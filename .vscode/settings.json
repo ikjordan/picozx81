@@ -1,0 +1,104 @@
+{
+    // These settings tweaks to the cmake plugin will ensure
+    // that you debug using cortex-debug instead of trying to launch
+    // a Pico binary on the host
+    "cmake.statusbar.advanced": {
+        "debug": {
+            "visibility": "hidden"
+        },
+        "launch": {
+            "visibility": "hidden"
+        },
+        "build": {
+            "visibility": "hidden"
+        },
+        "buildTarget": {
+            "visibility": "hidden"
+        }
+    },
+    "cmake.buildBeforeRun": true,
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "files.associations": {
+        "istream": "cpp",
+        "*.tcc": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp",
+        "string_view": "cpp",
+        "memory": "cpp",
+        "random": "cpp",
+        "initializer_list": "cpp",
+        "algorithm": "cpp",
+        "cstdlib": "cpp",
+        "cmath": "c",
+        "sstream": "cpp",
+        "atomic": "c",
+        "cstddef": "c",
+        "functional": "c",
+        "fstream": "c",
+        "typeinfo": "c",
+        "stdlib.h": "c",
+        "zx81bmp.h": "c",
+        "stdint.h": "c"
+    },
+    "cortex-debug.variableUseNaturalFormat": true,
+    "cSpell.words": [
+        "DFILE",
+        "Galaxians",
+        "hsync",
+        "inih",
+        "MCUME",
+        "picozx",
+        "Pimoroni",
+        "Quicksilva",
+        "RAMTOP",
+        "rowcounter",
+        "scanline",
+        "scanlines",
+        "tstate",
+        "tstates",
+        "vsync",
+        "zxspectrum",
+        "ZXPAND",
+        "DPICO",
+        "Defenda",
+        "QSUDG",
+        "clkfreq",
+        "clckfreq",
+        "dviboard",
+        "Maxtxt",
+        "HRDEMO",
+        "Bigg",
+        "thanni",
+        "rezurrection",
+        "Pacman",
+        "scrnbmp",
+        "GOSUB",
+        "Picos",
+        "xtricator",
+        "artic",
+        "zxtest",
+        "vcxz",
+        "Lshift",
+        "gfdsa",
+        "trewq",
+        "yuiop",
+        "hjkl"
+    ],
+    "cSpell.languageSettings": [
+        {
+            "languageId": "C",
+            "includeRegExpList": [
+               "CStyleComment"
+            ]
+        },
+        {
+            "languageId": "Cpp",
+            "includeRegExpList": [
+               "CStyleComment"
+            ]
+        }
+    ],
+}
