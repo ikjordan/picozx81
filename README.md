@@ -1,5 +1,5 @@
 # Summary
-+ PicoZX81 is a ZX81 and ZX80 simulator that runs on a Raspberry Pi Pico
+## A ZX81 and ZX80 simulator that runs on a Raspberry Pi Pico
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
 + Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base)
@@ -40,23 +40,23 @@ One intention of this project was to show what can be quickly achieved by levera
 # Building
 **Note:** Prebuilt executable files for the Pimoroni VGA and DVI demo boards can be found [here](uf2/)
 
-To build on a Raspberry Pi:
+### To build on a Raspberry Pi:
 1. Install the Raspberry Pi Pico SDK and Extras
-2. Clone this repository
-3. Update the submodules
-`git submodule update --init --recursive`
-4. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board will be created.
+2. Clone this repository, including submodules
+
+    `git clone --recursive https://github.com/ikjordan/picozx81.git`  
+3. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board will be created.
 This will be named `picozx81_vga.uf2`
 
     `mkdir build`  
     `cd build`  
     `cmake ..`  
     `make`
-5. To build for other boards, pass the board type as part of the cmake command. e.g. to build for the Pimoroni dvi board invoke cmake with:  
+4. To build for other boards, pass the board type as part of the cmake command. e.g. to build for the Pimoroni dvi board invoke cmake with:  
     `cmake -DPICO_BOARD=dviboard ..`  
 The executable built for the Pimoroni Pico DVI demo board will be named `picozx81_dvi.uf2`
-6. Upload the `uf2` file to the pico
-7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
+5. Upload the `uf2` file to the pico
+6. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
 # Use
 ## Configuring the Emulator
 ### Main Attributes
