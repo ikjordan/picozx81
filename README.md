@@ -1,9 +1,9 @@
-# Summary
-## A ZX81 and ZX80 simulator that runs on a Raspberry Pi Pico
-+ Provides an immersive full screen experience, with a very fast boot time and no operating system
-+ Simultaneous USB keyboard and joystick support (using a powered USB hub)
+# A Sinclair ZX81 and ZX80 simulator for the Raspberry Pi Pico
+## Summary
 + Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base)
 and [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base). Supports sound over onboard DAC. All supports custom VGA RGB 332 board (PWM sound)
++ Provides an immersive full screen experience, with a very fast boot time and no operating system
++ Simultaneous USB keyboard and joystick support (using a powered USB hub)
 + The small form factor makes the board easy to mount in period or reproduction cases. The low cost, relatively low performance and software generated display of the Pico is a 21st century analogue for the ZX80 and ZX81
 + Emulates pseudo and Hi-res graphics
 + Emulates ZonX and Quicksilva sound
