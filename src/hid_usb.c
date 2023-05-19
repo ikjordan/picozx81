@@ -175,6 +175,7 @@ bool hidNavigateMenu(uint8_t* key)
                 return true;
 
             case HID_KEY_ESCAPE:
+            case HID_KEY_0:
             case HID_KEY_SPACE:
                 *key = HID_KEY_ESCAPE;
                 return true;
@@ -184,8 +185,12 @@ bool hidNavigateMenu(uint8_t* key)
     return false;
 }
 
-bool hidReadUsbKeyboard(uint8_t* special)
+bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
 {
+    static bool shift = false;
+    static bool doubleshift = false;
+    static int doubletick = 0;
+
     hid_keyboard_report_t report;
     int r = 0;
     *special = 0;
@@ -195,32 +200,73 @@ bool hidReadUsbKeyboard(uint8_t* special)
     const unsigned char m = report.modifier;
     reset();
 
-    if (m & 0x22) press(0, 0); // Shift
+    // To generate a non Sinclair key from a Sinclair keyboard:
+    // 1. Shift is pressed without another key
+    // 2. Shift is released, without another key being pressed
+    // 3. Within two seconds shift is pressed again
+    //    and a numeric key is pressed before shift is released
+    if (m & 0x22) 
+    {
+        press(0, 0); // Shift
+        shift = true;
+    }
+    else
+    {
+        if (usedouble && shift)
+        {
+            doubleshift = true;
+            doubletick = 0;
+            shift = false;
+        }
+    }
+
+    // Double shift times out after 2 seconds
+    if (doubleshift && (++doubletick > 100))
+    {
+        doubleshift = false;
+    }
 
     for(unsigned int i = 0; i < 6; ++i)
     {
-        const HidKey_t* k = findKey(report.keycode[i]);
-        if (k)
+        if (usedouble && doubleshift && shift &&
+            ((report.keycode[i] >= HID_KEY_1) && (report.keycode[i] <= HID_KEY_5)))
         {
-            for (uint32_t c = 0; c < k->contacts; ++c)
-            {
-                const Contact_t* contact = &k->contact[c];
-                press(contact->line, contact->key);
-            }
+            *special = HID_KEY_F1 +  (report.keycode[i] - HID_KEY_1);
+
+            // The shift state has been consumed
+            shift = false;
+            doubleshift = false;
         }
         else
         {
-            // Check for non Sinclair keys here:
-            if (((report.keycode[i] >= HID_KEY_F1) && (report.keycode[i] <= HID_KEY_F5)) ||
-                 (report.keycode[i] == HID_KEY_ESCAPE))
+            const HidKey_t* k = findKey(report.keycode[i]);
+            if (k)
             {
-                *special = report.keycode[i];
+                for (uint32_t c = 0; c < k->contacts; ++c)
+                {
+                    const Contact_t* contact = &k->contact[c];
+                    press(contact->line, contact->key);
+
+                    // The shift state has been consumed
+                    doubleshift = false;
+                    shift = false;
+                }
+            }
+            else
+            {
+                // Check for non Sinclair keys here:
+                if (((report.keycode[i] >= HID_KEY_F1) && (report.keycode[i] <= HID_KEY_F5)) ||
+                    (report.keycode[i] == HID_KEY_ESCAPE))
+                {
+                    *special = report.keycode[i];
+                }
             }
         }
     }
     return *special != 0;
 }
 
+// Not currently used
 int16_t hidKeyboardToJoystick(void)
 {
     hid_keyboard_report_t report;

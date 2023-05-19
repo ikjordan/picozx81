@@ -40,6 +40,7 @@ extern bool emu_QSUDGRequested(void);
 extern bool emu_WRXRequested(void);
 extern bool emu_NTSCRequested(void);
 extern int emu_soundRequested(void);
+extern bool emu_DoubleShiftRequested(void);
 extern uint16_t emu_VTol(void);
 extern bool emu_ACBRequested(void);
 extern int emu_CentreX(void);

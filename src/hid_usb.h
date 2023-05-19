@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 void hidInitialise(byte* keyboard);
-bool hidReadUsbKeyboard(uint8_t* special);
+bool hidReadUsbKeyboard(uint8_t* special, bool usedouble);
 int16_t hidKeyboardToJoystick(void);
 
 int16_t hidReadUsbJoystick(int instance);

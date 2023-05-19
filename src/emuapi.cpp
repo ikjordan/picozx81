@@ -161,6 +161,7 @@ typedef struct
   bool M1NOT;
   bool LowRAM;
   bool acb;
+  bool doubleshift;
 } configuration_t;
 
 typedef struct
@@ -252,6 +253,11 @@ bool emu_LowRAMRequested(void)
 bool emu_QSUDGRequested(void)
 {
   return specific.QSUDG;
+}
+
+bool emu_DoubleShiftRequested(void)
+{
+  return specific.doubleshift;
 }
 
 bool emu_resetNeeded(void)
@@ -484,6 +490,11 @@ static int handler(void *user, const char *section, const char *name,
       {
         setDirectory(value);
       }
+      else if (!strcasecmp(name, "DOUBLESHIFT"))
+      {
+        // Defaults to off
+        c->conf->doubleshift = isEnabled(value);
+      }
       else
       {
         return 0;
@@ -540,6 +551,7 @@ void emu_ReadDefaultValues(void)
     general.NTSC = false;
     general.VTol = VTOL;
     general.centre = true;
+    general.doubleshift = false;
     selection[0] = 0;
   }
   else
@@ -609,7 +621,7 @@ void emu_ReadSpecificValues(const char *filename)
  ********************************/
 bool emu_UpdateKeyboard(uint8_t* special)
 {
-  bool ret = hidReadUsbKeyboard(special);
+  bool ret = hidReadUsbKeyboard(special, specific.doubleshift);
 
   if (!ret)
   {

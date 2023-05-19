@@ -201,6 +201,8 @@ bool statusMenu(void)
 
     writeString("Directory:", lhs, ++lcount);
     writeString(emu_GetDirectory(), rhs, lcount++);
+    writeString("Fn Key Map:", lhs, lcount);
+    writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
 
     do
     {

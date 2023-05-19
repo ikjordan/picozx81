@@ -112,6 +112,7 @@ Two extra options can be set via the `[default]` section of the `config.ini` fil
 | --- | --- | --- |
 | Dir | Sets the initial default directory to load and save programs | / |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
+| DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| Off |
 
 ### Examples
 Examples of the `config.ini` files used to test the programs listed in this [section](#applications-tested) can be found [here](examples)
@@ -126,25 +127,28 @@ The emulator is always reset if any of the following options are changed:
 
 **Note:** Changing the virtual sound card, or the video display settings, does *not* trigger a reset
 ## File Storage
-Program and configuration files are stored on a micro SD-Card. Directories are supported. File and directory names should only contain characters that exist in the ZX81 character set. File and directory names can be a mixture of upper and lower case, but are used case insensitive. Therefore, all file and child directory names in a given directory must differ by more than just case.
+Program and configuration files are stored on a micro SD-Card. Directories are supported. File and directory names should only contain characters that exist in the ZX81 character set. File and directory names can be a mixture of upper and lower case, but are used case insensitive. Therefore, all file and child directory names in a given directory must differ by more than just case
 ## Function key menu
-The emulator has several menus that can be selected through function key presses. To keep the look and feel of the ZX8x computers the menus are in black and white and use the ZX81 font
+The emulator has several menus that can be selected through function key presses. To keep the look and feel of the ZX8x computers the menus are in black and white and use the ZX81 font.
+
+The original ZX80/ZX81 40 key keyboard does not have function keys. A "double shift" mechanism can be used instead. Press shift, release shift, then, within 2 seconds press shift again, together with a number key to generate a function key press.  
+To enable this mechanism set `DoubleShift` to `On` in the configuration file
 ### F1 - Reset
 Hard resets the emulator. It is equivalent to removing and reconnecting the power
 ### F2 - Load Menu
-A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. The display can be navigated using the up, down and enter keys. Any sound that is playing is paused
+A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. The display can be navigated using the up, down and enter keys. The 7 key also generates "up" and the 6 key also generates "down". Any sound that is playing is paused
 
 + Press enter whilst a directory entry is selected to move to that directory
 + Press enter when a file is selected to load that file
-+ Press Escape to return to the emulation without changing directory or loading a new program
++ Press Escape, space or 0 to return to the emulation without changing directory or loading a new program
 ### F3 - View Emulator Configuration
-Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press Escape to exit back to the running emulator
+Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press Escape space or 0 to exit back to the running emulator
 ### F4 - Pause
-Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press Escape to end the pause and return to the running emulator
+Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press Escape, space or 0 to end the pause and return to the running emulator
 ### F5 - Display Keyboard Overlay
-The ZX80 and ZX81 use single key press BASIC entry. Pressing F5 displays a 4 colour image (VGA) or a grey scale image (DVI / HDMI) representing the keyboard of the computer being emulated, so that the correct key presses can be determined. The image was taken from [sz81](https://github.com/SegHaxx/sz81). It is possible to enter commands whilst the keyboard is displayed.
+The ZX80 and ZX81 use single key press BASIC entry. Pressing F5 displays a 4 colour image (VGA) or a grey scale image (DVI / HDMI) representing the keyboard of the computer being emulated, so that the correct key presses can be determined. The image was taken from [sz81](https://github.com/SegHaxx/sz81). It is possible to enter commands whilst the keyboard is displayed
 
-Press Escape to remove the keyboard display. The keyboard is also removed if another menu is selected
+Press Escape or 0 to remove the keyboard display. The keyboard is also removed if another menu is selected
 
 ## Loading and saving options
 The emulator supports the loading  `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
@@ -155,7 +159,7 @@ There are 3 ways to load files:
 #### 1. Via the F2 menu
 The user can navigate the SD card directory and select a file to load. The emulator is configured to the settings specified for the file in the `config.ini` files, reset and the new file loaded
 #### 2. Via `LOAD ""` (ZX81) or  `LOAD` (ZX80)
-If the user enters the `LOAD` command without specifying a file name the SD Card directory menu is displayed and a file to load can be selected. The emulator is configured to the settings specified for the file in the `config.ini` files. Unlike for option 1, the emulator is only reset if the configuration differs. This, for example, allows for RAMTOP to be manually set before loading a program.
+If the user enters the `LOAD` command without specifying a file name the SD Card directory menu is displayed and a file to load can be selected. The emulator is configured to the settings specified for the file in the `config.ini` files. Unlike for option 1, the emulator is only reset if the configuration differs. This, for example, allows for RAMTOP to be manually set before loading a program
 #### 3. Via `LOAD "program-name"` (ZX81 only)
 If a file name is specified, then `.p` is appended and an attempt is made to load the file from the current directory. The configuration for the file is read. A reset is performed only if required by a configuration change. This allows for multiple parts of an application to be loaded e.g. [HiRes Chess](https://spectrumcomputing.co.uk/entry/32021/ZX81/Hi-res_Chess) or [QS games](#qs-udg-graphics) that include character definitions
 ### Save
@@ -244,11 +248,19 @@ These really show off the capabilities of the ZX81
   + This game generates 31 lines of text. As the emulator only displays 30 line of text, one can choose to display either the top or the bottom line. Set `Centre` to `off` to display the top line (which includes the score). The game is still playable without the bottom line being visible. The QS sound board is emulated correctly
 
 # Developer Notes
+## Use with an original ZX80/ZX81 keyboard
+There are not enough unused GPIO pins on the Pimoroni demo boards to allow the direct connection of a ZX80/81 keyboard, but it can be done by using another Pico to convert the ZX80/81 keyboard into a USB keyboard. It may seem excessive to use a whole pico as a keyboard controller, but they are cheap and there is enough space to put the Pimoroni board, plus another Pico, plus a small USB hub into a ZX80 or ZX81 case
+
+Code to convert a ZX8x keyboard to USB can be found at [ZX81_USB_KBD](https://github.com/ikjordan/ZX81_USB_KBD). This code has been used to successfully connect a ZX81 keyboard to this emulator. If the keyboard is the only peripheral, then it can be plugged straight into the USB port of the Pico on the emulator board with the power connected to the USB power socket of the Pimoroni board. If other USB peripherals (such as another keyboard, or a USB joystick) also need to be connected then the ZX80/81 keyboard can be connected via a USB hub
+
+To access the function menus from a ZX80/81 keyboard enable the `doubleshift` configuration option
+
 ## Performance and constraints
 The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 90% of the available CPU clock cycles. An overclock to 250MHz is required
 
 Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n; set n,(hl); res n,(hl);`
 ## Possible Future Developments
++ Add support for the [PicoMite](https://geoffg.net/picomitevga.html) board
 + Add volume control
 + Add vsync (TV) based sound
 + There are some interesting developments to extend PicoDVI to include audio over the HDMI signal
