@@ -1,4 +1,4 @@
-# A Sinclair ZX81 and ZX80 simulator for the Raspberry Pi Pico
+# A Sinclair ZX81 and ZX80 Emulator for the Raspberry Pi Pico
 ## Summary
 + Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base)
 and [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base). Supports sound over onboard DAC. Also supports custom VGA RGB 332 board (PWM sound)
