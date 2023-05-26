@@ -152,7 +152,7 @@ typedef struct
   char button;
   int memory;
   int sound;
-  bool zx81;
+  ComputerType computer;
   bool NTSC;
   uint16_t VTol;
   bool centre;
@@ -199,7 +199,12 @@ bool emu_ACBRequested(void)
 
 bool emu_ZX80Requested(void)
 {
-  return !specific.zx81;
+  return (specific.computer == ZX80);
+}
+
+ComputerType emu_ComputerRequested(void)
+{
+  return specific.computer;
 }
 
 int emu_MemoryRequested(void)
@@ -332,7 +337,14 @@ static bool setDirectory(const char* dir)
 
 void emu_setZX80(bool zx80)
 {
-  general.zx81 = !zx80;
+  if (zx80)
+  {
+    general.computer = ZX80;
+  }
+  else if (general.computer == ZX80)
+  {
+      general.computer = ZX81;
+  }
 }
 
 static char convert(const char *val)
@@ -405,8 +417,19 @@ static int handler(void *user, const char *section, const char *name,
     }
     else if (!strcasecmp(name, "COMPUTER"))
     {
-      // ZX81 enabled unless entry exists and is set to "ZX80"
-      c->conf->zx81 = (strcasecmp(value, "ZX80") != 0);
+      // ZX81 enabled unless entry exists and is set to "ZX80" or "ZX81x2"
+      if (strcasecmp(value, "ZX80") == 0)
+      {
+        c->conf->computer = ZX80;
+      }
+      else if (strcasecmp(value, "ZX81x2") == 0)
+      {
+        c->conf->computer = ZX81X2;
+      }
+      else
+      {
+        c->conf->computer = ZX81;
+      }
     }
     else if (!strcasecmp(name, "M1NOT"))
     {
@@ -542,7 +565,7 @@ void emu_ReadDefaultValues(void)
     general.button = '0';
     general.sound = AY_TYPE_NONE;
     general.acb = false;
-    general.zx81 = true;
+    general.computer = ZX81;
     general.M1NOT = false;
     general.WRX = false;
     general.QSUDG = false;
@@ -609,7 +632,7 @@ void emu_ReadSpecificValues(const char *filename)
     // determine whether a reset is required
     resetNeeded =  ((specific.M1NOT != used.M1NOT) ||
                     (specific.memory != used.memory) ||
-                    (specific.zx81 != used.zx81) ||
+                    (specific.computer != used.computer) ||
                     (specific.WRX != used.WRX) ||
                     (specific.QSUDG != used.QSUDG) ||
                     (specific.LowRAM != used.LowRAM));

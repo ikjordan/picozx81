@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "Z80.h"
 #include "zx80rom.h"
+#include "zx81x2rom.h"
 #include "zx81rom.h"
 #include "zx8x.h"
 #include "emuapi.h"
@@ -457,7 +458,14 @@ void z8x_Init(void)
   }
   else
   {
+    if (emu_ComputerRequested() == ZX81)
+    {
     memcpy( mem + 0x0000, zx81rom, siz );
+    }
+    else
+    {
+      memcpy( mem + 0x0000, zx81x2rom, siz );
+    }
   }
   memcpy(mem+siz,mem,siz);
   if(zx80)

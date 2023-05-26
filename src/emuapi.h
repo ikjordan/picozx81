@@ -12,6 +12,12 @@
 extern "C" {
 #endif
 
+typedef enum {
+    ZX80 = 0,
+    ZX81,
+    ZX81X2 // Big bang ROM
+} ComputerType;
+
 extern void emu_init(void);
 
 extern bool emu_UpdateKeyboard(uint8_t* special);
@@ -34,6 +40,7 @@ extern void emu_ReadSpecificValues(const char* filename);
 extern void emu_setZX80(bool zx80);
 extern int emu_MemoryRequested(void);
 extern bool emu_ZX80Requested(void);
+extern ComputerType emu_ComputerRequested(void);
 extern bool emu_M1NOTRequested(void);
 extern bool emu_LowRAMRequested(void);
 extern bool emu_QSUDGRequested(void);

@@ -153,7 +153,7 @@ bool statusMenu(void)
     writeString("======", lhs + 6, lcount++);
 
     writeString("Computer:", lhs, ++lcount);
-    writeString(emu_ZX80Requested() ? "ZX80" : "ZX81", rhs, lcount++);
+    writeString((emu_ComputerRequested() == ZX80) ? "ZX80" : (emu_ComputerRequested() == ZX81X2) ? "ZX81X2" : "ZX81", rhs, lcount++);
     writeString("Memory:", lhs, lcount);
     sprintf(c,"%0d KB\n",emu_MemoryRequested());
     writeString(c, rhs, lcount++);
@@ -168,6 +168,9 @@ bool statusMenu(void)
     writeString(emu_NTSCRequested() ? "NTSC" : "PAL", rhs, lcount++);
     writeString("Centre:", lhs, lcount);
     writeString((emu_CentreY()!=0) ? "Yes" : "No", rhs, lcount++);
+    writeString("Vert Tol:", lhs, lcount);
+    sprintf(c,"%d lines\n",emu_VTol());
+    writeString(c, rhs, lcount++);
 
     writeString("Sound:", lhs, ++lcount);
     switch (emu_soundRequested())

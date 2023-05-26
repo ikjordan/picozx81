@@ -1,7 +1,8 @@
 # A Sinclair ZX81 and ZX80 Emulator for the Raspberry Pi Pico
 ## Summary
-+ Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base)
-and [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base). Supports sound over onboard DAC. Also supports custom VGA RGB 332 board (PWM sound)
++ Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base),
+the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base) and the [PicoMite VGA board](https://geoffg.net/picomitevga.html). Can be extended for other board types (code support included for a custom VGA RGB 332 board)
++ Supports sound over onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
 + The small form factor makes the board easy to mount in period or reproduction cases. The low cost, relatively low performance and software generated display of the Pico is a 21st century analogue for the ZX80 and ZX81
@@ -28,6 +29,7 @@ One intention of this project was to show what can be quickly achieved by levera
 
 ## Notes
 + The intention of the emulator is to provide an authentic '80s feel. There have been amazing ZX81 developments in recent years, such as ([Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm), [ZXPand+](https://www.rwapsoftware.co.uk/zx812.html) etc). These are not supported. Instead it emulates the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics
++ The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
 + Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
 + To achieve a full speed emulation the Pico is overclocked to 250MHz. There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be build to use 1.2V, add `-DOVER_CLOCK` to the cmake command
 + The Pico only has 1 USB port. The Pimoroni boards can be powered through a second connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
@@ -52,9 +54,14 @@ This will be named `picozx81_vga.uf2`
     `cd build`  
     `cmake ..`  
     `make`
-4. To build for other boards, pass the board type as part of the cmake command. e.g. to build for the Pimoroni dvi board invoke cmake with:  
-    `cmake -DPICO_BOARD=dviboard ..`  
-The executable built for the Pimoroni Pico DVI demo board will be named `picozx81_dvi.uf2`
+4. To build for other boards, pass the board type as part of the cmake command. e.g.
+
+| Board | CMake | uf2 name |
+| --- | --- | --- |
+| Pimoroni DVI |`cmake -DPICO_BOARD=dviboard ..` | `picozx81_dvi.uf2`|
+| PicoMite VGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga.uf2`|
+| Custom 332 VGA|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
+
 5. Upload the `uf2` file to the pico
 6. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
 # Use
@@ -63,7 +70,7 @@ The executable built for the Pimoroni Pico DVI demo board will be named `picozx8
 The following can be configured:
 | Item | Description | Default Value | Notes |
 | --- | --- | --- | --- |
-| Computer | Selects either ZX81 or ZX80 | ZX81 | ZX80 assumes 4kB ROM |
+| Computer | Selects either ZX81, ZX81x2 or ZX80 | ZX81 | ZX80 assumes 4kB ROM. ZX81x2 selects a ZX81 with the ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM for faster BASIC |
 | Memory | In kB. Starting at 0x4000 | 16 | 1, 2, 3, 4, 16, 32 and 48 allowed |
 | WRX | Selects if RAM supports Hi-res graphics | Off | Automatically set to on if Memory is 2kB or less |
 | LowRAM | Selects if RAM populated between 0x2000 and 0x3fff| Off | Typically used in conjunction with WRX to create a hires display file in low memory, can also be used for UDG graphics emulation if WRX off|
@@ -79,8 +86,8 @@ The following can be configured:
 1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if UDG is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400  to 0x87ff)
 2. To emulate other UDG graphics cards that reside between 0x2000 and 0x3fff set LowRAM to On and WRX to Off. This setting is needed ro run e.g. [Galaxians with user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388)
 3. If `NTSC` is set to On and `Centre` is set to Off then a black vsync bar will be seen at the bottom of the display for programs that generate a typical 192 line display
-4. A higher tolerance value results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p)
-
+4. A higher tolerance value results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). The default value of 100 emulates a TV that very quickly regains vertical lock. Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock 
+5. The "Big Bang" ROM can double the speed of BASIC programs
 ### Joystick
 In addition a USB joystick can be configured to generated key presses
 
@@ -260,7 +267,6 @@ The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real
 
 Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n; set n,(hl); res n,(hl);`
 ## Possible Future Developments
-+ Add support for the [PicoMite](https://geoffg.net/picomitevga.html) board
 + Add volume control
 + Add vsync (TV) based sound
 + There are some interesting developments to extend PicoDVI to include audio over the HDMI signal
@@ -269,7 +275,7 @@ Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n;
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 
 ## Comparison to MCUME
-[MCUME](https://github.com/Jean-MarcHarvengt/MCUME/) demonstrated that a Raspberry Pi Pico based ZX80/81 emulator was feasible
+[MCUME](https://github.com/Jean-MarcHarvengt/MCUME/) demonstrated that a Raspberry Pi Pico based ZX80/81 emulator was feasible. The custom VGA RGB 332 board type is similar to the hardware required for MCUME
 
 This emulator offers the following over MCUME:
 + Support for USB keyboards and joysticks

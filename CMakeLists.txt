@@ -19,6 +19,8 @@ endif()
 # e.g. cmake -DPICO_BOARD=dviboard
 # Set to "vga332board" for home brew 332 vga board
 # e.g. cmake -DPICO_BOARD=vga332board
+# Set to "picomitevgaboard" for PicoMite vga board
+# e.g. cmake -DPICO_BOARD=picomitevgaboard
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
@@ -37,7 +39,7 @@ include_directories(display)
 include_directories(usb)
 include_directories(inih)
 
-if (${PICO_BOARD} MATCHES "dviboard")
+if (${PICO_BOARD} STREQUAL "dviboard")
     add_subdirectory(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/include)
@@ -86,7 +88,7 @@ add_executable(${PROJECT}
         ${USB_SOURCES}
     )
 
-if ((${PICO_BOARD} MATCHES "dviboard") OR (${PICO_BOARD} MATCHES "vgaboard"))
+if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
     # Set I2S sound
     target_compile_definitions(${PROJECT} PRIVATE -DI2S)
     target_link_libraries(${PROJECT}
@@ -95,7 +97,7 @@ if ((${PICO_BOARD} MATCHES "dviboard") OR (${PICO_BOARD} MATCHES "vgaboard"))
     )
     pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/audio_i2s.pio)
 
-    if (${PICO_BOARD} MATCHES "dviboard")
+    if (${PICO_BOARD} STREQUAL "dviboard")
         target_compile_definitions(${PROJECT} PUBLIC
             -DDVI_DEFAULT_SERIAL_CONFIG=pimoroni_demo_hdmi_cfg
             -DDVI_1BPP_BIT_REVERSE=1
@@ -110,7 +112,11 @@ if ((${PICO_BOARD} MATCHES "dviboard") OR (${PICO_BOARD} MATCHES "vgaboard"))
         target_link_libraries(${PROJECT} pico_scanvideo_dpi)
     endif()
 else()
-    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_332")
+    if (${PICO_BOARD} STREQUAL "picomitevgaboard")
+        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picomitevga")
+    else()
+        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga332")
+    endif()
     target_link_libraries(${PROJECT} pico_scanvideo_dpi)
 endif()
 
@@ -133,7 +139,7 @@ target_link_libraries(${PROJECT}
 )
 
 # Cannot use serial port with Pimoroni vga card
-if (${PICO_BOARD} MATCHES "vgaboard")
+if (${PICO_BOARD} STREQUAL "vgaboard")
     pico_enable_stdio_uart(${PROJECT} 0)
 else()
     pico_enable_stdio_uart(${PROJECT} 1)
@@ -142,4 +148,3 @@ pico_enable_stdio_usb(${PROJECT} 0)
 
 pico_add_extra_outputs(${PROJECT})
 
-unset(PICO_BOARD)
