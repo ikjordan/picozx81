@@ -1,7 +1,7 @@
 # A Sinclair ZX81 and ZX80 Emulator for the Raspberry Pi Pico
 ## Summary
 + Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base),
-the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base) and the [PicoMite VGA board](https://geoffg.net/picomitevga.html). Can be extended for other board types (code support included for a custom VGA RGB 332 board)
+the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base) and the [PicoMite VGA board](https://geoffg.net/picomitevga.html)
 + Supports sound over onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
@@ -15,6 +15,7 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + Load `.p`, `.81`, `.o` and `.80` files from micro SD Card. Save `.p` and `.o` files
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
++ Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME)
 
 ## Acknowledgements
 One intention of this project was to show what can be quickly achieved by leveraging other open source projects. The following excellent Open source projects have been used for source code and inspiration:
@@ -36,11 +37,11 @@ One intention of this project was to show what can be quickly achieved by levera
 + To connect more than one peripheral (e.g. a keyboard and joystick) at the same time, a powered USB OTG hub is required. These 3 hubs have been successfully tested. [1](https://www.amazon.co.uk/dp/B083WML1XB), [2](https://www.amazon.co.uk/dp/B078M3Z84Z), [3](https://www.amazon.co.uk/dp/B07Z4RHJ2D). Plug the hub directly into the USB port on the Pico, not the USB power connector on the Pimoroni board  
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
 + On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
++ The PicoMite VGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
 + In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
-
 # Building
-**Note:** Prebuilt executable files for the Pimoroni VGA and DVI demo boards can be found [here](uf2/)
+**Note:** Prebuilt executable files for the 4 supported board types can be found [here](uf2/)
 
 ### To build on a Raspberry Pi:
 1. Install the Raspberry Pi Pico SDK and Extras
