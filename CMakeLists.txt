@@ -89,8 +89,9 @@ add_executable(${PROJECT}
     )
 
 if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
-    # Set I2S sound
+    # Use I2S loaded by DMA sound
     target_compile_definitions(${PROJECT} PRIVATE -DI2S)
+    # VGA board can also use PWM (but cannot be loaded by DMA, as l and r on different slices)
     target_link_libraries(${PROJECT}
         hardware_pio
         hardware_dma
@@ -112,6 +113,11 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
         target_link_libraries(${PROJECT} pico_scanvideo_dpi)
     endif()
 else()
+    # Use PWM loaded by DMA sound
+    target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
+    target_link_libraries(${PROJECT}
+        hardware_dma
+    )
     if (${PICO_BOARD} STREQUAL "picomitevgaboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picomitevga")
     else()
