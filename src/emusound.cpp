@@ -139,13 +139,13 @@ static void __not_in_flash_func(dmaInterruptHandler)()
   }
 }
 
-static void config_DMA(uint channel, uint slice, const volatile void* write, uint count, bool stereo)
+static void config_DMA(uint channel, uint slice, const volatile void* write, uint count)
 {
   dma_channel_config dmaconfig = dma_channel_get_default_config(channel);
   channel_config_set_read_increment(&dmaconfig, true);
   channel_config_set_write_increment(&dmaconfig, false);
   channel_config_set_dreq(&dmaconfig, DREQ_PWM_WRAP0 + slice);
-  channel_config_set_transfer_data_size(&dmaconfig, stereo ? DMA_SIZE_32 : DMA_SIZE_16);
+  channel_config_set_transfer_data_size(&dmaconfig, DMA_SIZE_32);
 
   // Set up dma
   dma_channel_configure(channel,
@@ -271,7 +271,7 @@ static void beginAudio(void)
 
     // Should only use DMA if both channels are on same slice, or mono
     assert(audio_pin_slice_r == audio_pin_slice_l);
-    config_DMA(dma_channel_sound, audio_pin_slice_l, soundBuffer16, NUMSAMPLES, AUDIO_PIN_L != AUDIO_PIN_R);
+    config_DMA(dma_channel_sound, audio_pin_slice_l, soundBuffer16, NUMSAMPLES);
 
     // Set the DMA interrupt handler
     irq_set_exclusive_handler(DMA_IRQ_1, dmaInterruptHandler);
