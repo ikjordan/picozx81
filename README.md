@@ -67,15 +67,12 @@ This will be named `picozx81_vga.uf2`
 6. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
 # Use
 ## Quick Start
-If the emulator is started with no SD Card, or with an empty SD Card, then it will emulate a 16K ZX81
-
-To switch to always starting emulating a ZX80, a populated SD Card is required. If it is present, the machine that is emulated is specified by the `config.ini` file in the root directory, see [configuring the emulator](#configuring-the-emulator)
-
-If the contents of the [examples](examples) directory have been copied to the SD Card, then the included programs can be loaded. Press `F2` to see files in the current directory that can be loaded
-
-To make picozx81 emulate a ZX80, without changing `config.ini`, a ZX80 program can be loaded. Press `F2`, navigate up one directory and then select the `ZX80` directory. Select `simple.o` and load it. The emulator will now be in ZX80 mode, with a simple 1 line ZX80 BASIC program loaded
-
-The following sections describe how to configure the emulator and provide links to programs that can be downloaded, copied to the SD Card and then run using the emulator
++ If the emulator is started with no SD Card, or with an empty SD Card, then it will emulate a 16K ZX81
++ To switch to always starting emulating a ZX80, a populated SD Card is required. If it is present, the machine that is emulated is specified by the `config.ini` file in the root directory, see [configuring the emulator](#configuring-the-emulator)
++ If the contents of the [examples](examples) directory have been copied to the SD Card, then the included programs can be loaded. Press `F2` to see files in the current directory that can be loaded
++ To make picozx81 emulate a ZX80, without changing `config.ini`, a ZX80 program can be loaded. Press `F2`, navigate up one directory and then select the `ZX80` directory. Select `simple.o` and load it. The emulator will now be in ZX80 mode, with a simple 1 line ZX80 BASIC program loaded
++ The current settings used by the emulator can be viewed by pressing `F3`
++ The following sections describe how to configure the emulator and provide links to programs that can be downloaded, copied to the SD Card and then run using the emulator
 
 ## Configuring the Emulator
 ### Main Attributes
@@ -113,7 +110,7 @@ In addition a USB joystick can be configured to generated key presses
 
 Notes: ENTER and SPACE can be used to represent the New Line and Space keys, respectively
 
-### Configuration Files
+## Configuration Files
 The items specified above are set via `config.ini` files. When a program is loaded the emulation configuration is read, and set for the program before it is run.
 The order for configuring an item for a given program (e.g. `prog.p`) is as follows:
 1. Search for `config.ini` in the directory that contains `prog.p`
@@ -135,6 +132,8 @@ Two extra options can be set via the `[default]` section of the `config.ini` fil
 
 ### Examples
 Examples of the `config.ini` files used to test the programs listed in this [section](#applications-tested) can be found [here](examples)
+### Editing `config.ini`
+The `config.ini` file *cannot* be edited within the emulator. Modify the `config.ini` file using another computer
 ### Need for reset
 The emulator is always reset if any of the following options are changed:
 + Computer
@@ -143,7 +142,6 @@ The emulator is always reset if any of the following options are changed:
 + M1NOT
 + WRX
 + QSUDG
-
 **Note:** Changing the virtual sound card, or the video display settings, does *not* trigger a reset
 ## File Storage
 Program and configuration files are stored on a micro SD-Card. Directories are supported. File and directory names should only contain characters that exist in the ZX81 character set. File and directory names can be a mixture of upper and lower case, but are used case insensitive. Therefore, all file and child directory names in a given directory must differ by more than just case
