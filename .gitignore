@@ -44,3 +44,6 @@
 # Built Visual Studio Code Extensions
 *.vsix
 build/*
+
+# Allow example file
+!examples/ZX80/simple.o

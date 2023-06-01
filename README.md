@@ -66,6 +66,17 @@ This will be named `picozx81_vga.uf2`
 5. Upload the `uf2` file to the pico
 6. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
 # Use
+## Quick Start
+If the emulator is started with no SD Card, or with an empty SD Card, then it will emulate a 16K ZX81
+
+To switch to always starting emulating a ZX80, a populated SD Card is required. If it is present, the machine that is emulated is specified by the `config.ini` file in the root directory, see [configuring the emulator](#configuring-the-emulator)
+
+If the contents of the [examples](examples) directory have been copied to the SD Card, then the included programs can be loaded. Press `F2` to see files in the current directory that can be loaded
+
+To make picozx81 emulate a ZX80, without changing `config.ini`, a ZX80 program can be loaded. Press `F2`, navigate up one directory and then select the `ZX80` directory. Select `simple.o` and load it. The emulator will now be in ZX80 mode, with a simple 1 line ZX80 BASIC program loaded
+
+The following sections describe how to configure the emulator and provide links to programs that can be downloaded, copied to the SD Card and then run using the emulator
+
 ## Configuring the Emulator
 ### Main Attributes
 The following can be configured:
