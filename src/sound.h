@@ -25,10 +25,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 #ifdef I2S
 #define ZEROSOUND 0         // Zero point for I2S sound
 #else
 #define ZEROSOUND 500       // Zero point for PWM sound
+#define RANGE     1000
 #endif
 
 extern bool sound_create(int freq, int framesize);

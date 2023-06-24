@@ -1,7 +1,7 @@
 # A Sinclair ZX81 and ZX80 Emulator for the Raspberry Pi Pico
 ## Summary
 + Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base),
-the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base) and the [PicoMite VGA board](https://geoffg.net/picomitevga.html)
+the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base), the [PicoMite VGA board](https://geoffg.net/picomitevga.html) and the [Olimex RP2040-PICO-PC](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware)
 + Supports sound over onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
@@ -38,10 +38,11 @@ One intention of this project was to show what can be quickly achieved by levera
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
 + On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
 + The PicoMite VGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
++ The Olimex RP2040-PICO-PC has a stereo audio jack, but the left channel cannot be used with HDMI, so only mono audio through the right channel is possible when using this board
 + In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
 # Building
-**Note:** Prebuilt executable files for the 4 supported board types can be found [here](uf2/)
+**Note:** Prebuilt executable files for the 5 supported board types can be found [here](uf2/)
 
 ### To build:
 1. Install the Raspberry Pi Pico toolchain and SDK
@@ -67,6 +68,7 @@ This will be named `picozx81_vga.uf2`
 | --- | --- | --- |
 | Pimoroni DVI |`cmake -DPICO_BOARD=dviboard ..` | `picozx81_dvi.uf2`|
 | PicoMite VGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga.uf2`|
+| Olimex PICO DVI |`cmake -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc.uf2`|
 | Custom 332 VGA|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
 
 **Note:** The `buildall` script in the root directory of `picozx81` will build `uf2` files for all supported board types
@@ -305,7 +307,7 @@ This emulator offers the following over MCUME:
 + Ability to save files
 + Ability to load a program without reset
 + Support for Hi-res and pseudo Hi-res graphics
-+ Support for Pimoroni VGA and DVI boards
++ Support for multiple DVI and VGA boards
 + Support for programs which use more than 32 columns or 24 rows of characters
 + ZonX and QS Sound emulation
 + Emulated QS UDG

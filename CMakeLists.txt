@@ -21,6 +21,8 @@ endif()
 # e.g. cmake -DPICO_BOARD=vga332board
 # Set to "picomitevgaboard" for PicoMite vga board
 # e.g. cmake -DPICO_BOARD=picomitevgaboard
+# Set to "olimexpcboard" for Olimex RP2040-PICO-PC board
+# e.g. cmake -DPICO_BOARD=olimexpcboard
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
@@ -39,7 +41,7 @@ include_directories(display)
 include_directories(usb)
 include_directories(inih)
 
-if (${PICO_BOARD} STREQUAL "dviboard")
+if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard"))
     add_subdirectory(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/include)
@@ -60,7 +62,7 @@ set(INI_SOURCES
         inih/ini.c
    )
 
-if (${PICO_BOARD} MATCHES "dviboard")
+   if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard"))
     set(DISPLAY_SOURCES
         display/display_dvi.c
         display/tmds_double.S
@@ -88,37 +90,48 @@ add_executable(${PROJECT}
         ${USB_SOURCES}
     )
 
+# Determine sound system
 if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
     # Use I2S loaded by DMA sound
     target_compile_definitions(${PROJECT} PRIVATE -DI2S)
-    # VGA board can also use PWM (but cannot be loaded by DMA, as l and r on different slices)
+    # Default to I2S sound. Note that Pimoroni VGA board can also use PWM
+    # but values cannot be loaded by DMA, as l and r are on different slices
     target_link_libraries(${PROJECT}
         hardware_pio
         hardware_dma
     )
     pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/audio_i2s.pio)
+else()
+    # Use PWM loaded by DMA sound
+    target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
+    target_link_libraries(${PROJECT} hardware_dma)
+endif()
 
-    if (${PICO_BOARD} STREQUAL "dviboard")
+# Determine video system and name uf2
+if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard"))
         target_compile_definitions(${PROJECT} PUBLIC
-            -DDVI_DEFAULT_SERIAL_CONFIG=pimoroni_demo_hdmi_cfg
             -DDVI_1BPP_BIT_REVERSE=1
             -DDVI_VERTICAL_REPEAT=2
             -DDVI_N_TMDS_BUFFERS=3
             -DDVI_MONOCHROME_TMDS
         )
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_dvi")
         target_link_libraries(${PROJECT} libdvi)
+
+    if (${PICO_BOARD} STREQUAL "dviboard")
+        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_dvi")
+        target_compile_definitions(${PROJECT} PUBLIC
+            -DDVI_DEFAULT_SERIAL_CONFIG=pimoroni_demo_hdmi_cfg
+    )
     else()
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga")
-        target_link_libraries(${PROJECT} pico_scanvideo_dpi)
+        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_olimexpc")
+        target_compile_definitions(${PROJECT} PUBLIC
+            -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2040_PICO_PC_cfg
+        )
     endif()
 else()
-    # Use PWM loaded by DMA sound
-    target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
-    target_link_libraries(${PROJECT}
-        hardware_dma
-    )
-    if (${PICO_BOARD} STREQUAL "picomitevgaboard")
+    if (${PICO_BOARD} STREQUAL "vgaboard")
+        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga")
+    elseif (${PICO_BOARD} STREQUAL "picomitevgaboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picomitevga")
     else()
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga332")

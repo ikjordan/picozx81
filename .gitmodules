@@ -3,4 +3,4 @@
 	url = https://github.com/benhoyt/inih.git
 [submodule "PicoDVI"]
 	path = PicoDVI
-	url = https://github.com/Wren6991/PicoDVI.git
+	url = https://github.com/ikjordan/PicoDVI.git

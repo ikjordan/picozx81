@@ -65,11 +65,7 @@ int sound_stereo_acb=0;		/* 1 for ACB stereo, else 0 */
  * For I2S max value is 32768 mid point is 0 max for 1 channel is < 32768 / 4
  * For 12S further divide by 4 to avoid full volume
  */
-#ifdef I2S
 #define AMPL_AY_TONE 2048
-#else
-#define AMPL_AY_TONE 124
-#endif
 
 /* max. number of sub-frame AY port writes allowed;
  * given the number of port writes theoretically possible in a
@@ -107,6 +103,7 @@ static int ay_change_count;
 
 static void sound_ay_reset(void);
 
+
 static void sound_ay_setvol(void)
 {
   int f;
@@ -117,7 +114,7 @@ static void sound_ay_setvol(void)
   for(f=15;f>0;f--)
   {
     ay_tone_levels[f]=(uint16_t)(v+0.5);
-    /* 10^3/20 = 3dB */
+    // printf("Tone %i\n", ay_tone_levels[f]);
     v/=1.4125375446;
   }
   ay_tone_levels[0]=0;
@@ -214,11 +211,7 @@ void sound_end(void)
       (*(ptr))-=AY_GET_SUBVAL(ay_tone_tick[chan],0);			\
     }
 
-#ifdef I2S
 static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
-#else
-static void __not_in_flash_func(sound_ay_overlay)(uint16_t* buff)
-#endif
 {
 static int rng=1;
 static int noise_toggle=1;
@@ -227,11 +220,7 @@ int tone_level[3];
 int mixer,envshape;
 int f,g,level;
 int v=0;
-#ifdef I2S
 int16_t* ptr;
-#else
-uint16_t* ptr;
-#endif
 struct ay_change_tag *change_ptr=ay_change;
 int changes_left=ay_change_count;
 int reg,r;
@@ -364,6 +353,11 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
   if(sound_stereo && !sound_stereo_acb)
     ptr[1]=*ptr;
 
+  #ifndef I2S
+  // Correct to PWM
+  *ptr = (*ptr>>4) + ZEROSOUND;
+  ptr[1] = (ptr[1]>>4) + ZEROSOUND;
+  #endif
   /* update noise RNG/filter */
   ay_noise_tick+=ay_tick_incr;
   if(ay_noise_tick>=ay_noise_period)

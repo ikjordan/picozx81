@@ -12,6 +12,7 @@
 #include "emupriv.h"
 
 #include "ini.h"
+#include "iopins.h"
 
 static bool autorun = false;
 
@@ -194,7 +195,12 @@ int emu_soundRequested(void)
 
 bool emu_ACBRequested(void)
 {
+  // Do not allow stereo on a mono board
+#ifdef I2S
   return specific.acb;
+#else
+  return specific.acb && (AUDIO_PIN_L != AUDIO_PIN_R);
+#endif
 }
 
 bool emu_ZX80Requested(void)
@@ -693,9 +699,11 @@ extern semaphore_t timer_sem;
 void emu_WaitFor50HzTimer(void)
 {
 #ifdef TIME_SPARE
-  static uint64_t count = 0;
-  static perform results[10];
-  static uint64_t index = 0;
+  static uint32_t count = 0;
+  static uint64_t total_time;
+  static uint32_t underrun;
+  static int32_t  sound_prev = 0;
+  static int64_t  int_prev = 0;
 
   uint64_t start = time_us_64();
 #endif
@@ -705,24 +713,21 @@ void emu_WaitFor50HzTimer(void)
 #ifdef TIME_SPARE
   uint64_t taken = (time_us_64() - start);
   if (taken < 100)
-    results[index].underrun++;
-  results[index].total_time += taken;
+    underrun++;
+  total_time += taken;
 
   if (++count == 500)
   {
     count = 0;
-    int32_t ints = int_count;
-    int32_t sound = sound_count;
-    results[index].sound_count += sound;
-    results[index++].int_count += ints;
-    index %= 10;
-    results[index].sound_count = -sound;
-    results[index].int_count = -ints;
+    int64_t ints = int_count + int_prev ;
+    int_prev = -int_count;
+    int32_t sound = sound_count + sound_prev;
+    sound_prev = -sound_count;
 
-    if (!index)
-    {
-      printf("Spare ms in 10sec: %lld %d\n", results[9].total_time / 1000, results[9].underrun);
-    }
+    printf("Spare ms in 10sec: %lld Under: %d\n", total_time / 1000, underrun);
+    printf("int: %lld sound: %d\n", ints, sound);
+    total_time = 0;
+    underrun = 0;
   }
 #endif
 }

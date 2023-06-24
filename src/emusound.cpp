@@ -25,7 +25,6 @@
 #include "emusound.h"
 #include "iopins.h"
 
-
 semaphore_t timer_sem;
 
 #define SAMPLE_FREQ   32000
@@ -52,13 +51,11 @@ int irq_num;
 int i2s_pio_sm;
 int i2s_dreq = DREQ_PIO0_TX0;
 gpio_function i2s_gpio_func = GPIO_FUNC_PIO0;
-#else
-static const int RANGE = (ZEROSOUND<<1);
 #endif
 
 #ifdef TIME_SPARE
-uint32_t sound_count = 0;
-uint32_t int_count = 0;
+int32_t sound_count = 0;
+int64_t int_count = 0;
 #endif
 
 void emu_sndInit(bool playSound)
@@ -160,11 +157,14 @@ static void config_DMA(uint channel, uint slice, const volatile void* write, uin
 static void __not_in_flash_func(pwmInterruptHandler)()
 {
   static int cnt = 0;
-  pwm_clear_irq(pwm_gpio_to_slice_num(AUDIO_PIN_L));
+  pwm_clear_irq(pwm_gpio_to_slice_num(AUDIO_PIN_R));
 
-  pwm_set_gpio_level(AUDIO_PIN_L, soundBuffer16[cnt++]);
   pwm_set_gpio_level(AUDIO_PIN_R, soundBuffer16[cnt++]);
-
+#if (AUDIO_PIN_L != AUDIO_PIN_R)
+  pwm_set_gpio_level(AUDIO_PIN_L, soundBuffer16[cnt++]);
+#else
+  cnt++;
+#endif
 #ifdef TIME_SPARE
   int_count++;
 #endif
@@ -207,6 +207,7 @@ static void beginAudio(void)
 
       if (i2s_pio_sm == -1)
       {
+        printf("Cannot configure I2S sound - aborting\n");
         exit(-1);  // Cannot run without sound
       }
       else
@@ -256,31 +257,36 @@ static void beginAudio(void)
     i2s_start_dma_transfer();
     pio_sm_set_enabled(audio_pio, i2s_pio_sm, true);
 #else // I2S
-    gpio_set_function(AUDIO_PIN_L, GPIO_FUNC_PWM);
-    int audio_pin_slice_l = pwm_gpio_to_slice_num(AUDIO_PIN_L);
-
-    int audio_pin_slice_r = audio_pin_slice_l;
+    gpio_set_function(AUDIO_PIN_R, GPIO_FUNC_PWM);
+    int audio_pin_slice_r = pwm_gpio_to_slice_num(AUDIO_PIN_R);
+    int audio_pin_slice_l = audio_pin_slice_r;
 
 #if (AUDIO_PIN_L != AUDIO_PIN_R)
-    gpio_set_function(AUDIO_PIN_R, GPIO_FUNC_PWM);
-    audio_pin_slice_r = pwm_gpio_to_slice_num(AUDIO_PIN_R);
+    gpio_set_function(AUDIO_PIN_L, GPIO_FUNC_PWM);
+    audio_pin_slice_l = pwm_gpio_to_slice_num(AUDIO_PIN_L);
 #endif // AUDIO_PIN_L != AUDIO_PIN_R
 
   #ifdef SOUND_DMA
     dma_channel_sound = dma_claim_unused_channel(true);
 
-    // Should only use DMA if both channels are on same slice, or mono
-    assert(audio_pin_slice_r == audio_pin_slice_l);
-    config_DMA(dma_channel_sound, audio_pin_slice_l, soundBuffer16, NUMSAMPLES);
+    // Cannot use DMA if have two channels on different slices
+    if (audio_pin_slice_r != audio_pin_slice_l)
+    {
+      printf("Audio on different slices: l slice = %i, r slice = %i\n",
+             audio_pin_slice_l, audio_pin_slice_r);
+      printf("Cannot use DMA: aborting\n");
+      exit(-1);
+    }
+    config_DMA(dma_channel_sound, audio_pin_slice_r, soundBuffer16, NUMSAMPLES);
 
     // Set the DMA interrupt handler
     irq_set_exclusive_handler(DMA_IRQ_1, dmaInterruptHandler);
     dma_set_irq1_channel_mask_enabled(0x01 << dma_channel_sound, true);
     irq_set_enabled(DMA_IRQ_1, true);
 #else // SOUND_DMA
-    // Setup PWM interrupt to fire when PWM cycle is complete
-    pwm_clear_irq(audio_pin_slice_l);
-    pwm_set_irq_enabled(audio_pin_slice_l, true);
+    // Setup PWM interrupt to fire when PWM cycle is complete on right channel
+    pwm_clear_irq(audio_pin_slice_r);
+    pwm_set_irq_enabled(audio_pin_slice_r, true);
     irq_set_exclusive_handler(PWM_IRQ_WRAP, pwmInterruptHandler);
     irq_set_priority (PWM_IRQ_WRAP, PICO_DEFAULT_IRQ_PRIORITY);
     irq_set_enabled(PWM_IRQ_WRAP, true);
@@ -301,20 +307,25 @@ static void beginAudio(void)
     // Set buffer and initial pwm to silence
     emu_silenceSound();
 
-    pwm_set_gpio_level(AUDIO_PIN_L, ZEROSOUND);   // mid point to wrap
-    pwm_init(audio_pin_slice_l, &config, false);
-
-#if (AUDIO_PIN_L != AUDIO_PIN_R)
     pwm_set_gpio_level(AUDIO_PIN_R, ZEROSOUND);   // mid point to wrap
     pwm_init(audio_pin_slice_r, &config, false);
+
+#if (AUDIO_PIN_L != AUDIO_PIN_R)
+    // Can have left and right PWM on different slices (e.g. the Pimoroni VGA boards)
+    if (audio_pin_slice_l != audio_pin_slice_r)
+    {
+      pwm_set_gpio_level(AUDIO_PIN_L, ZEROSOUND);   // mid point to wrap
+      pwm_init(audio_pin_slice_l, &config, false);
+    }
 #endif // AUDIO_PIN_L != AUDIO_PIN_R
 
   #ifdef SOUND_DMA
     dma_start_channel_mask(0x1 << dma_channel_sound);
 #endif // SOUND_DMA
-
-    // Can have left and right PWM on different slices (e.g. the Pimoroni VGA board)
-    pwm_set_mask_enabled((0x1 << audio_pin_slice_r) | (0x1 << audio_pin_slice_l));
+    // Cannot use mask here, as other libs may have already enabled PWM slices
+    pwm_set_enabled(audio_pin_slice_r, true);
+    if (audio_pin_slice_r != audio_pin_slice_l)
+      pwm_set_enabled(audio_pin_slice_l, true);
 #endif // I2S
 
     printf("sound initialized\n");
