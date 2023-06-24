@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#build a board type
+build_uf2()
+{
+  board=$1"board .."
+  uf2="picozx81_"$1".uf2"
+
+  cmake -DPICO_BOARD=${board}
+  make -j4
+  cp ./${uf2} ../uf2/${uf2}
+}
+
+# Create the directories
+mkdir -p build
+mkdir -p uf2
+cd build
+
+# Build all PicoZX81 variants
+build_uf2 vga
+build_uf2 dvi
+build_uf2 picomitevga
+build_uf2 vga332

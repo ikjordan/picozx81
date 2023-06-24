@@ -43,19 +43,25 @@ One intention of this project was to show what can be quickly achieved by levera
 # Building
 **Note:** Prebuilt executable files for the 4 supported board types can be found [here](uf2/)
 
-### To build on a Raspberry Pi:
-1. Install the Raspberry Pi Pico SDK and Extras
-2. Clone this repository, including submodules
+### To build:
+1. Install the Raspberry Pi Pico toolchain and SDK
+
+    Instructions to do this for several operating systems can be found by downloading [this pdf](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf). Chapter 2 covers installation on the Raspberry Pi, chapter 9 describes the process for other operating systems
+2. The vga display uses the `pico_scanvideo` library, which is part of the `pico-extras` repository. Clone this repository, including submodules
+
+    `git clone --recursive https://github.com/raspberrypi/pico-extras.git`
+
+3. Clone this repository (i.e. picozx81), including submodules
 
     `git clone --recursive https://github.com/ikjordan/picozx81.git`  
-3. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board will be created.
+4. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board will be created.
 This will be named `picozx81_vga.uf2`
 
     `mkdir build`  
     `cd build`  
     `cmake ..`  
     `make`
-4. To build for other boards, pass the board type as part of the cmake command. e.g.
+5. To build for other boards, pass the board type as part of the cmake command. e.g.
 
 | Board | CMake | uf2 name |
 | --- | --- | --- |
@@ -63,8 +69,12 @@ This will be named `picozx81_vga.uf2`
 | PicoMite VGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga.uf2`|
 | Custom 332 VGA|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
 
-5. Upload the `uf2` file to the pico
-6. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
+**Note:** The `buildall` script in the root directory of `picozx81` will build `uf2` files for all supported board types
+
+
+6. Upload the `uf2` file to the pico
+7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
+
 # Use
 ## Quick Start
 + If the emulator is started with no SD Card, or with an empty SD Card, then it will emulate a 16K ZX81
@@ -142,6 +152,7 @@ The emulator is always reset if any of the following options are changed:
 + M1NOT
 + WRX
 + QSUDG
+
 **Note:** Changing the virtual sound card, or the video display settings, does *not* trigger a reset
 ## File Storage
 Program and configuration files are stored on a micro SD-Card. Directories are supported. File and directory names should only contain characters that exist in the ZX81 character set. File and directory names can be a mixture of upper and lower case, but are used case insensitive. Therefore, all file and child directory names in a given directory must differ by more than just case
@@ -233,6 +244,7 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 
 ### Sound
 + [Pink Panther Demo](http://zx81.eu5.org/files/soft/toddy/pinkpthr.zip)
+  + When configured for mono, channels A and B destructively interfere at around 2 mins 15 seconds, causing silence for 1 to 2 seconds. Selecting ACB stereo avoids this
 + [Bigg Oil](https://github.com/charlierobson/biggoil)
 + QS Programs
 + [Galaxians](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388)
