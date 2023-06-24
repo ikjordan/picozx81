@@ -69,9 +69,10 @@ This will be named `picozx81_vga.uf2`
 | Pimoroni DVI |`cmake -DPICO_BOARD=dviboard ..` | `picozx81_dvi.uf2`|
 | PicoMite VGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga.uf2`|
 | Olimex PICO DVI |`cmake -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc.uf2`|
+| Pimoroni VGA |`cmake -DPICO_BOARD=vgaboard ..` | `picozx81_vga.uf2`|
 | Custom 332 VGA|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
 
-**Note:** The `buildall` script in the root directory of `picozx81` will build `uf2` files for all supported board types
+**Note:** The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
 
 
 6. Upload the `uf2` file to the pico
