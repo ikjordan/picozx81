@@ -248,14 +248,16 @@ bool loadMenu(void)
             switch (key)
             {
                 case HID_KEY_ARROW_DOWN:
-                    if ((row + 1) < maxrow)
+                case HID_KEY_ARROW_RIGHT:
+                    if (((row + 1) < maxrow) && (key == HID_KEY_ARROW_DOWN))
                     {
                         xorRow(row++);
                         xorRow(row);
                     }
                     else
                     {
-                        if ((row + 1 + offset) < entries)
+                        if ((((row + 1 + offset) < entries) && (key == HID_KEY_ARROW_DOWN)) ||
+                            ((offset + (MENU_Y>>3)) < entries) && (key == HID_KEY_ARROW_RIGHT))
                         {
                             // Move to next page
                             offset += MENU_Y>>3;
@@ -269,7 +271,8 @@ bool loadMenu(void)
                 break;
 
                 case HID_KEY_ARROW_UP:
-                    if (row)
+                case HID_KEY_ARROW_LEFT:
+                    if (row && (key == HID_KEY_ARROW_UP))
                     {
                         xorRow(row--);
                         xorRow(row);

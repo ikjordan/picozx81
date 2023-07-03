@@ -170,6 +170,15 @@ bool hidNavigateMenu(uint8_t* key)
                 *key = HID_KEY_ARROW_UP;
                 return true;
 
+            case HID_KEY_ARROW_RIGHT:
+            case HID_KEY_8:
+                *key = HID_KEY_ARROW_RIGHT;
+                return true;
+            case HID_KEY_ARROW_LEFT:
+            case HID_KEY_5:
+                *key = HID_KEY_ARROW_LEFT;
+                return true;
+
             case HID_KEY_ENTER:
                 *key = HID_KEY_ENTER;
                 return true;

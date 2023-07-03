@@ -168,7 +168,9 @@ To enable this mechanism set `DoubleShift` to `On` in the configuration file. Us
 ### F1 - Reset
 Hard resets the emulator. It is equivalent to removing and reconnecting the power
 ### F2 - Load Menu
-A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. The display can be navigated using the up, down and enter keys. The 7 key also generates "up" and the 6 key also generates "down". Any sound that is playing is paused
+A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. The display can be navigated using the up, down and enter keys. The 7 key also generates "up" and the 6 key also generates "down". Any sound that is playing is paused.
+
+For directories with a large number of files it is possible to move to the next page of files by using the right or 8 key. To move to the previous page of files use the left or 5 key.
 
 + Press enter whilst a directory entry is selected to move to that directory
 + Press enter when a file is selected to load that file
@@ -193,9 +195,9 @@ The user can navigate the SD card directory and select a file to load. The emula
 #### 2. Via `LOAD ""` (ZX81) or  `LOAD` (ZX80)
 If the user enters the `LOAD` command without specifying a file name the SD Card directory menu is displayed and a file to load can be selected. The emulator is configured to the settings specified for the file in the `config.ini` files. Unlike for option 1, the emulator is only reset if the configuration differs. This, for example, allows for RAMTOP to be manually set before loading a program
 #### 3. Via `LOAD "program-name"` (ZX81 only)
-If a file name is specified, then `.p` is appended and an attempt is made to load the file from the current directory. The configuration for the file is read. A reset is performed only if required by a configuration change. This allows for multiple parts of an application to be loaded e.g. [HiRes Chess](https://spectrumcomputing.co.uk/entry/32021/ZX81/Hi-res_Chess) or [QS games](#qs-udg-graphics) that include character definitions
+If a file name is specified, then `.p` is appended and an attempt is made to load the file from the current directory. The configuration for the file is read. A reset is performed only if required by a configuration change. This allows for multiple parts of an application to be loaded e.g. [HiRes Chess](https://spectrumcomputing.co.uk/entry/32021/ZX81/Hi-res_Chess) or [QS games](#qs-udg-graphics) that include character definitions.
 
-If the supplied filename, with `.p` appended, does not exist in the current directory, then the `LOAD` fails with error `D`.
+If the supplied filename, with `.p` appended, does not exist in the current directory, then the `LOAD` fails with error `D`
 
 ### Save
 #### ZX81
