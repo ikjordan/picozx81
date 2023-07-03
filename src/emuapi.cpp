@@ -163,6 +163,7 @@ typedef struct
   bool LowRAM;
   bool acb;
   bool doubleshift;
+  bool extendfile;
 } configuration_t;
 
 typedef struct
@@ -269,6 +270,11 @@ bool emu_QSUDGRequested(void)
 bool emu_DoubleShiftRequested(void)
 {
   return specific.doubleshift;
+}
+
+bool emu_ExtendFileRequested(void)
+{
+  return specific.extendfile;
 }
 
 bool emu_resetNeeded(void)
@@ -508,6 +514,11 @@ static int handler(void *user, const char *section, const char *name,
       }
       c->conf->memory = (int)res;
     }
+    else if (!strcasecmp(name, "ExtendFile"))
+    {
+        // Defaults to off
+        c->conf->extendfile = isEnabled(value);
+    }
     else if ((!strcasecmp(section, "default")))
     {
       // Following only allowed in default section
@@ -581,6 +592,7 @@ void emu_ReadDefaultValues(void)
     general.VTol = VTOL;
     general.centre = true;
     general.doubleshift = false;
+    general.extendfile = false;
     selection[0] = 0;
   }
   else

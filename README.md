@@ -97,6 +97,7 @@ The following can be configured:
 | WRX | Selects if RAM supports Hi-res graphics | Off | Automatically set to on if Memory is 2kB or less |
 | LowRAM | Selects if RAM populated between 0x2000 and 0x3fff| Off | Typically used in conjunction with WRX to create a hires display file in low memory, can also be used for UDG graphics emulation if WRX off|
 | M1NOT | Allows machine code to be executed between 0x8000 and 0xbfff| Off |Memory must be set to 32 or 48   |
+| ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXPand+ syntax|Off| See [LOAD](#load) and [SAVE](#save)|
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 100 | See notes below|
 | Centre | When enabled the usual 32 by 24 character display is centred on screen| On | Set to OFF for programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
@@ -163,7 +164,7 @@ Program and configuration files are stored on a micro SD-Card. Directories are s
 The emulator has several menus that can be selected through function key presses. To keep the look and feel of the ZX8x computers the menus are in black and white and use the ZX81 font.
 
 The original ZX80/ZX81 40 key keyboard does not have function keys. A "double shift" mechanism can be used instead. Press shift, release shift, then, within 2 seconds press shift again, together with a number key to generate a function key press.  
-To enable this mechanism set `DoubleShift` to `On` in the configuration file
+To enable this mechanism set `DoubleShift` to `On` in the configuration file. Using this mechanism and pressing the number key 0 generates Escape
 ### F1 - Reset
 Hard resets the emulator. It is equivalent to removing and reconnecting the power
 ### F2 - Load Menu
@@ -171,15 +172,15 @@ A menu displaying directories and files that can be loaded is displayed, using t
 
 + Press enter whilst a directory entry is selected to move to that directory
 + Press enter when a file is selected to load that file
-+ Press Escape, space or 0 to return to the emulation without changing directory or loading a new program
++ Press Escape, space, Q or 0 to return to the emulation without changing directory or loading a new program
 ### F3 - View Emulator Configuration
-Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press Escape space or 0 to exit back to the running emulator
+Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press Escape, space, Q or 0 to exit back to the running emulator
 ### F4 - Pause
-Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press Escape, space or 0 to end the pause and return to the running emulator
+Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press Escape, space, Q or 0 to end the pause and return to the running emulator
 ### F5 - Display Keyboard Overlay
 The ZX80 and ZX81 use single key press BASIC entry. Pressing F5 displays a 4 colour image (VGA) or a grey scale image (DVI / HDMI) representing the keyboard of the computer being emulated, so that the correct key presses can be determined. The image was taken from [sz81](https://github.com/SegHaxx/sz81). It is possible to enter commands whilst the keyboard is displayed
 
-Press Escape or 0 to remove the keyboard display. The keyboard is also removed if another menu is selected
+Press Escape to remove the keyboard display. The keyboard is also removed if another menu is selected. If a ZX8x 40 key keyboard is being used, then set `DoubleShift` to `On` and remove the menu by pressing shift, releasing shift, and then, within two seconds pressing shift and 0 together 
 
 ## Loading and saving options
 The emulator supports the loading  `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
@@ -193,11 +194,40 @@ The user can navigate the SD card directory and select a file to load. The emula
 If the user enters the `LOAD` command without specifying a file name the SD Card directory menu is displayed and a file to load can be selected. The emulator is configured to the settings specified for the file in the `config.ini` files. Unlike for option 1, the emulator is only reset if the configuration differs. This, for example, allows for RAMTOP to be manually set before loading a program
 #### 3. Via `LOAD "program-name"` (ZX81 only)
 If a file name is specified, then `.p` is appended and an attempt is made to load the file from the current directory. The configuration for the file is read. A reset is performed only if required by a configuration change. This allows for multiple parts of an application to be loaded e.g. [HiRes Chess](https://spectrumcomputing.co.uk/entry/32021/ZX81/Hi-res_Chess) or [QS games](#qs-udg-graphics) that include character definitions
+
+If the supplied filename, with `.p` appended, does not exist in the current directory, then the `LOAD` fails with error `D`.
+
 ### Save
 #### ZX81
-To save a program the `SAVE "Filename"` command is used. `.p` is appended to the supplied file name and it is saved in the current directory. If a file of the specified name already exists, it is overwritten
+To save a program the `SAVE "Filename"` command is used. If `"Filename"` has no extension then `.p` is appended to the supplied file name. The file is saved in the current directory. If a file of the specified name already exists, it is overwritten
+
 #### ZX80
 To save a program the `SAVE` command is used. It does not take a file name, so the program is saved in the current directory with the name `"zx80prog.o"`. If a file with that name already exists it is overwritten
+
+### Loading and Saving Memory Blocks
+The emulator supports extensions to `LOAD` and `SAVE` to support the loading and saving of memory blocks. The syntax is similar to that used by [ZXPAND](https://github-wiki-see.page/m/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual) 
+#### Load
+`LOAD "filename;nnnnn"`  
+where `nnnnn` represents a decimal number specifying the target address
+##### Failure Modes
+Error `B` is reported if:
++ The target address is not in available RAM
++ The target address plus the length of data in the file is not in available RAM
++ The target address is not a number
+
+Error `D` is reported if:
++ The specified filename does not exist in the current directory (no `.p` extension is added)
+#### Save
+`SAVE "filename;sssss,llll"`  
+where:
++ `sssss` represents a decimal number specifying the start address of memory to be saved
++ `llll` specifies the number of bytes of memory to be saved
+##### Failure Modes
+Error `B` is reported if:
++ The start address is not in available RAM
++ The start address plus the number of bytes to save is not in available RAM
+
+If the string passed to `SAVE` cannot be parsed into a valid `filename` `sssss` and `llll` triple then it is treated as a single filename and a program file is saved with the name of the supplied string (with `.p` appended if there is no `.` in the supplied string)
 
 # Applications Tested
 Testing the emulator has been a great way to experience some classic ZX81 games and demos, including many that stretch the ZX81 and ZX80 well beyond what Sinclair may have originally expected. The following have been successfully tested:
@@ -237,6 +267,7 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [Othello](https://www.sinclairzxworld.com/viewtopic.php?t=1220)
 + [WRX1K1](https://quix.us/timex/rigter/1khires.html)
   + The assembler routine runs in 1K, but the BASIC demo program that draws concentric circles does not, as it requires more than 1K of RAM. This can be verified by using the BASIC listing tool in EightyOne to check the memory address of each line of BASIC. It will run in 2K
++ [zedit](https://forum.tlienhard.com/phpBB3/download/file.php?id=6795)
 
 ### QS UDG Graphics
 + [QS Invaders](http://www.zx81stuff.org.uk/zx81/tape/QSInvaders)

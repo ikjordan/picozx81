@@ -91,24 +91,6 @@ static void endMenu(void)
     }
 }
 
-// Not currently used
-void keyboardMenu(void)
-{
-    uint8_t key = 0;
-
-    displayShowKeyboard(!emu_ZX80Requested());
-
-    // Just wait for ESC to be pressed
-    do
-    {
-        tuh_task();
-        hidNavigateMenu(&key);
-        emu_WaitFor50HzTimer();
-    } while (key != HID_KEY_ESCAPE);
-
-    displayHideKeyboard();
-}
-
 // Pauses emulator execution, displays P in the 4 corners and waits for
 // ESC to be pressed
 void pauseMenu(void)
@@ -163,6 +145,8 @@ bool statusMenu(void)
     writeString(emu_LowRAMRequested() ? "Yes" : "No", rhs, lcount++);
     writeString("M1NOT:", lhs, lcount);
     writeString(emu_M1NOTRequested() ? "ON" : "OFF", rhs, lcount++);
+    writeString("Extend File:",lhs, lcount);
+    writeString(emu_ExtendFileRequested() ? "Yes" : "No", rhs, lcount++);
 
     writeString("TV Type:", lhs, ++lcount);
     writeString(emu_NTSCRequested() ? "NTSC" : "PAL", rhs, lcount++);
@@ -204,6 +188,7 @@ bool statusMenu(void)
 
     writeString("Directory:", lhs, ++lcount);
     writeString(emu_GetDirectory(), rhs, lcount++);
+
     writeString("Fn Key Map:", lhs, lcount);
     writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
 

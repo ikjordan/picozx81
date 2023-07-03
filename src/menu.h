@@ -8,7 +8,6 @@ extern "C" {
 extern bool loadMenu(void);
 extern bool statusMenu(void);
 extern void pauseMenu(void);
-extern void keyboardMenu(void);
 
 #ifdef __cplusplus
 }

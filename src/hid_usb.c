@@ -177,6 +177,7 @@ bool hidNavigateMenu(uint8_t* key)
             case HID_KEY_ESCAPE:
             case HID_KEY_0:
             case HID_KEY_SPACE:
+            case HID_KEY_Q:
                 *key = HID_KEY_ESCAPE;
                 return true;
         }
@@ -229,9 +230,16 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
     for(unsigned int i = 0; i < 6; ++i)
     {
         if (usedouble && doubleshift && shift &&
-            ((report.keycode[i] >= HID_KEY_1) && (report.keycode[i] <= HID_KEY_5)))
+            (((report.keycode[i] >= HID_KEY_1) && (report.keycode[i] <= HID_KEY_5)) || (report.keycode[i] == HID_KEY_0)))
         {
-            *special = HID_KEY_F1 +  (report.keycode[i] - HID_KEY_1);
+            if (report.keycode[i] != HID_KEY_0)
+            {
+                *special = HID_KEY_F1 +  (report.keycode[i] - HID_KEY_1);
+            }
+            else
+            {
+                *special = HID_KEY_ESCAPE;
+            }
 
             // The shift state has been consumed
             shift = false;
