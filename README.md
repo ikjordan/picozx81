@@ -97,7 +97,7 @@ The following can be configured:
 | WRX | Selects if RAM supports Hi-res graphics | Off | Automatically set to on if Memory is 2kB or less |
 | LowRAM | Selects if RAM populated between 0x2000 and 0x3fff| Off | Typically used in conjunction with WRX to create a hires display file in low memory, can also be used for UDG graphics emulation if WRX off|
 | M1NOT | Allows machine code to be executed between 0x8000 and 0xbfff| Off |Memory must be set to 32 or 48   |
-| ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXPand+ syntax|Off| See [LOAD](#load) and [SAVE](#save)|
+| ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXPand+ syntax|Off| See [Loading and Saving Memory Blocks](#loading-and-saving-memory-blocks)|
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 100 | See notes below|
 | Centre | When enabled the usual 32 by 24 character display is centred on screen| On | Set to OFF for programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
