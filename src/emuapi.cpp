@@ -164,6 +164,7 @@ typedef struct
   bool acb;
   bool doubleshift;
   bool extendfile;
+  bool allfiles;
 } configuration_t;
 
 typedef struct
@@ -275,6 +276,11 @@ bool emu_DoubleShiftRequested(void)
 bool emu_ExtendFileRequested(void)
 {
   return specific.extendfile;
+}
+
+bool emu_AllFilesRequested(void)
+{
+  return specific.allfiles;
 }
 
 bool emu_resetNeeded(void)
@@ -522,18 +528,23 @@ static int handler(void *user, const char *section, const char *name,
     else if ((!strcasecmp(section, "default")))
     {
       // Following only allowed in default section
-      if (!strcasecmp(name, "LOAD"))
+      if (!strcasecmp(name, "Load"))
       {
         strcpy(selection, value);
       }
-      else if (!strcasecmp(name, "DIR"))
+      else if (!strcasecmp(name, "Dir"))
       {
         setDirectory(value);
       }
-      else if (!strcasecmp(name, "DOUBLESHIFT"))
+      else if (!strcasecmp(name, "DoubleShift"))
       {
         // Defaults to off
         c->conf->doubleshift = isEnabled(value);
+      }
+      else if (!strcasecmp(name, "AllFiles"))
+      {
+        // Defaults to off
+        c->conf->allfiles = isEnabled(value);
       }
       else
       {
@@ -593,6 +604,7 @@ void emu_ReadDefaultValues(void)
     general.centre = true;
     general.doubleshift = false;
     general.extendfile = false;
+    general.allfiles = false;
     selection[0] = 0;
   }
   else

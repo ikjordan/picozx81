@@ -469,9 +469,10 @@ static int populateFiles(const char* path, uint first)
             res = f_readdir(&dir, &fno);                    /* Read an entry */
             if (res != FR_OK || fno.fname[0] == 0) break;   /* Break on error or end of entries */
 
-            if (((!(fno.fattrib & AM_DIR) && (strlen(fno.fname) < MAX_FILENAME_LEN)) &&
-                 (emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p") ||
-                  emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81"))))
+            if ((!(fno.fattrib & AM_DIR) && (strlen(fno.fname) < MAX_FILENAME_LEN)) &&
+                ((emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p") ||
+                  emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81") ||
+                  emu_AllFilesRequested())))
             {
                 if ((count >= first) && (count < (first + (MENU_Y>>3))))
                 {
@@ -555,8 +556,9 @@ static bool getFile(char* inout, uint index, bool* direct)
             if (!(fno.fattrib & AM_DIR))
             {
                 if ((strlen(fno.fname) < MAX_FILENAME_LEN) &&
-                    (emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p")||
-                        emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81")))
+                    ((emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p") ||
+                      emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81")) ||
+                      emu_AllFilesRequested()))
                 {
                     ++count;
                 }
