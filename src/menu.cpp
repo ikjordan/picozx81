@@ -122,7 +122,7 @@ void pauseMenu(void)
 bool statusMenu(void)
 {
     uint8_t key = 0;
-    uint lcount = 5;
+    uint lcount = 4;
 
     char c[20];
     int lhs = 11;
@@ -189,7 +189,10 @@ bool statusMenu(void)
     writeString("Directory:", lhs, ++lcount);
     writeString(emu_GetDirectory(), rhs, lcount++);
 
-    writeString("Fn Key Map:", lhs, lcount);
+    writeString("All Files:", lhs, lcount);
+    writeString(emu_AllFilesRequested() ? "Yes" : "No", rhs, lcount++);
+
+    writeString("Fn Key Map:", lhs, ++lcount);
     writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
 
     do

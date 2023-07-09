@@ -98,7 +98,6 @@ The following can be configured:
 | LowRAM | Selects if RAM populated between 0x2000 and 0x3fff| Off | Typically used in conjunction with WRX to create a hires display file in low memory, can also be used for UDG graphics emulation if WRX off|
 | M1NOT | Allows machine code to be executed between 0x8000 and 0xbfff| Off |Memory must be set to 32 or 48   |
 | ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXPand+ syntax|Off| See [LOAD](#load) and [SAVE](#save)|
-| AllFiles| Enables the display of all files in the [Load Menu](#f2---load-menu)|Off|When off only files with extensions `.p`, `.o`, `.81` and `.80` are displayed|
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 100 | See notes below|
 | Centre | When enabled the usual 32 by 24 character display is centred on screen| On | Set to OFF for programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
@@ -144,6 +143,8 @@ Two extra options can be set via the `[default]` section of the `config.ini` fil
 | Dir | Sets the initial default directory to load and save programs | / |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| Off |
+| AllFiles| Enables the display of all files in the [Load Menu](#f2---load-menu). When off only files with extensions `.p`, `.o`, `.81` and `.80` are displayed|Off|
+
 
 ### Examples
 Examples of the `config.ini` files used to test the programs listed in this [section](#applications-tested) can be found [here](examples)
@@ -164,8 +165,14 @@ Program and configuration files are stored on a micro SD-Card. Directories are s
 ## Function key menu
 The emulator has several menus that can be selected through function key presses. To keep the look and feel of the ZX8x computers the menus are in black and white and use the ZX81 font.
 
-The original ZX80/ZX81 40 key keyboard does not have function keys. A "double shift" mechanism can be used instead. Press shift, release shift, then, within 2 seconds press shift again, together with a number key to generate a function key press.  
-To enable this mechanism set `DoubleShift` to `On` in the configuration file. Using this mechanism and pressing the number key 0 generates Escape
+The original ZX80/ZX81 40 key keyboard does not have function keys. A "double shift" mechanism can be used instead. The mechanism is as follows:
+1. Shift is pressed without another key
+2. Shift is released, without another key being pressed
+3. Within one second shift is pressed again
+4. Shift is released, without another key being pressed
+5. To generate a function key, within one second, a numeric key in the range `1` to `5` is pressed without shift being pressed. If number 0 is pressed `Escape` is generated 
+
+To enable this mechanism set `DoubleShift` to `On` in the configuration file
 ### F1 - Reset
 Hard resets the emulator. It is equivalent to removing and reconnecting the power
 ### F2 - Load Menu
