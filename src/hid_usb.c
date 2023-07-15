@@ -170,6 +170,15 @@ bool hidNavigateMenu(uint8_t* key)
                 *key = HID_KEY_ARROW_UP;
                 return true;
 
+            case HID_KEY_ARROW_RIGHT:
+            case HID_KEY_8:
+                *key = HID_KEY_ARROW_RIGHT;
+                return true;
+            case HID_KEY_ARROW_LEFT:
+            case HID_KEY_5:
+                *key = HID_KEY_ARROW_LEFT;
+                return true;
+
             case HID_KEY_ENTER:
                 *key = HID_KEY_ENTER;
                 return true;
@@ -177,6 +186,7 @@ bool hidNavigateMenu(uint8_t* key)
             case HID_KEY_ESCAPE:
             case HID_KEY_0:
             case HID_KEY_SPACE:
+            case HID_KEY_Q:
                 *key = HID_KEY_ESCAPE;
                 return true;
         }
@@ -188,7 +198,7 @@ bool hidNavigateMenu(uint8_t* key)
 bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
 {
     static bool shift = false;
-    static bool doubleshift = false;
+    static int doubleshift = 0;     // Counts shift presses
     static int doubletick = 0;
 
     hid_keyboard_report_t report;
@@ -203,8 +213,9 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
     // To generate a non Sinclair key from a Sinclair keyboard:
     // 1. Shift is pressed without another key
     // 2. Shift is released, without another key being pressed
-    // 3. Within two seconds shift is pressed again
-    //    and a numeric key is pressed before shift is released
+    // 3. Within 1 second shift is pressed again
+    // 4. Shift is released, without another key being pressed
+    // 5. Within 1 second a numeric key is pressed without shift being pressed
     if (m & 0x22) 
     {
         press(0, 0); // Shift
@@ -214,28 +225,33 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
     {
         if (usedouble && shift)
         {
-            doubleshift = true;
+            doubleshift++;
             doubletick = 0;
             shift = false;
         }
     }
 
-    // Double shift times out after 2 seconds
-    if (doubleshift && (++doubletick > 100))
+    // Double shift times out after 1 second
+    if ((doubleshift > 0) && (++doubletick > 50))
     {
-        doubleshift = false;
+        doubleshift = 0;
     }
 
     for(unsigned int i = 0; i < 6; ++i)
     {
-        if (usedouble && doubleshift && shift &&
-            ((report.keycode[i] >= HID_KEY_1) && (report.keycode[i] <= HID_KEY_5)))
+        if (usedouble && (doubleshift == 2) && (!shift) &&
+            (((report.keycode[i] >= HID_KEY_1) && (report.keycode[i] <= HID_KEY_5)) || (report.keycode[i] == HID_KEY_0)))
         {
-            *special = HID_KEY_F1 +  (report.keycode[i] - HID_KEY_1);
+            if (report.keycode[i] != HID_KEY_0)
+            {
+                *special = HID_KEY_F1 +  (report.keycode[i] - HID_KEY_1);
+            }
+            else
+            {
+                *special = HID_KEY_ESCAPE;
+            }
 
-            // The shift state has been consumed
-            shift = false;
-            doubleshift = false;
+            doubleshift = 0;
         }
         else
         {
@@ -248,8 +264,7 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
                     press(contact->line, contact->key);
 
                     // The shift state has been consumed
-                    doubleshift = false;
-                    shift = false;
+                    doubleshift = 0;
                 }
             }
             else

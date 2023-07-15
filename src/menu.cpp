@@ -91,24 +91,6 @@ static void endMenu(void)
     }
 }
 
-// Not currently used
-void keyboardMenu(void)
-{
-    uint8_t key = 0;
-
-    displayShowKeyboard(!emu_ZX80Requested());
-
-    // Just wait for ESC to be pressed
-    do
-    {
-        tuh_task();
-        hidNavigateMenu(&key);
-        emu_WaitFor50HzTimer();
-    } while (key != HID_KEY_ESCAPE);
-
-    displayHideKeyboard();
-}
-
 // Pauses emulator execution, displays P in the 4 corners and waits for
 // ESC to be pressed
 void pauseMenu(void)
@@ -140,7 +122,7 @@ void pauseMenu(void)
 bool statusMenu(void)
 {
     uint8_t key = 0;
-    uint lcount = 5;
+    uint lcount = 4;
 
     char c[20];
     int lhs = 11;
@@ -163,6 +145,8 @@ bool statusMenu(void)
     writeString(emu_LowRAMRequested() ? "Yes" : "No", rhs, lcount++);
     writeString("M1NOT:", lhs, lcount);
     writeString(emu_M1NOTRequested() ? "ON" : "OFF", rhs, lcount++);
+    writeString("Extend File:",lhs, lcount);
+    writeString(emu_ExtendFileRequested() ? "Yes" : "No", rhs, lcount++);
 
     writeString("TV Type:", lhs, ++lcount);
     writeString(emu_NTSCRequested() ? "NTSC" : "PAL", rhs, lcount++);
@@ -204,7 +188,11 @@ bool statusMenu(void)
 
     writeString("Directory:", lhs, ++lcount);
     writeString(emu_GetDirectory(), rhs, lcount++);
-    writeString("Fn Key Map:", lhs, lcount);
+
+    writeString("All Files:", lhs, lcount);
+    writeString(emu_AllFilesRequested() ? "Yes" : "No", rhs, lcount++);
+
+    writeString("Fn Key Map:", lhs, ++lcount);
     writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
 
     do
@@ -263,14 +251,16 @@ bool loadMenu(void)
             switch (key)
             {
                 case HID_KEY_ARROW_DOWN:
-                    if ((row + 1) < maxrow)
+                case HID_KEY_ARROW_RIGHT:
+                    if (((row + 1) < maxrow) && (key == HID_KEY_ARROW_DOWN))
                     {
                         xorRow(row++);
                         xorRow(row);
                     }
                     else
                     {
-                        if ((row + 1 + offset) < entries)
+                        if ((((row + 1 + offset) < entries) && (key == HID_KEY_ARROW_DOWN)) ||
+                            ((offset + (MENU_Y>>3)) < entries) && (key == HID_KEY_ARROW_RIGHT))
                         {
                             // Move to next page
                             offset += MENU_Y>>3;
@@ -284,7 +274,8 @@ bool loadMenu(void)
                 break;
 
                 case HID_KEY_ARROW_UP:
-                    if (row)
+                case HID_KEY_ARROW_LEFT:
+                    if (row && (key == HID_KEY_ARROW_UP))
                     {
                         xorRow(row--);
                         xorRow(row);
@@ -481,9 +472,10 @@ static int populateFiles(const char* path, uint first)
             res = f_readdir(&dir, &fno);                    /* Read an entry */
             if (res != FR_OK || fno.fname[0] == 0) break;   /* Break on error or end of entries */
 
-            if (((!(fno.fattrib & AM_DIR) && (strlen(fno.fname) < MAX_FILENAME_LEN)) &&
-                 (emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p") ||
-                  emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81"))))
+            if ((!(fno.fattrib & AM_DIR) && (strlen(fno.fname) < MAX_FILENAME_LEN)) &&
+                ((emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p") ||
+                  emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81") ||
+                  emu_AllFilesRequested())))
             {
                 if ((count >= first) && (count < (first + (MENU_Y>>3))))
                 {
@@ -567,8 +559,9 @@ static bool getFile(char* inout, uint index, bool* direct)
             if (!(fno.fattrib & AM_DIR))
             {
                 if ((strlen(fno.fname) < MAX_FILENAME_LEN) &&
-                    (emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p")||
-                        emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81")))
+                    ((emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p") ||
+                      emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81")) ||
+                      emu_AllFilesRequested()))
                 {
                     ++count;
                 }
