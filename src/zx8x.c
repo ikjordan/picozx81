@@ -117,6 +117,7 @@ unsigned int out(int h, int l,int a)
   switch(l)
   {
     case 0x0f:
+    case 0x1f:
       if(sound_ay == AY_TYPE_ZONX)
         sound_ay_write(ay_reg,a);
     break;
@@ -331,6 +332,7 @@ void load_p(int a)
 
     // Finally load the file
     size  = (size < max_read) ? size : max_read;
+    printf("start=%i size=%i\n", start, size);
     emu_FileRead(mem + start, size, f);
   }
   else

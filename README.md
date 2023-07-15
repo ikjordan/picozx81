@@ -239,6 +239,11 @@ Error `B` is reported if:
 
 If the string passed to `SAVE` cannot be parsed into a valid `filename` `sssss` and `llll` triple then it is treated as a single filename and a program file is saved with the name of the supplied string (with `.p` appended if there is no `.` in the supplied string)
 
+### Directories
+The original ZX81 used tape as a storage media, with no concept of a directory structure. The emulator uses an SD Card, and does support the basic use of directories.
+#### Examples
++ `LOAD "../HIGHER"` will attempt to load the file `HIGHER.P` from the parent directory of the current directory
++ `LOAD "ABC/LOWER"` will attempt to load the file `LOWER.P` from the child directory with the name `ABC`
 # Applications Tested
 Testing the emulator has been a great way to experience some classic ZX81 games and demos, including many that stretch the ZX81 and ZX80 well beyond what Sinclair may have originally expected. The following have been successfully tested:
 ## ZX81
