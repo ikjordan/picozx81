@@ -170,6 +170,7 @@ void load_p(int a)
   unsigned char *ptr=mem+(a&32767),*dptr=fname;
   unsigned char *extend = 0;
   int start = 0;
+  int offset = 0;
 
   memset(fname, 0, sizeof(fname));
 
@@ -203,44 +204,41 @@ void load_p(int a)
 
         if ((res == LONG_MIN || res == LONG_MAX  || res <= 0 || res > 0xffff))
         {
-          // Default to 0 if entry is not convertible
-          res = 0;
-          printf("Illegal memory load address\n");
+          printf("Mem load address parse error, generating error B\n");
+          ERROR_B();
+          return;
         }
 
         start = (int)res;
 
         // Series of checks to ensure start is in the right area
-        if (start)
-        {
-          printf("Start Requested %i\n", start);
+        printf("Start Requested %i\n", start);
 
-          // Must not be in the ROM
-          if (start < 0x2000)
+        // Check if in ROM - not illegal, but cannot overwrite ROM!
+        if (start < 0x2000)
+        {
+          // Calculate the offset to the start of available memory
+          if (LowRAM)
           {
-            start = 0;
-            printf("Requested memory load in ROM\n");
+            offset = 0x2000 - start;
           }
-          else if ((start < 0x4000) && !LowRAM)
+          else
           {
-            // No low memory
-            start = 0;
-            printf("Requested memory load in low memory - no low memory enabled\n");
+            offset = 0x4000 - start;
           }
+          printf("Requested memory load in ROM %i Offset %i\n", start, offset);
         }
-
-        // Read a start address, but failed a check, so have an error
-        if (!start)
+        else if ((start < 0x4000) && !LowRAM)
         {
-          printf("Mem parse error, generating error B\n");
-          ERROR_B();
-          return;
+          // No low memory
+          offset = 0x4000 - start;
+          printf("Requested load in low memory %i Not enabled, offset %i\n", start, offset);
         }
       }
     }
 
     /* add '.p' if no extension given */
-    if(!strrchr(fname, '.') && !start)
+    if(!strrchr(fname, '.') && (start == 0))
     {
       strcat(fname,".p");
     }
@@ -269,12 +267,19 @@ void load_p(int a)
   if (!size)
   {
     // Report error D
-    printf("Zero length, generating error D\n");
+    printf("File does not exist, or zero length. Generating error D\n");
     ERROR_D();
     return;
   }
+  else if (size <= offset)
+  {
+    // All of the load would either be in ROM or non existent RAM, so report error B
+    printf("No data to write to RAM, generating error B\n");
+    ERROR_B();
+    return;
+  }
 
-  if ((!autoload) && (start == 0)) /* if start address is given then don't search for settings */
+  if ((!autoload) && start) /* if start address is given then don't search for settings */
   {
     // Load the settings for this file
     emu_ReadSpecificValues(fname);
@@ -292,29 +297,38 @@ void load_p(int a)
   // Got this far then all good
   autoload=0;
 
-  int f = emu_FileOpen(fname, "r+b");
-
   // This really should not fail!
-  if (f)
+  if (emu_FileOpen(fname, "r+b"))
   {
     /* Make sure we do not read in too much for the RAM we have */
     max_read = ramsize * 1024;
 
-    if (start)
+    if (start > 0)
     {
-      if ((start >= 0x2000) && (start < 0x4000))
+      if (start < 0x4000)
       {
-        max_read = 0x4000 - start;
+        // adjust maximum size to read dependent on LowRAM
+        if (LowRAM)
+        {
+          max_read += 0x2000;
+        }
+        // Make sure to read into existing RAM
+        start += offset;
       }
       else
       {
+        // Prevent loading past the end of normal memory, have already handled
+        // start in ROM and no low RAM through offset
         max_read -= (start - 0x4000);
-        if (max_read <= 0)
-        {
-          printf("Memory load address %i out of range, generating error B\n", start);
-          ERROR_B();
-          return;
-        }
+      }
+
+      // Check some memory will still be loaded
+      if (max_read <= 0)
+      {
+        printf("No data can be written to RAM: %i out of range, generating error B\n", max_read);
+        ERROR_B();
+        emu_FileClose();
+        return;
       }
     }
     else
@@ -333,16 +347,16 @@ void load_p(int a)
     // Finally load the file
     size  = (size < max_read) ? size : max_read;
     printf("start=%i size=%i\n", start, size);
-    emu_FileRead(mem + start, size, f);
+    emu_FileRead(mem + start, size, offset);
+    emu_FileClose();
   }
   else
   {
     // Report error D
-    printf("File read failed, generating error D\n");
+    printf("File open failed, generating error D\n");
     ERROR_D();
     return;
   }
-  emu_FileClose(f);
 }
 
 void save_p(int a)
@@ -386,10 +400,8 @@ void save_p(int a)
         // Attempt to read the length
         long res=strtol(extend, NULL, 10);
 
-        if ((res == LONG_MIN || res == LONG_MAX  || res < 0 || res > 0xbfff))
+        if ((res == LONG_MIN || res == LONG_MAX  || res <= 0 || res > 0xc000))
         {
-          // Default to 0 if entry is not convertible
-          res = 0;
           printf("Illegal memory length, generating error B\n");
           ERROR_B();
           return;
@@ -397,93 +409,49 @@ void save_p(int a)
 
         length = (int)res;
 
-        // With a valid length, we can find the start address
-        if (length)
+        extend = strrchr(fname, ';');
+
+        if (extend)
         {
-          extend = strrchr(fname, ';');
+          *extend++ = '\0';
 
-          if (extend)
+          // Attempt to read the start address
+          long res=strtol(extend, NULL, 10);
+
+          if ((res == LONG_MIN || res == LONG_MAX  || res < 0x2000 || res > 0xffff))
           {
-            *extend++ = '\0';
+            printf("Illegal start address, generating error B\n");
+            ERROR_B();
+            return;
+          }
 
-            // Attempt to read the start address
-            long res=strtol(extend, NULL, 10);
+          start = (int)res;
 
-            if ((res == LONG_MIN || res == LONG_MAX  || res < 0 || res > 0xbfff))
-            {
-              // Default to -1 if entry is not convertible
-              res = -1;
-              printf("Illegal start address, generating error B\n");
-              ERROR_B();
-              return;
-            }
-
-            start = (int)res;
-
-            // Attempt to validate both
-            if (length && start >= 0)
-            {
-              // Check for saving ROM
-              if (start < 0x2000)
-              {
-                // Validate that length does not exceed 8kB boundary
-                if (start + length >= 0x2000)
-                {
-                  printf("Saving past end of ROM area. Start %i, Length %i\n", start, length);
-                  start = -1;
-                  length = 0;
-                }
-                else
-                {
-                  printf("Saving ROM. Start %i, Length %i\n", start, length);
-                }
-              }
-              // If in low memory, ensure it exists, and do not stray outside
-              else if ((start < 0x4000) && ((!LowRAM) || (start + length >= 0x4000)))
-              {
-                printf("Either no low RAM, or out of range. Start %i, Length %i\n", start, length);
-                start = -1;
-                length = 0;
-              }
-              // If in normal memory ensure all of range exists
-              else if ((start + length) >= (0x4000 + (ramsize * 1024)))
-              {
-                printf("Range does not fit available RAM. Start %i, Length %i\n", start, length);
-                start = -1;
-                length = 0;
-              }
-              else
-              {
-                // Success!!!
-                printf("Filename: %s, start address %i, length %i\n", fname, start, length);
-              }
-            }
-
-            if (start == -1)
-            {
-              printf("Gnerating error B\n");
-              ERROR_B();
-              return;
-            }
+          // Check that the end address is within 64kB
+          if (start + length > 0x10000)
+          {
+            printf("Start %i + length %i too large, generating error B\n", start, length);
+            ERROR_B();
+            return;
           }
           else
           {
-            // If found length, but no comma, then revert to full address
-            printf("Found memory length, but no start address. Length %i\n", length);
-            length = 0;
-            start = 0;
-            *comma = ',';
+            // Success!!!
+            printf("Filename: %s, start address %i, length %i\n", fname, start, length);
           }
         }
         else
         {
-          // length was not valid, so restore comma
+          // If found length, but no comma, then revert to full address
+          printf("Found memory length, but no start address. Length %i\n", length);
+          length = 0;
+          start = 0;
           *comma = ',';
         }
       }
     }
 
-    if(!strrchr(fname, '.') && (!length && start >= 0))
+    if(!strrchr(fname, '.') && (!length))
     {
       strcat(fname,".p");
     }
@@ -738,11 +706,11 @@ void z8x_Start(const char * filename)
     // can check that it exists
     strcpy(fname, emu_GetDirectory());
     strcat(fname, tapename);
-    int f = emu_FileOpen(fname, "r+b");
-    if ( f )
+
+    if (emu_FileOpen(fname, "r+b"))
     {
-      int fsize = emu_FileRead(&c, 1, f);
-      if ( fsize == 0)
+      int fsize = emu_FileRead(&c, 1, 0);
+      if (!fsize)
       {
         printf("z81 Open %s failed. No autoload\n", filename);
       }
@@ -756,7 +724,7 @@ void z8x_Start(const char * filename)
         // Determine the computer type from the ending
         emu_setZX80(emu_endsWith(fname, ".o") || emu_endsWith(fname, ".80"));
       }
-      emu_FileClose(f);
+      emu_FileClose();
     }
   }
 }
