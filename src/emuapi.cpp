@@ -26,15 +26,15 @@ static FIL file;
 /********************************
  * File IO
  ********************************/
-int emu_FileOpen(const char *filepath, const char *mode)
+bool emu_FileOpen(const char *filepath, const char *mode)
 {
-  int retval = 0;
+  bool retval = false;
 
   printf("FileOpen %s\n", filepath);
   FRESULT res = f_open(&file, filepath, FA_READ);
   if (res == FR_OK)
   {
-    retval = 1;
+    retval = true;
   }
   else
   {
@@ -43,14 +43,35 @@ int emu_FileOpen(const char *filepath, const char *mode)
   return (retval);
 }
 
-int emu_FileRead(void *buf, int size, int handler)
+int emu_FileRead(void *buf, int size, int offset)
 {
-  unsigned int retval = 0;
-  f_read(&file, (void *)buf, size, &retval);
-  return retval;
+  unsigned int read = 0;
+
+  if (size > 0)
+  {
+    if (offset)
+    {
+      if (f_lseek(&file, offset) != FR_OK)
+      {
+        printf("emu_FileRead seek failed\n");
+        return 0;
+      }
+    }
+
+    if (f_read(&file, (void *)buf, size, &read) != FR_OK)
+    {
+      printf("emu_FileRead read failed\n");
+      read = 0;
+    }
+  }
+  else
+  {
+    printf("emu_FileRead negative size %i\n", size);
+  }
+  return read;
 }
 
-void emu_FileClose(int handler)
+void emu_FileClose(void)
 {
   f_close(&file);
 }
@@ -64,32 +85,6 @@ unsigned int emu_FileSize(const char *filepath)
     filesize = entry.fsize;
   }
   printf("FileSize of %s is %i\n", filepath, filesize);
-  return (filesize);
-}
-
-unsigned int emu_LoadFile(const char *filepath, void *buf, int size)
-{
-  int filesize = 0;
-
-  printf("LoadFile %s\n", filepath);
-  if (!(f_open(&file, filepath, FA_READ)))
-  {
-    filesize = f_size(&file);
-    if (size >= filesize)
-    {
-      unsigned int retval = 0;
-      if ((f_read(&file, buf, filesize, &retval)))
-      {
-        printf("File read failed\n");
-      }
-    }
-    f_close(&file);
-  }
-  else
-  {
-    printf("Cannot open %s\n", filepath);
-  }
-
   return (filesize);
 }
 

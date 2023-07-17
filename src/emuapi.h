@@ -22,12 +22,11 @@ extern void emu_init(void);
 
 extern bool emu_UpdateKeyboard(uint8_t* special);
 
-extern int emu_FileOpen(const char * filepath, const char * mode);
-extern int emu_FileRead(void * buf, int size, int handler);
-extern void emu_FileClose(int handler);
+extern bool emu_FileOpen(const char * filepath, const char * mode);
+extern int emu_FileRead(void * buf, int size, int offset);
+extern void emu_FileClose(void);
 
 extern unsigned int emu_FileSize(const char * filepath);
-extern unsigned int emu_LoadFile(const char * filepath, void * buf, int size);
 extern bool emu_SaveFile(const char * filepath, void * buf, int size);
 extern bool emu_endsWith(const char * s, const char * suffix);
 
