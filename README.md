@@ -13,7 +13,6 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + Emulates 50Hz and 60Hz display
 + Support for up to 320 by 240 pixel display i.e. 40 character width and 30 character height
 + Load `.p`, `.81`, `.o` and `.80` files from micro SD Card. Save `.p` and `.o` files
-+ Supports loading and saving of memory blocks using [ZXpand like syntax](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual#load)
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
 + Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME)
@@ -24,13 +23,13 @@ One intention of this project was to show what can be quickly achieved by levera
 + EightyOne [Releases](https://sourceforge.net/projects/eightyone-sinclair-emulator/) [source](https://github.com/charlierobson/EightyOne)
 + [MCUME](https://github.com/Jean-MarcHarvengt/MCUME)
 + [pico-zxspectrum](https://github.com/fruit-bat/pico-zxspectrum)
-+ [Pico DVI](https://github.com/Wren6991/PicoDVI)
++ [Pico DVI](https://github.com/Wren6991/PicoDVI) 
 + [Pimoroni SD Card driver](https://github.com/pimoroni/pimoroni-pico/tree/main/drivers/sdcard)
 + [FatFS](http://elm-chan.org/fsw/ff/00index_e.html)
 + Config file parsing [inih](https://github.com/benhoyt/inih)
 
 ## Notes
-+ The intention of the emulator is to provide an authentic '80s feel. There have been amazing ZX81 developments in recent years, such as ([Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm), [ZXpand+](https://www.rwapsoftware.co.uk/zx812.html) etc). These are not supported. Instead it emulates the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. However, basic support to load and save memory blocks, using a syntax similar to ZXpand is implemented
++ The intention of the emulator is to provide an authentic '80s feel. There have been amazing ZX81 developments in recent years, such as ([Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm), [ZXPand+](https://www.rwapsoftware.co.uk/zx812.html) etc). These are not supported. Instead it emulates the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics
 + The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
 + Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
 + To achieve a full speed emulation the Pico is overclocked to 250MHz. There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be build to use 1.2V, add `-DOVER_CLOCK` to the cmake command
@@ -43,9 +42,7 @@ One intention of this project was to show what can be quickly achieved by levera
 + In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
 # Building
-**Notes:**
-+ Prebuilt executable files for the 5 supported board types can be found [here](uf2/)
-+ If a **zip** of the source files is downloaded from GitHub, it will be **incomplete**, as the zip will not contain the submodules. Zip files of the submodules would have to be downloaded separately from GitHub. It is easier to clone the repository, as described in the following section
+**Note:** Prebuilt executable files for the 5 supported board types can be found [here](uf2/)
 
 ### To build:
 1. Install the Raspberry Pi Pico toolchain and SDK
@@ -57,7 +54,7 @@ One intention of this project was to show what can be quickly achieved by levera
 
 3. Clone this repository (i.e. picozx81), including submodules
 
-    `git clone --recursive https://github.com/ikjordan/picozx81.git`
+    `git clone --recursive https://github.com/ikjordan/picozx81.git`  
 4. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board will be created.
 This will be named `picozx81_vga.uf2`
 
@@ -100,7 +97,7 @@ The following can be configured:
 | WRX | Selects if RAM supports Hi-res graphics | Off | Automatically set to on if Memory is 2kB or less |
 | LowRAM | Selects if RAM populated between 0x2000 and 0x3fff| Off | Typically used in conjunction with WRX to create a hires display file in low memory, can also be used for UDG graphics emulation if WRX off|
 | M1NOT | Allows machine code to be executed between 0x8000 and 0xbfff| Off |Memory must be set to 32 or 48   |
-| ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXpand+ syntax|Off| See [Loading and Saving Memory Blocks](#loading-and-saving-memory-blocks)|
+| ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXPand+ syntax|Off| See [Loading and Saving Memory Blocks](#loading-and-saving-memory-blocks)|
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 100 | See notes below|
 | Centre | When enabled the usual 32 by 24 character display is centred on screen| On | Set to OFF for programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
@@ -110,9 +107,9 @@ The following can be configured:
 
 **Notes:**
 1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if UDG is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400  to 0x87ff)
-2. To emulate other UDG graphics cards that reside between 0x2000 and 0x3fff set LowRAM to On and WRX to Off. This setting is needed to run e.g. [Galaxians with user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388)
+2. To emulate other UDG graphics cards that reside between 0x2000 and 0x3fff set LowRAM to On and WRX to Off. This setting is needed ro run e.g. [Galaxians with user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388)
 3. If `NTSC` is set to On and `Centre` is set to Off then a black vsync bar will be seen at the bottom of the display for programs that generate a typical 192 line display
-4. A higher tolerance value results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). The default value of 100 emulates a TV that very quickly regains vertical lock. Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
+4. A higher tolerance value results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). The default value of 100 emulates a TV that very quickly regains vertical lock. Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock 
 5. The "Big Bang" ROM can double the speed of BASIC programs
 ### Joystick
 In addition a USB joystick can be configured to generated key presses
@@ -173,19 +170,15 @@ The original ZX80/ZX81 40 key keyboard does not have function keys. A "double sh
 2. Shift is released, without another key being pressed
 3. Within one second shift is pressed again
 4. Shift is released, without another key being pressed
-5. To generate a function key, within one second, a numeric key in the range `1` to `5` is pressed without shift being pressed. If `0` is pressed `Escape` is generated
+5. To generate a function key, within one second, a numeric key in the range `1` to `5` is pressed without shift being pressed. If number 0 is pressed `Escape` is generated 
 
 To enable this mechanism set `DoubleShift` to `On` in the configuration file
 ### F1 - Reset
 Hard resets the emulator. It is equivalent to removing and reconnecting the power
 ### F2 - Load Menu
-A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. Directory names are prepended by `<` and appended by `>` e.g. `<NAME>`
+A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. The display can be navigated using the up, down and enter keys. The 7 key also generates "up" and the 6 key also generates "down". Any sound that is playing is paused.
 
-If the name of a file or directory is too long to display in full it is truncated with the last characters as `+` (file) and `+>` (directory)
-
-The display can be navigated using the up, down and enter keys. The 7 key also generates "up" and the 6 key also generates "down". Any sound that is playing is paused.
-
-For directories with a large number of files it is possible to move to the next page of files by using the right, Page Down or 8 key. To move to the previous page of files use the left, Page Up or 5 key.
+For directories with a large number of files it is possible to move to the next page of files by using the right or 8 key. To move to the previous page of files use the left or 5 key.
 
 + Press enter whilst a directory entry is selected to move to that directory
 + Press enter when a file is selected to load that file
@@ -197,9 +190,7 @@ Pauses the emulation. Handy if the phone rings during a gaming session! `P` is X
 ### F5 - Display Keyboard Overlay
 The ZX80 and ZX81 use single key press BASIC entry. Pressing F5 displays a 4 colour image (VGA) or a grey scale image (DVI / HDMI) representing the keyboard of the computer being emulated, so that the correct key presses can be determined. The image was taken from [sz81](https://github.com/SegHaxx/sz81). It is possible to enter commands whilst the keyboard is displayed
 
-Press Escape to remove the keyboard display. The keyboard is also removed if another menu is selected
-
-If a ZX8x 40 key keyboard is being used, then set `DoubleShift` to `On` and remove the menu by pressing and releasing shift twice and then pressing `0` within one second of releasing shift
+Press Escape to remove the keyboard display. The keyboard is also removed if another menu is selected. If a ZX8x 40 key keyboard is being used, then set `DoubleShift` to `On` and remove the menu by pressing shift, releasing shift, and then, within two seconds pressing shift and 0 together 
 
 ## Loading and saving options
 The emulator supports the loading  `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
@@ -214,7 +205,7 @@ If the user enters the `LOAD` command without specifying a file name the SD Card
 #### 3. Via `LOAD "program-name"` (ZX81 only)
 If a file name is specified, then `.p` is appended and an attempt is made to load the file from the current directory. The configuration for the file is read. A reset is performed only if required by a configuration change. This allows for multiple parts of an application to be loaded e.g. [HiRes Chess](https://spectrumcomputing.co.uk/entry/32021/ZX81/Hi-res_Chess) or [QS games](#qs-udg-graphics) that include character definitions.
 
-If the supplied filename, with `.p` appended, does not exist, then the `LOAD` fails with error `D`. This is similar to a "real" ZX81, where if a named file is not on a tape, the computer will attempt to load until the user aborts by pressing `BREAK`, generating error `D`
+If the supplied filename, with `.p` appended, does not exist in the current directory, then the `LOAD` fails with error `D`
 
 ### Save
 #### ZX81
@@ -224,36 +215,29 @@ To save a program the `SAVE "Filename"` command is used. If `"Filename"` has no 
 To save a program the `SAVE` command is used. It does not take a file name, so the program is saved in the current directory with the name `"zx80prog.o"`. If a file with that name already exists it is overwritten
 
 ### Loading and Saving Memory Blocks
-The emulator supports extensions to `LOAD` and `SAVE` to support the loading and saving of memory blocks. The syntax is similar to that used by [ZXpand](https://github-wiki-see.page/m/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual).
-
-
-**Note:** There are differences in failure modes and error reporting compared to the ZXpand. Also `.p` is *not* appended when loading and saving memory blocks
-
-Set the `ExtendFile` config option to `On` to enable the extensions
+The emulator supports extensions to `LOAD` and `SAVE` to support the loading and saving of memory blocks. The syntax is similar to that used by [ZXPAND](https://github-wiki-see.page/m/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual) 
 #### Load
 `LOAD "filename;nnnnn"`  
 where `nnnnn` represents a decimal number specifying the target address
-
 ##### Failure Modes
-+ Error inverse `1`: The target address is not a number, or is outside of the range 0 to 65535
-+ Error inverse `3`: No data would be written into existent RAM. Checks are made to ensure that data is not written to ROM, or non existing RAM addresses
-+ Error `D`: The specified filename does not exist (no `.p` extension is added)
+Error `B` is reported if:
++ The target address is not in available RAM
++ The target address plus the length of data in the file is not in available RAM
++ The target address is not a number
 
-**Note:**
-+ The string passed to `LOAD` is parsed for target address if and only if it contains at least 1 `;` the target address is assumed to be after the last `;` in the string. If the string does not contain a `;` it is treated as a single filename and a program file is loaded with the name of the supplied string (with `.p` appended if there is no `.` in the supplied string)
+Error `D` is reported if:
++ The specified filename does not exist in the current directory (no `.p` extension is added)
 #### Save
-`SAVE "filename;sssss,lllll"`  
+`SAVE "filename;sssss,llll"`  
 where:
 + `sssss` represents a decimal number specifying the start address of memory to be saved
-+ `lllll` specifies the number of bytes of memory to be saved
++ `llll` specifies the number of bytes of memory to be saved
 ##### Failure Modes
-+ Error inverse `1`: The start address is not a number, or is outside of the range 0 to 65535
-+ Error inverse `2`: The length address is not a number, or is outside of the range 1 to 65536
-+ Error inverse `3`: The sum of the start address and the length is greater than 65536
+Error `B` is reported if:
++ The start address is not in available RAM
++ The start address plus the number of bytes to save is not in available RAM
 
-**Notes:**
-+ If a file with the specified name exists on the SD Card, it is overwritten
-+ The string passed to `SAVE` is parsed for start and length if and only if it contains at least 1 `;` and a `,` exists in the string after the last `;`. Otherwise the string is treated as a single filename and a program file is saved with the name of the supplied string (with `.p` appended if there is no `.` in the supplied string)
+If the string passed to `SAVE` cannot be parsed into a valid `filename` `sssss` and `llll` triple then it is treated as a single filename and a program file is saved with the name of the supplied string (with `.p` appended if there is no `.` in the supplied string)
 
 ### Directories
 The original ZX81 used tape as a storage media, with no concept of a directory structure. The emulator uses an SD Card, and does support the basic use of directories.
@@ -290,7 +274,7 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
   + A very faithful clone of the arcade Space Invaders
 + [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html)
   + Hi-res 320x240 and 40 by 30 characters. Set `Centre` to off to see the full image.
-  + The display routine is the most CPU intensive part of the emulator, so this is the best test that the emulator can run at 100% of the speed of "real" hardware
+  + The display routine is the most CPU intensive part of the emulator, so this is the best test that the emulator can run at 100% of the speed of "real" hardware 
 + [HRDEMO3](https://www.zx81.nl/dload/utils/hrdemo3.p)
 + [HiRes Chess](https://spectrumcomputing.co.uk/entry/32021/ZX81/Hi-res_Chess)
   + All 26 lines are shown
@@ -315,10 +299,7 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [Galaxians](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388)
 + [SInvaders](https://github.com/SplinterGU/SInvaders)
 + [Dancing Demon](https://www.rwapsoftware.co.uk/zx81/software/Demon.zip)
-+ [PT3 player](https://www.sinclairzxworld.com/viewtopic.php?p=44220#p44220) and [STC Player](https://www.sinclairzxworld.com/viewtopic.php?f=11&t=4222)
-  + Use `config.ini` in [`sounds`](examples/ZX81/Sounds/config.ini)
-  + **Note:** The `config.ini` file must be in the same directory as the `.p` file, therefore to run the `splash.p` files supplied with the PT3 players, move them to the same directory as the player and ensure that a copy of the `config.ini` file is in that directory
-  + The ZXpand configuration line in the PT3 player, which appears as a `LLIST` command at line 9992, should be deleted
+
 ### NTSC
 + [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p)
   + This is written for a 60Hz ZX81. For the second count to be accurate the `NTSC` option must be enabled. If `NTSC` is not selected the clock will run at 50/60 speed. Nova generates up to 26 rows of 34 characters. These are displayed correctly
@@ -360,7 +341,6 @@ Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n;
 + Add volume control
 + Add vsync (TV) based sound
 + There are some interesting developments to extend PicoDVI to include audio over the HDMI signal
-+ Use the contents of a string variable to supply a file name to the ZX80 load and save commands
 + Support for USB gamepads as well as joysticks
 + Extend the VGA322 board type to support original DB9 joysticks
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
