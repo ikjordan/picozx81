@@ -433,33 +433,33 @@ void save_p(int a)
         }
       }
     }
+  }
 
-    if (found)
+  if (found)
+  {
+    // Saving a memory block, fix the file name
+    --extend;
+    *extend = 0;
+    printf("Filename: %s, start address %i, length %i\n", fname, start, length);
+  }
+  else
+  {
+    // Saving a program, append suffix if needed
+    if(!strrchr(fname, '.'))
     {
-      // Saving a memory block, fix the file name
-      --extend;
-      *extend = 0;
-      printf("Filename: %s, start address %i, length %i\n", fname, start, length);
+      strcat(fname,".p");
+    }
+
+    // Set start and length
+    if(zx80)
+    {
+      start = 0x4000;
+      length = fetch2(16394)-0x4000;
     }
     else
     {
-      // Saving a program, append suffix if needed
-      if(!strrchr(fname, '.'))
-      {
-        strcat(fname,".p");
-      }
-
-      // Set start and length
-      if(zx80)
-      {
-        start = 0x4000;
-        length = fetch2(16394)-0x4000;
-      }
-      else
-      {
-        start = 0x4009;
-        length = fetch2(16404)-0x4009;
-      }
+      start = 0x4009;
+      length = fetch2(16404)-0x4009;
     }
   }
   emu_SaveFile(fname, &mem[start], length);
