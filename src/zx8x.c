@@ -13,8 +13,16 @@
 #include "hid_usb.h"
 #include "menu.h"
 
-#define ERROR_B() mem[16384] = 10;
+bool parseNumber(const char* input,
+                 unsigned int min,
+                 unsigned int max,
+                 char term,
+                 unsigned int* out);
+
 #define ERROR_D() mem[16384] = 12;
+#define ERROR_INV1() mem[16384] = 128;
+#define ERROR_INV2() mem[16384] = 129;
+#define ERROR_INV3() mem[16384] = 130;
 
 byte mem[MEMORYRAM_SIZE];
 unsigned char *memptr[64];
@@ -169,7 +177,8 @@ void load_p(int a)
   int max_read;
   unsigned char *ptr=mem+(a&32767),*dptr=fname;
   unsigned char *extend = 0;
-  int start = 0;
+  int start = -1;
+  int offset = 0;
 
   memset(fname, 0, sizeof(fname));
 
@@ -199,48 +208,41 @@ void load_p(int a)
         *extend++ = '\0';
 
         // Attempt to read the start address
-        long res=strtol(extend, NULL, 10);
-
-        if ((res == LONG_MIN || res == LONG_MAX  || res <= 0 || res > 0xffff))
+        if (!parseNumber(extend, 0, 65535, 0, &start))
         {
-          // Default to 0 if entry is not convertible
-          res = 0;
-          printf("Illegal memory load address\n");
+          printf("Mem load address parse error, generating error 1\n");
+          ERROR_INV1();
+          return;
         }
-
-        start = (int)res;
 
         // Series of checks to ensure start is in the right area
-        if (start)
-        {
-          printf("Start Requested %i\n", start);
+        printf("Start Requested %i\n", start);
 
-          // Must not be in the ROM
-          if (start < 0x2000)
+        // Check if in ROM - not illegal, but cannot overwrite ROM!
+        if (start < 0x2000)
+        {
+          // Calculate the offset to the start of available memory
+          if (LowRAM)
           {
-            start = 0;
-            printf("Requested memory load in ROM\n");
+            offset = 0x2000 - start;
           }
-          else if ((start < 0x4000) && !LowRAM)
+          else
           {
-            // No low memory
-            start = 0;
-            printf("Requested memory load in low memory - no low memory enabled\n");
+            offset = 0x4000 - start;
           }
+          printf("Requested memory load in ROM %i Offset %i\n", start, offset);
         }
-
-        // Read a start address, but failed a check, so have an error
-        if (!start)
+        else if ((start < 0x4000) && !LowRAM)
         {
-          printf("Mem parse error, generating error B\n");
-          ERROR_B();
-          return;
+          // No low memory
+          offset = 0x4000 - start;
+          printf("Requested load in low memory %i Not enabled, offset %i\n", start, offset);
         }
       }
     }
 
     /* add '.p' if no extension given */
-    if(!strrchr(fname, '.') && !start)
+    if(!strrchr(fname, '.') && (start < 0))
     {
       strcat(fname,".p");
     }
@@ -269,12 +271,19 @@ void load_p(int a)
   if (!size)
   {
     // Report error D
-    printf("Zero length, generating error D\n");
+    printf("File does not exist, or zero length. Generating error D\n");
     ERROR_D();
     return;
   }
+  else if (size <= offset)
+  {
+    // All of the load would either be in ROM or non existent RAM, so report error B
+    printf("No data to write to RAM, generating error 3\n");
+    ERROR_INV3();
+    return;
+  }
 
-  if ((!autoload) && (start == 0)) /* if start address is given then don't search for settings */
+  if ((!autoload) && start >= 0) /* if start address is given then don't search for settings */
   {
     // Load the settings for this file
     emu_ReadSpecificValues(fname);
@@ -292,29 +301,38 @@ void load_p(int a)
   // Got this far then all good
   autoload=0;
 
-  int f = emu_FileOpen(fname, "r+b");
-
   // This really should not fail!
-  if (f)
+  if (emu_FileOpen(fname, "r+b"))
   {
     /* Make sure we do not read in too much for the RAM we have */
     max_read = ramsize * 1024;
 
-    if (start)
+    if (start > 0)
     {
-      if ((start >= 0x2000) && (start < 0x4000))
+      if (start < 0x4000)
       {
-        max_read = 0x4000 - start;
+        // adjust maximum size to read dependent on LowRAM
+        if (LowRAM)
+        {
+          max_read += 0x2000;
+        }
+        // Make sure to read into existing RAM
+        start += offset;
       }
       else
       {
+        // Prevent loading past the end of normal memory, have already handled
+        // start in ROM and no low RAM through offset
         max_read -= (start - 0x4000);
-        if (max_read <= 0)
-        {
-          printf("Memory load address %i out of range, generating error B\n", start);
-          ERROR_B();
-          return;
-        }
+      }
+
+      // Check some memory will still be loaded
+      if (max_read <= 0)
+      {
+        printf("No data can be written to RAM: %i out of range, generating error 3\n", max_read);
+        ERROR_INV3();
+        emu_FileClose();
+        return;
       }
     }
     else
@@ -333,16 +351,16 @@ void load_p(int a)
     // Finally load the file
     size  = (size < max_read) ? size : max_read;
     printf("start=%i size=%i\n", start, size);
-    emu_FileRead(mem + start, size, f);
+    emu_FileRead(mem + start, size, offset);
+    emu_FileClose();
   }
   else
   {
     // Report error D
-    printf("File read failed, generating error D\n");
+    printf("File open failed, generating error D\n");
     ERROR_D();
     return;
   }
-  emu_FileClose(f);
 }
 
 void save_p(int a)
@@ -353,6 +371,7 @@ void save_p(int a)
   unsigned char *comma = 0;
   int start = 0;
   int length = 0;
+  bool found = false;
 
   memset(fname,0,sizeof(fname));
   strcat(fname, emu_GetDirectory());
@@ -376,141 +395,71 @@ void save_p(int a)
 
     if (emu_ExtendFileRequested())
     {
-      // Search for a separator that indicates request to save memory
-      extend = strrchr(fname, ',');
+      // find last ;
+      extend = strrchr(fname, ';');
+
       if (extend)
       {
-        comma = extend; // Need to store this in case length not found
-        *extend++ = '\0';
+        // verify , after last ;
+        ++extend;
+        comma = strrchr(extend, ',');
 
-        // Attempt to read the length
-        long res=strtol(extend, NULL, 10);
-
-        if ((res == LONG_MIN || res == LONG_MAX  || res < 0 || res > 0xbfff))
+        if (comma)
         {
-          // Default to 0 if entry is not convertible
-          res = 0;
-          printf("Illegal memory length, generating error B\n");
-          ERROR_B();
-          return;
-        }
+          found = true; // Have found ; and ,
+          ++comma;
 
-        length = (int)res;
-
-        // With a valid length, we can find the start address
-        if (length)
-        {
-          extend = strrchr(fname, ';');
-
-          if (extend)
+          if (!parseNumber(extend, 0, 0xffff, ',', &start))
           {
-            *extend++ = '\0';
-
-            // Attempt to read the start address
-            long res=strtol(extend, NULL, 10);
-
-            if ((res == LONG_MIN || res == LONG_MAX  || res < 0 || res > 0xbfff))
-            {
-              // Default to -1 if entry is not convertible
-              res = -1;
-              printf("Illegal start address, generating error B\n");
-              ERROR_B();
-              return;
-            }
-
-            start = (int)res;
-
-            // Attempt to validate both
-            if (length && start >= 0)
-            {
-              // Check for saving ROM
-              if (start < 0x2000)
-              {
-                // Validate that length does not exceed 8kB boundary
-                if (start + length >= 0x2000)
-                {
-                  printf("Saving past end of ROM area. Start %i, Length %i\n", start, length);
-                  start = -1;
-                  length = 0;
-                }
-                else
-                {
-                  printf("Saving ROM. Start %i, Length %i\n", start, length);
-                }
-              }
-              // If in low memory, ensure it exists, and do not stray outside
-              else if ((start < 0x4000) && ((!LowRAM) || (start + length >= 0x4000)))
-              {
-                printf("Either no low RAM, or out of range. Start %i, Length %i\n", start, length);
-                start = -1;
-                length = 0;
-              }
-              // If in normal memory ensure all of range exists
-              else if ((start + length) >= (0x4000 + (ramsize * 1024)))
-              {
-                printf("Range does not fit available RAM. Start %i, Length %i\n", start, length);
-                start = -1;
-                length = 0;
-              }
-              else
-              {
-                // Success!!!
-                printf("Filename: %s, start address %i, length %i\n", fname, start, length);
-              }
-            }
-
-            if (start == -1)
-            {
-              printf("Gnerating error B\n");
-              ERROR_B();
-              return;
-            }
+            printf("Illegal start address, generating error 1\n");
+            ERROR_INV1();
+            return;
           }
-          else
+
+          if (!parseNumber(comma, 1, 0x10000, 0, &length))
           {
-            // If found length, but no comma, then revert to full address
-            printf("Found memory length, but no start address. Length %i\n", length);
-            length = 0;
-            start = 0;
-            *comma = ',';
+            printf("Illegal length, generating error 2\n");
+            ERROR_INV2();
+            return;
           }
-        }
-        else
-        {
-          // length was not valid, so restore comma
-          *comma = ',';
+
+          // Check that the end address is within 64kB
+          if (start + length > 0x10000)
+          {
+            printf("Start %i + length %i too large, generating error 3\n", start, length);
+            ERROR_INV3();
+            return;
+          }
         }
       }
     }
 
-    if(!strrchr(fname, '.') && (!length && start >= 0))
+    if (found)
     {
-      strcat(fname,".p");
+      // Saving a memory block, fix the file name
+      --extend;
+      *extend = 0;
+      printf("Filename: %s, start address %i, length %i\n", fname, start, length);
     }
-  }
-  /* work out how much to write, and write it.
-  * we need to write from 0x4009 (0x4000 on ZX80) to E_LINE inclusive.
-  */
-  if(zx80)
-  {
-    if (!start)
+    else
     {
+      // Saving a program, append suffix if needed
+      if(!strrchr(fname, '.'))
+      {
+        strcat(fname,".p");
+      }
+
+      // Set start and length
+      if(zx80)
+      {
         start = 0x4000;
-    }
-    if (!length)
-    {
-      length = fetch2(16394)-0x4000;
-    }
-  }
-  else
-  {
-    if (!start)
-    {
+        length = fetch2(16394)-0x4000;
+      }
+      else
+      {
         start = 0x4009;
-    }
-    if (!length)
-    {
-      length = fetch2(16404)-0x4009;
+        length = fetch2(16404)-0x4009;
+      }
     }
   }
   emu_SaveFile(fname, &mem[start], length);
@@ -738,11 +687,11 @@ void z8x_Start(const char * filename)
     // can check that it exists
     strcpy(fname, emu_GetDirectory());
     strcat(fname, tapename);
-    int f = emu_FileOpen(fname, "r+b");
-    if ( f )
+
+    if (emu_FileOpen(fname, "r+b"))
     {
-      int fsize = emu_FileRead(&c, 1, f);
-      if ( fsize == 0)
+      int fsize = emu_FileRead(&c, 1, 0);
+      if (!fsize)
       {
         printf("z81 Open %s failed. No autoload\n", filename);
       }
@@ -756,7 +705,28 @@ void z8x_Start(const char * filename)
         // Determine the computer type from the ending
         emu_setZX80(emu_endsWith(fname, ".o") || emu_endsWith(fname, ".80"));
       }
-      emu_FileClose(f);
+      emu_FileClose();
     }
   }
+}
+
+// input: string to be parsed for an unsigned number
+// Min: Minimum allowed value
+// Max: Maximum allowed value
+// Term: Required terminating character
+// Out: Contains value read if successful
+// Return value: True if value parsed successfully, false otherwise
+bool parseNumber(const char* input,
+                 unsigned int min,
+                 unsigned int max,
+                 char term,
+                 unsigned int* out)
+{
+  *out = 0;
+
+  while ((*input >= '0') && (*input <= '9') && (*out <= max))
+  {
+    *out = *out * 10 + *input++ - '0';
+  }
+  return ((*input == term) && (*out >= min) && (*out <= max));
 }
