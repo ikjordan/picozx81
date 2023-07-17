@@ -435,7 +435,7 @@ static int populateFiles(const char* path, uint first)
     {
         if (!first)
         {
-            writeString("..", 1, 0);
+            writeString("<..>", 1, 0);
             ++i;
         }
         ++count;
@@ -444,6 +444,10 @@ static int populateFiles(const char* path, uint first)
     res = f_opendir(&dir, path);                            /* Open the directory */
     if (res == FR_OK)
     {
+        char name[(MENU_X>>3) + 1]; 
+        int len = 0;
+        name[0] = '<';
+
         // Find all directories first
         while (true)
         {
@@ -456,7 +460,21 @@ static int populateFiles(const char* path, uint first)
             {
                 if ((count >= first) && (count < (first + (MENU_Y>>3))))
                 {
-                    writeString(fno.fname, 1, i);
+                    strncpy(&name[1], fno.fname, sizeof(name)-1);
+
+                    len = strlen(fno.fname) + 1; // Position of closing >
+                    if (len > ((MENU_X>>3) - 3))
+                    {
+                        name[((MENU_X>>3) - 4)] = '+';
+                        name[((MENU_X>>3) - 3)] = '>';
+                        name[((MENU_X>>3) - 2)] = '0';
+                    }
+                    else
+                    {
+                        name[len] = '>';
+                        name[len + 1] = 0;
+                    }
+                    writeString(name, 1, i);
                     ++i;
                 }
                 ++count;
@@ -479,7 +497,19 @@ static int populateFiles(const char* path, uint first)
             {
                 if ((count >= first) && (count < (first + (MENU_Y>>3))))
                 {
-                    writeString(fno.fname, 1, i);
+                    // Terminate long file names with a +
+                    if (strlen(fno.fname) > ((MENU_X>>3) - 2))
+                    {
+                        // Copy and terminate with a +
+                        strncpy(name, fno.fname, sizeof(name));
+                        name[((MENU_X>>3) - 3)] = '+';
+                        name[((MENU_X>>3) - 2)] = 0;
+                        writeString(name, 1, i);
+                    }
+                    else
+                    {
+                        writeString(fno.fname, 1, i);
+                    }
                     ++i;
                 }
                 ++count;
@@ -490,7 +520,7 @@ static int populateFiles(const char* path, uint first)
     return count;
 }
 
-// Directory path passes in in inout
+// Directory path passed in inout
 // inout set to the name of the file / directory matching the index
 // direct set true for a directory, false for a file
 // Returns true for success, false for failure
