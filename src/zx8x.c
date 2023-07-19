@@ -1,6 +1,5 @@
 #include <string.h>
 #include <stdlib.h>
-#include <limits.h>
 #include "Z80.h"
 #include "zx80rom.h"
 #include "zx81x2rom.h"
@@ -277,7 +276,7 @@ void load_p(int a)
   }
   else if (size <= offset)
   {
-    // All of the load would either be in ROM or non existent RAM, so report error B
+    // All of the load would either be in ROM or non existent RAM, so report error 3
     printf("No data to write to RAM, generating error 3\n");
     ERROR_INV3();
     return;

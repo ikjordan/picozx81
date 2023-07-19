@@ -192,6 +192,14 @@ bool hidNavigateMenu(uint8_t* key)
             case HID_KEY_Q:
                 *key = HID_KEY_ESCAPE;
                 return true;
+
+            case HID_KEY_A:
+                *key = HID_KEY_A;
+                return true;
+
+            case HID_KEY_P:
+                *key = HID_KEY_P;
+                return true;
         }
     }
     // To DO: Read the joystick?

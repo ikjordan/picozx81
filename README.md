@@ -33,8 +33,8 @@ One intention of this project was to show what can be quickly achieved by levera
 + The intention of the emulator is to provide an authentic '80s feel. There have been amazing ZX81 developments in recent years, such as ([Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm), [ZXpand+](https://www.rwapsoftware.co.uk/zx812.html) etc). These are not supported. Instead it emulates the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. However, basic support to load and save memory blocks, using a syntax similar to ZXpand is implemented
 + The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
 + Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
-+ To achieve a full speed emulation the Pico is overclocked to 250MHz. There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be build to use 1.2V, add `-DOVER_CLOCK` to the cmake command
-+ The Pico only has 1 USB port. The Pimoroni boards can be powered through a second connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
++ To achieve a full speed emulation the Pico is overclocked to 250MHz. There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_CLOCK` to the cmake command
++ The Pico only has 1 USB port. The Pimoroni and Olimex boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
 + To connect more than one peripheral (e.g. a keyboard and joystick) at the same time, a powered USB OTG hub is required. These 3 hubs have been successfully tested. [1](https://www.amazon.co.uk/dp/B083WML1XB), [2](https://www.amazon.co.uk/dp/B078M3Z84Z), [3](https://www.amazon.co.uk/dp/B07Z4RHJ2D). Plug the hub directly into the USB port on the Pico, not the USB power connector on the Pimoroni board  
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
 + On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
@@ -146,7 +146,7 @@ Two extra options can be set via the `[default]` section of the `config.ini` fil
 | Dir | Sets the initial default directory to load and save programs | / |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| Off |
-| AllFiles| Enables the display of all files in the [Load Menu](#f2---load-menu). When off only files with extensions `.p`, `.o`, `.81` and `.80` are displayed|Off|
+| AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load-menu) is selected. When off only files with extensions `.p`, `.o`, `.81` and `.80` are initially displayed|Off|
 
 
 ### Examples
@@ -179,25 +179,24 @@ To enable this mechanism set `DoubleShift` to `On` in the configuration file
 ### F1 - Reset
 Hard resets the emulator. It is equivalent to removing and reconnecting the power
 ### F2 - Load Menu
-A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. Directory names are prepended by `<` and appended by `>` e.g. `<NAME>`
+A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. Any sound that is playing is paused. Directory names are prepended by `<` and appended by `>` e.g. `<NAME>`
 
 If the name of a file or directory is too long to display in full it is truncated with the last characters as `+` (file) and `+>` (directory)
 
-The display can be navigated using the up, down and enter keys. The 7 key also generates "up" and the 6 key also generates "down". Any sound that is playing is paused.
-
-For directories with a large number of files it is possible to move to the next page of files by using the right, Page Down or 8 key. To move to the previous page of files use the left, Page Up or 5 key.
-
-+ Press enter whilst a directory entry is selected to move to that directory
-+ Press enter when a file is selected to load that file
-+ Press Escape, space, Q or 0 to return to the emulation without changing directory or loading a new program
++ The display can be navigated using the `up`, `down` and `enter` keys. The `7` key also generates `up` and the `6` key also generates `down`
++ For directories with a large number of files it is possible to move to the next page of files by using the `right`, `Page Down` or `8` key. To move to the previous page of files use the `left`, `Page Up` or `5` key
++ Press `A` to display all files in the directory. Press `P` to only display files with extensions `.p`, `.o`, `.81` and `.80`
++ Press `enter` whilst a directory entry is selected to move to that directory
++ Press `enter` when a file is selected to load that file
++ Press `Escape`, `space`, `Q` or `0` to return to the emulation without changing directory or loading a new program
 ### F3 - View Emulator Configuration
-Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press Escape, space, Q or 0 to exit back to the running emulator
+Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press `Escape`, `space`, `Q` or `0` to exit back to the running emulator
 ### F4 - Pause
-Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press Escape, space, Q or 0 to end the pause and return to the running emulator
+Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press `Escape`, `space`, `Q` or `0` to end the pause and return to the running emulator
 ### F5 - Display Keyboard Overlay
-The ZX80 and ZX81 use single key press BASIC entry. Pressing F5 displays a 4 colour image (VGA) or a grey scale image (DVI / HDMI) representing the keyboard of the computer being emulated, so that the correct key presses can be determined. The image was taken from [sz81](https://github.com/SegHaxx/sz81). It is possible to enter commands whilst the keyboard is displayed
+The ZX80 and ZX81 use single key press BASIC entry. Pressing `F5` displays a 4 colour image (VGA) or a grey scale image (DVI / HDMI) representing the keyboard of the computer being emulated, so that the correct key presses can be determined. The image was taken from [sz81](https://github.com/SegHaxx/sz81). It is possible to enter commands whilst the keyboard is displayed
 
-Press Escape to remove the keyboard display. The keyboard is also removed if another menu is selected
+Press `Escape` to remove the keyboard display. The keyboard is also removed if another menu is selected
 
 If a ZX8x 40 key keyboard is being used, then set `DoubleShift` to `On` and remove the menu by pressing and releasing shift twice and then pressing `0` within one second of releasing shift
 
