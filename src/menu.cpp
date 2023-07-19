@@ -36,6 +36,7 @@ const static uint16_t MENU_X = DISPLAY_WIDTH;
 const static uint16_t MENU_Y = DISPLAY_HEIGHT;
 static uint8_t* menuscreen = 0;
 
+static bool allfiles = false;
 
 static bool buildMenu(bool clone)
 {
@@ -222,6 +223,8 @@ bool loadMenu(void)
     if (!buildMenu(false))
         return false;
 
+    allfiles = emu_AllFilesRequested();
+
     strcpy(working, emu_GetDirectory());
     strcpy(newdir,working);
     uint entries = populateFiles(working, 0);
@@ -325,6 +328,32 @@ bool loadMenu(void)
                     {
                         // If getFile failed menu will exit with previous settings
                         key = HID_KEY_ESCAPE;
+                    }
+                break;
+
+                case HID_KEY_A:
+                    if (!allfiles)
+                    {
+                        allfiles = true;
+                        offset = 0;
+                        row = 0;
+                        memset(menuscreen, 0x00, DISPLAY_STRIDE_BYTE * MENU_Y);
+                        populateFiles(working, offset);
+                        maxrow = ((entries - offset) < (MENU_Y>>3)) ? entries - offset : (MENU_Y>>3);
+                        xorRow(row);
+                    }
+                break;
+
+                case HID_KEY_P:
+                    if (allfiles)
+                    {
+                        allfiles = false;
+                        offset = 0;
+                        row = 0;
+                        memset(menuscreen, 0x00, DISPLAY_STRIDE_BYTE * MENU_Y);
+                        populateFiles(working, offset);
+                        maxrow = ((entries - offset) < (MENU_Y>>3)) ? entries - offset : (MENU_Y>>3);
+                        xorRow(row);
                     }
                 break;
             }
@@ -493,7 +522,7 @@ static int populateFiles(const char* path, uint first)
             if ((!(fno.fattrib & AM_DIR) && (strlen(fno.fname) < MAX_FILENAME_LEN)) &&
                 ((emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p") ||
                   emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81") ||
-                  emu_AllFilesRequested())))
+                  allfiles)))
             {
                 if ((count >= first) && (count < (first + (MENU_Y>>3))))
                 {
@@ -591,7 +620,7 @@ static bool getFile(char* inout, uint index, bool* direct)
                 if ((strlen(fno.fname) < MAX_FILENAME_LEN) &&
                     ((emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p") ||
                       emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81")) ||
-                      emu_AllFilesRequested()))
+                      allfiles))
                 {
                     ++count;
                 }
