@@ -119,7 +119,7 @@ unsigned int in(int h, int l)
   return(255);
 }
 
-unsigned int out(int h, int l,int a)
+unsigned int out(int l,int a)
 {
   switch(l)
   {
@@ -169,13 +169,13 @@ void blankScreen()
   emu_BlankScreen();
 }
 
-static unsigned char fname[256];
+static char fname[256];
 
 void load_p(int a)
 {
   int max_read;
-  unsigned char *ptr=mem+(a&32767),*dptr=fname;
-  unsigned char *extend = 0;
+  char *ptr=(char*)mem+(a&32767),*dptr=fname;
+  char *extend = 0;
   int start = -1;
   int offset = 0;
 
@@ -207,7 +207,7 @@ void load_p(int a)
         *extend++ = '\0';
 
         // Attempt to read the start address
-        if (!parseNumber(extend, 0, 65535, 0, &start))
+        if (!parseNumber(extend, 0, 65535, 0, (unsigned int*)&start))
         {
           printf("Mem load address parse error, generating error 1\n");
           ERROR_INV1();
@@ -364,10 +364,9 @@ void load_p(int a)
 
 void save_p(int a)
 {
-  unsigned char *ptr=mem+a,*dptr=fname;
-  FILE *out;
-  unsigned char *extend = 0;
-  unsigned char *comma = 0;
+  char *ptr=(char*)(mem+a),*dptr=fname;
+  char *extend = 0;
+  char *comma = 0;
   int start = 0;
   int length = 0;
   bool found = false;
@@ -390,7 +389,7 @@ void save_p(int a)
     {
       *dptr++=zx2ascii[(*ptr)&63];
     }
-    while((*ptr++)<128 && dptr<fname+sizeof(fname)-3);
+    while((*ptr++)<128 && dptr<(fname+sizeof(fname)-3));
 
     if (emu_ExtendFileRequested())
     {
@@ -408,14 +407,14 @@ void save_p(int a)
           found = true; // Have found ; and ,
           ++comma;
 
-          if (!parseNumber(extend, 0, 0xffff, ',', &start))
+          if (!parseNumber(extend, 0, 0xffff, ',', (unsigned int*)&start))
           {
             printf("Illegal start address, generating error 1\n");
             ERROR_INV1();
             return;
           }
 
-          if (!parseNumber(comma, 1, 0x10000, 0, &length))
+          if (!parseNumber(comma, 1, 0x10000, 0, (unsigned int*)&length))
           {
             printf("Illegal length, generating error 2\n");
             ERROR_INV2();
@@ -580,6 +579,7 @@ static void initmem()
         memattr[f]=1;
         memptr[f]=mem+1024*f;
       }
+      // fall through
     case 32:
       for(f=32;f<48;f++)
       {

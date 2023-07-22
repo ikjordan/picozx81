@@ -18,18 +18,15 @@ typedef struct {
     uint16_t stride;        // Number of bytes in display line
 } Display_t;
 
-const static uint16_t PIXEL_WIDTH = 320;
-const static uint16_t FRAME_WIDTH = PIXEL_WIDTH << 1;
-const static uint16_t WIDTH = PIXEL_WIDTH>>3;
-const static uint16_t HEIGHT = 240;
-const static uint16_t MIN_RUN = 3;
+static const uint16_t PIXEL_WIDTH = 320;
+static const uint16_t FRAME_WIDTH = PIXEL_WIDTH << 1;
+static const uint16_t HEIGHT = 240;
 
 static volatile uint16_t disp_index;
 static volatile bool blank = true;
 static volatile uint16_t blank_colour = BLACK;
 
 static Display_t disp[2];
-static uint16_t lookup[256][8];
 static semaphore_t display_initialised;
 
 static bool showKeyboard = false;

@@ -9,24 +9,40 @@
 #include "zx80bmp.h"
 #include "zx81bmp.h"
 
-typedef struct {
+typedef struct
+{
     uint8_t* buff;          // pointer to start of buffer
     uint16_t x;             // offset into line (in bytes) for first pixel to display
     uint16_t y;             // First line to display
     uint16_t stride;        // Number of bytes in display line
 } Display_t;
 
-const static uint16_t PIXEL_WIDTH = 320;
-const static uint16_t WIDTH = PIXEL_WIDTH>>3;
-const static uint16_t HEIGHT = 240;
-const static uint16_t MIN_RUN = 3;
+// Unions to allow variable length data manipulation
+typedef union
+{
+    uint16_t i16[256][8];
+    uint64_t i64[256][2];
+} Look_u;
+
+typedef union
+{
+    uint16_t i16[8];
+    uint32_t i32[4];
+    uint64_t i64[2];
+} Fill_u;
+
+
+static const uint16_t PIXEL_WIDTH = 320;
+static const uint16_t WIDTH = PIXEL_WIDTH>>3;
+static const uint16_t HEIGHT = 240;
+static const uint16_t MIN_RUN = 3;
 
 static volatile uint16_t disp_index;
 static volatile bool blank = true;
 static volatile uint16_t blank_colour = BLACK;
 
 static Display_t disp[2];
-static uint16_t lookup[256][8];
+static Look_u lookup;
 static semaphore_t display_initialised;
 
 static bool showKeyboard = false;
@@ -37,7 +53,7 @@ static uint16_t keyboard_y = 0;
 // Define timing here due to sdk issue with h_pulse length
 const scanvideo_timing_t vga_timing_640x480_60_default1 =
     {
-             .clock_freq = 25000000,
+        .clock_freq = 25000000,
 
         .h_active = 640,
         .v_active = 480,
@@ -168,7 +184,7 @@ static int32_t __not_in_flash_func(populate_keyboard_line)(int linenum, uint16_t
     }
 
     // Now have the picture
-    for (int i = keyboard_x+1; i < ((keyboard->width>>1)+keyboard_x+1); i+=2)
+    for (unsigned int i = keyboard_x+1; i < ((keyboard->width>>1)+keyboard_x+1); i+=2)
     {
         buff[i] = keyboard->palette[(*pd & 0xc0) >> 6];
         buff[i] += keyboard->palette[(*pd & 0x30) >> 4] << 16;
@@ -190,37 +206,35 @@ static int32_t __not_in_flash_func(populate_keyboard_line)(int linenum, uint16_t
 static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, int linenum, uint32_t* buff)
 {
     // Need to interlace commands with first 2 pixels at start of buffer line
-    uint16_t first[8];
-    uint64_t*res = (uint64_t*)first;
+    Fill_u first;
 
     // Extract the data for the first 8 pixels
-    res[0] = *((uint64_t*)(&lookup[display_line[0]][0]));
-    res[1] = *((uint64_t*)(&lookup[display_line[0]][4]));
+    first.i64[0] = lookup.i64[display_line[0]][0];
+    first.i64[1] = lookup.i64[display_line[0]][1];
 
     // interlace the first two
-    buff[0] = COMPOSABLE_RAW_RUN          | (first[0] << 16);
+    buff[0] = COMPOSABLE_RAW_RUN          | (first.i16[0] << 16);
 
     // Note pixel length +1 as have final black pixel
-    buff[1] = (PIXEL_WIDTH + 1 - MIN_RUN) | (first[1] << 16);
-
+    buff[1] = (PIXEL_WIDTH + 1 - MIN_RUN) | (first.i16[1] << 16);
 
     // Populate the rest of the pixels in the first byte
-    buff[2] = *(uint32_t*)(&first[2]);
-    buff[3] = *(uint32_t*)(&first[4]);
-    buff[4] = *(uint32_t*)(&first[6]);
+    buff[2] = first.i32[1];
+    buff[3] = first.i32[2];
+    buff[4] = first.i32[3];
 
     // Process the next 24 pixels
     uint64_t* dest = (uint64_t*)(&buff[5]);
     for (int i=1; i<(keyboard_x>>2); ++i)
     {
-        *dest++ = *((uint64_t*)(&lookup[display_line[i]][0]));
-        *dest++ = *((uint64_t*)(&lookup[display_line[i]][4]));
+        *dest++ = lookup.i64[display_line[i]][0];
+        *dest++ = lookup.i64[display_line[i]][1];
     }
 
     // Process the keyboard
     const uint8_t* pd = &keyboard->pixel_data[(linenum - keyboard_y) * (keyboard->width>>2)];
 
-    for (int i = keyboard_x+1; i < ((keyboard->width>>1)+keyboard_x+1); i+=2)
+    for (unsigned int i = keyboard_x+1; i < ((keyboard->width>>1)+keyboard_x+1); i+=2)
     {
         buff[i] = keyboard->palette[(*pd & 0xc0) >> 6];
         buff[i] += keyboard->palette[(*pd & 0x30) >> 4] << 16;
@@ -233,8 +247,8 @@ static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, i
 
     for (int i=WIDTH-(keyboard_x>>2); i<WIDTH; ++i)
     {
-        *dest++ = *((uint64_t*)(&lookup[display_line[i]][0]));
-        *dest++ = *((uint64_t*)(&lookup[display_line[i]][4]));
+        *dest++ = lookup.i64[display_line[i]][0];
+        *dest++ = lookup.i64[display_line[i]][1];
     }
 
     // Must end with a black pixel
@@ -245,31 +259,29 @@ static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, i
 static int32_t __not_in_flash_func(populate_line)(uint8_t* display_line, uint32_t* buff)
 {
     // Need to interlace commands with first 2 pixels at start of buffer line
-    uint16_t first[8];
-    uint64_t*res = (uint64_t*)first;
+    Fill_u first;
 
     // Extract the data for the first 8 pixels
-    res[0] = *((uint64_t*)(&lookup[display_line[0]][0]));
-    res[1] = *((uint64_t*)(&lookup[display_line[0]][4]));
+    first.i64[0] = lookup.i64[display_line[0]][0];
+    first.i64[1] = lookup.i64[display_line[0]][1];
 
     // interlace the first two
-    buff[0] = COMPOSABLE_RAW_RUN          | (first[0] << 16);
+    buff[0] = COMPOSABLE_RAW_RUN          | (first.i16[0] << 16);
 
     // Note pixel length +1 as have final black pixel
-    buff[1] = (PIXEL_WIDTH + 1 - MIN_RUN) | (first[1] << 16);
-
+    buff[1] = (PIXEL_WIDTH + 1 - MIN_RUN) | (first.i16[1] << 16);
 
     // Populate the rest of the pixels in the first byte
-    buff[2] = *(uint32_t*)(&first[2]);
-    buff[3] = *(uint32_t*)(&first[4]);
-    buff[4] = *(uint32_t*)(&first[6]);
+    buff[2] = first.i32[1];
+    buff[3] = first.i32[2];
+    buff[4] = first.i32[3];
 
     // Process the remaining 320/8 - 1 bytes
     uint64_t* dest = (uint64_t*)(&buff[5]);
     for (int i=1; i<WIDTH; ++i)
     {
-        *dest++ = *((uint64_t*)(&lookup[display_line[i]][0]));
-        *dest++ = *((uint64_t*)(&lookup[display_line[i]][4]));
+        *dest++ = lookup.i64[display_line[i]][0];
+        *dest++ = lookup.i64[display_line[i]][1];
     }
 
     // Must end with a black pixel
@@ -291,7 +303,7 @@ static void __not_in_flash_func(render_loop)()
     while (true)
     {
         struct scanvideo_scanline_buffer *buf = scanvideo_begin_scanline_generation(true);  // Wait to acquire a scanline
-	    int line_num = scanvideo_scanline_number(buf->scanline_id);                         // The scanline
+	    unsigned int line_num = scanvideo_scanline_number(buf->scanline_id);                         // The scanline
 
         uint16_t index = disp_index;    // As disp_index can change at any time
         if (showKeyboard && (line_num >= keyboard_y) && (line_num <(keyboard_y + keyboard->height)))
@@ -330,7 +342,7 @@ static void initialise1bppLookup()
         for (int j=0; j<8; ++j)
         {
             // If the bit is set, then the byte will be black
-            lookup[i][j] = ((i<<j)&0x80) ? BLACK : WHITE;
+            lookup.i16[i][j] = ((i<<j)&0x80) ? BLACK : WHITE;
         }
     }
 }

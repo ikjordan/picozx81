@@ -41,11 +41,15 @@
 
 void __not_in_flash_func(process_kbd_mount)(uint8_t dev_addr, uint8_t instance)
 {
+  (void)dev_addr;
+  (void)instance;
   //printf("keyboard mounted\n");
 }
 
 void __not_in_flash_func(process_kbd_unmount)(uint8_t dev_addr, uint8_t instance)
 {
+  (void)dev_addr;
+  (void)instance;
   //printf("keyboard unmounted\n");
 }
 
@@ -97,21 +101,21 @@ bool hid_app_get_latest_joystick_state(joystick_state_t* latest, int num)
     // button 1 up / down
     uint32_t range = simple_joysticks[i]->axis_x1.logical_max - simple_joysticks[i]->axis_x1.logical_min;
 
-    if (simple_joysticks[i]->values.x1 > (((3 * range) >> 2) + simple_joysticks[i]->axis_x1.logical_min))
+    if (simple_joysticks[i]->values.x1 > (int32_t)(((3 * range) >> 2) + simple_joysticks[i]->axis_x1.logical_min))
     {
       latest[i].lr = MASK_JOY_RIGHT;
     }
-    else if (simple_joysticks[i]->values.x1 < ((range >> 2) + simple_joysticks[i]->axis_x1.logical_min))
+    else if (simple_joysticks[i]->values.x1 < (int32_t)((range >> 2) + simple_joysticks[i]->axis_x1.logical_min))
     {
       latest[i].lr = MASK_JOY_LEFT;
     }
 
     range = simple_joysticks[i]->axis_y1.logical_max - simple_joysticks[i]->axis_y1.logical_min;
-    if (simple_joysticks[i]->values.y1 > (((3 * range) >> 2) + simple_joysticks[i]->axis_y1.logical_min))
+    if (simple_joysticks[i]->values.y1 > (int32_t)(((3 * range) >> 2) + simple_joysticks[i]->axis_y1.logical_min))
     {
       latest[i].ud = MASK_JOY_DOWN;
     }
-    else if (simple_joysticks[i]->values.y1 < ((range >> 2) + simple_joysticks[i]->axis_y1.logical_min))
+    else if (simple_joysticks[i]->values.y1 < (int32_t)((range >> 2) + simple_joysticks[i]->axis_y1.logical_min))
     {
       latest[i].ud = MASK_JOY_UP;
     }
@@ -130,6 +134,10 @@ bool hid_app_get_latest_joystick_state(joystick_state_t* latest, int num)
 //--------------------------------------------------------------------+
 static void __not_in_flash_func(handle_kbd_report)(tusb_hid_host_info_t* info, const uint8_t* report, uint8_t report_length, uint8_t report_id)
 {
+  (void)info;
+  (void)report_length;
+  (void)report_id;
+
   TU_LOG1("HID receive keyboard report\r\n");
   process_kbd_report((hid_keyboard_report_t*)report);
 }
@@ -142,6 +150,10 @@ void handle_keyboard_unmount(tusb_hid_host_info_t* info) {
 
 void __not_in_flash_func(handle_mouse_report)(tusb_hid_host_info_t* info, const uint8_t* report, uint8_t report_length, uint8_t report_id)
 {
+  (void)info;
+  (void)report_length;
+  (void)report_id;
+
   TU_LOG1("HID receive mouse report\r\n");
   process_mouse_report((hid_mouse_report_t const *)report);
 }
@@ -167,6 +179,9 @@ void handle_joystick_unmount(tusb_hid_host_info_t* info) {
 
 void handle_gamepad_report(tusb_hid_host_info_t* info, const uint8_t* report, uint8_t report_length, uint8_t report_id)
 {
+  (void)info;
+  (void)report_id;
+
   TU_LOG1("HID receive gamepad report ");
   for(int i = 0; i < report_length; ++i) {
     printf("%02x", report[i]);
@@ -188,7 +203,7 @@ void __not_in_flash_func(tuh_hid_mount_cb)(uint8_t dev_addr, uint8_t instance, u
   printf("HID device address = %d, instance = %d is mounted\r\n", dev_addr, instance);
 
   // Interface protocol (hid_interface_protocol_enum_t)
-  const char* protocol_str[] = { "None", "Keyboard", "Mouse" };
+  //const char* protocol_str[] = { "None", "Keyboard", "Mouse" };
   uint8_t const itf_protocol = tuh_hid_interface_protocol(dev_addr, instance);
 
   //printf("HID Interface Protocol = %s\r\n", protocol_str[itf_protocol]);
@@ -386,7 +401,7 @@ static void __not_in_flash_func(process_generic_report)(uint8_t dev_addr, uint8_
   tusb_hid_host_info_t* info = tuh_hid_get_info(dev_addr, instance);
   uint8_t const rpt_count = hid_info[instance].report_count;
   tuh_hid_report_info2_t* rpt_info_arr = hid_info[instance].report_info;
-  tuh_hid_report_info2_t* rpt_info = NULL;
+  //tuh_hid_report_info2_t* rpt_info; = NULL;
 
   if (info == NULL)
   {
@@ -401,7 +416,7 @@ static void __not_in_flash_func(process_generic_report)(uint8_t dev_addr, uint8_
     if ( rpt_count == 1 && rpt_info_arr[0].report_id == 0)
     {
       // Simple report without report ID as 1st byte
-      rpt_info = &rpt_info_arr[0];
+      //rpt_info = &rpt_info_arr[0];
     }
     else
     {
@@ -413,7 +428,7 @@ static void __not_in_flash_func(process_generic_report)(uint8_t dev_addr, uint8_
       {
         if (rpt_id == rpt_info_arr[i].report_id )
         {
-          rpt_info = &rpt_info_arr[i];
+          //rpt_info = &rpt_info_arr[i];
           break;
         }
       }

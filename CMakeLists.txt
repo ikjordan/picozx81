@@ -138,6 +138,8 @@ if (OVER_VOLT)
 target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
 endif()
 
+target_compile_options(${PROJECT} PRIVATE -Wall)
+
 target_link_libraries(${PROJECT}
                       pico_multicore
                       pico_stdlib

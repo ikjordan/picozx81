@@ -73,20 +73,20 @@ int LastInstruction;
 #define HMIN    8
 #define HMAX    32
 
-const static int HSYNC_TOLERANCEMIN = HSCAN - HTOL;
-const static int HSYNC_TOLERANCEMAX = HSCAN + HTOL;
+static const int HSYNC_TOLERANCEMIN = HSCAN - HTOL;
+static const int HSYNC_TOLERANCEMAX = HSCAN + HTOL;
 
-const static int HSYNC_MINLEN = HMIN;
-const static int HSYNC_MAXLEN = HMAX;
-const static int VSYNC_MINLEN = VMIN;
+static const int HSYNC_MINLEN = HMIN;
+static const int HSYNC_MAXLEN = HMAX;
+static const int VSYNC_MINLEN = VMIN;
 
 static int VSYNC_TOLERANCEMIN = SCAN50 - VTOL;
 static int VSYNC_TOLERANCEMAX = SCAN50 + VTOL;
 
-const static int HSYNC_START = 16;
-const static int HSYNC_END = 32;
-const static int HLEN = HLENGTH;
-const static int MAX_JMP = 8;
+static const int HSYNC_START = 16;
+static const int HSYNC_END = 32;
+static const int HLEN = HLENGTH;
+static const int MAX_JMP = 8;
 
 static int RasterX = 0;
 static int RasterY = 0;
@@ -642,7 +642,7 @@ static inline void __not_in_flash_func(checkvsync)(int tolchk)
     RasterY = 0;
     dest = DISPLAY_OFFSET + (DISPLAY_STRIDE_BIT * adjustStartY) + adjustStartX;
 
-    if (sync_len>tsmax)
+    if (sync_len>(int)tsmax)
     {
       // If there has been no sync for an entire frame then blank the screen
       blankScreen();
