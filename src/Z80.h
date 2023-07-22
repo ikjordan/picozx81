@@ -71,13 +71,13 @@ extern void ExecZ80(void);
 #define store2(x,y) store2b(x,(y)>>8,(y)&0xFF)
 
 #ifdef __GNUC__
-static void inline storefunc(unsigned short ad,unsigned char b){
+inline static void storefunc(unsigned short ad,unsigned char b){
    store(ad,b);
 }
 #undef store
 #define store(x,y) storefunc(x,y)
 
-static void inline store2func(unsigned short ad,unsigned char b1,unsigned char b2){
+inline static void store2func(unsigned short ad,unsigned char b1,unsigned char b2){
    store2b(ad,b1,b2);
 }
 #undef store2b

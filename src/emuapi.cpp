@@ -14,8 +14,6 @@
 #include "ini.h"
 #include "iopins.h"
 
-static bool autorun = false;
-
 /********************************
  * Menu file loader UI
  ********************************/
@@ -28,6 +26,7 @@ static FIL file;
  ********************************/
 bool emu_FileOpen(const char *filepath, const char *mode)
 {
+  (void)mode;   // Ignore mode, always open as read only
   bool retval = false;
 
   printf("FileOpen %s\n", filepath);
@@ -108,7 +107,6 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
   return true;
 }
 
-static FIL outfile;
 /********************************
  * Initialization
  ********************************/
@@ -168,7 +166,6 @@ typedef struct
   configuration_t *conf;
 } conf_handler_t;
 
-static char *heading;
 static char selection[MAX_FILENAME_LEN] = "";
 static char dirPath[MAX_DIRECTORY_LEN] = "";
 

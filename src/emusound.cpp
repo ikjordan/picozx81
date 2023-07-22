@@ -300,7 +300,7 @@ static void beginAudio(void)
     // int_frac has 4 bit frac, so multiply int by 16 (4 bits)
     uint32_t system_clock_frequency = clock_get_hz(clk_sys);
     uint32_t divider = (((system_clock_frequency  / RANGE) << 4) / SAMPLE_FREQ);
-    printf("Sys clock %u Divide: %u\n", system_clock_frequency, divider);
+    printf("Sys clock %lu Divide: %lu\n", system_clock_frequency, divider);
     pwm_config_set_clkdiv_int_frac(&config, divider >> 4u, divider & 0xfu);
     pwm_config_set_wrap(&config, RANGE - 1);
 

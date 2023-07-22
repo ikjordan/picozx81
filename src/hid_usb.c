@@ -83,8 +83,8 @@ HidKey_t keys[] = {
 
 static uint8_t const ascii2keycode[128][2] =  { HID_ASCII_TO_KEYCODE };
 
-const static unsigned int KEYS_LEN = sizeof(keys) / sizeof(HidKey_t);
-const static unsigned int KEY_SIZE = sizeof(HidKey_t);
+static const unsigned int KEYS_LEN = sizeof(keys) / sizeof(HidKey_t);
+static const unsigned int KEY_SIZE = sizeof(HidKey_t);
 
 static bool keys_sorted  = false;
 
@@ -113,7 +113,7 @@ static HidKey_t* findKey(const unsigned char keycode)
 {
     if (keycode <= 1)
         return 0;
-    const HidKey_t k0 = {keycode, 0, 0};
+    const HidKey_t k0 = {keycode, 0, {{0,0}}};
     return (HidKey_t *) bsearch(&k0, keys, KEYS_LEN, KEY_SIZE, keys_v_comparator);
 }
 
@@ -153,7 +153,6 @@ void hidInitialise(byte* keyboard)
 bool hidNavigateMenu(uint8_t* key)
 {
     hid_keyboard_report_t report;
-    int r = 0;
 
     hid_app_get_latest_keyboard_report(&report);
 
@@ -213,7 +212,6 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
     static int doubletick = 0;
 
     hid_keyboard_report_t report;
-    int r = 0;
     *special = 0;
 
     hid_app_get_latest_keyboard_report(&report);

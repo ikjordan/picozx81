@@ -30,8 +30,6 @@ static uint16_t curr_x_off = 0;
 static uint16_t curr_y_off = 0;
 static uint16_t curr_stride = 0;
 
-static uint8_t* menu = 0;
-
 const static uint16_t MENU_X = DISPLAY_WIDTH;
 const static uint16_t MENU_Y = DISPLAY_HEIGHT;
 static uint8_t* menuscreen = 0;
@@ -56,7 +54,6 @@ static bool buildMenu(bool clone)
     {
         if (wasBlank)
         {
-            int fill = wasBlack ? 0xff : 0;
             memset(menuscreen, wasBlack, DISPLAY_STRIDE_BYTE * MENU_Y);
         }
         else
@@ -263,7 +260,7 @@ bool loadMenu(void)
                     else
                     {
                         if ((((row + 1 + offset) < entries) && (key == HID_KEY_ARROW_DOWN)) ||
-                            ((offset + (MENU_Y>>3)) < entries) && (key == HID_KEY_ARROW_RIGHT))
+                            (((offset + (MENU_Y>>3)) < entries) && (key == HID_KEY_ARROW_RIGHT)))
                         {
                             // Move to next page
                             offset += MENU_Y>>3;
@@ -400,7 +397,7 @@ static void writeString(const char* s, uint col, uint row)
 {
     if ((col < (MENU_X>>3)) && row < ((MENU_Y>>3)))
     {
-        int len = strlen(s);
+        unsigned int len = strlen(s);
 
         len = len > ((MENU_X>>3)-col-1) ? ((MENU_X>>3)-col-1) : len;
         for (uint i=0; i<len; ++i)
@@ -562,7 +559,7 @@ static bool getFile(char* inout, uint index, bool* direct)
     DIR dir;
     FILINFO fno;
     bool ret = false;
-    int count = 0;
+    uint count = 0;
 
     if (inout[0])
     {

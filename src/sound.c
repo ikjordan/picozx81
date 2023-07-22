@@ -122,8 +122,8 @@ static void sound_ay_setvol(void)
 
 void sound_ay_init()
 {
-  int f,clock;
-  double v;
+  int f;
+  int clock = 0;
 
   if (sound_ay != AY_TYPE_NONE)
   {
@@ -144,7 +144,7 @@ void sound_ay_init()
         break;
       default:
         sound_ay=AY_TYPE_NONE;
-        return;
+        break;
       }
   }
   ay_tick_incr=(int)(65536.*clock/sound_freq);
@@ -378,7 +378,7 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
 
 void __not_in_flash_func(sound_frame)(uint16_t* buff)
 {
-  sound_ay_overlay(buff);
+  sound_ay_overlay((int16_t*)buff);
   ay_change_count = 0;
 }
 
@@ -392,7 +392,7 @@ if(!sound_enabled || sound_ay == AY_TYPE_NONE) return;
 /* accept r15, in case of the two-I/O-port 8910 */
 if(reg>=16) return;
 
-if(tstates>=0 && ay_change_count<AY_CHANGE_MAX)
+if(ay_change_count<AY_CHANGE_MAX)
   {
   ay_change[ay_change_count].tstates=tstates;
   ay_change[ay_change_count].reg=reg;

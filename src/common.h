@@ -63,7 +63,7 @@ extern "C" {
 #endif
 
 extern unsigned int in(int h,int l);
-extern unsigned int out(int h,int l,int a);
+extern unsigned int out(int l,int a);
 extern void save_p(int a);
 extern void load_p(int a);
 extern void bitbufBlit(unsigned char * buf);

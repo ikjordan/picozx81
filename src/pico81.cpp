@@ -48,7 +48,6 @@ int main(void)
 
 static void mainLoop(void)
 {
-    bool pause = false;
     bool kdisp = false;
     while (1)
     {
