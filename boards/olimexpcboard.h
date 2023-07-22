@@ -54,13 +54,8 @@
 #define PICO_SD_DAT_PIN_INCREMENT 1
 #endif
 
-// The board does have a stereo jack, but the lh channel 
-// cannot be used with dvi, as the slice it is on is used for
-// dvi timing.
-// Therefore define lhc to equal rhc
 #define OLIMEXPCBOARD_PWM_R_PIN 27
-// #define OLIMEXPCBOARD_PWM_L_PIN 28
-#define OLIMEXPCBOARD_PWM_L_PIN OLIMEXPCBOARD_PWM_R_PIN
+#define OLIMEXPCBOARD_PWM_L_PIN 28
 
 #ifndef PICO_AUDIO_PWM_L_PIN
 #define PICO_AUDIO_PWM_L_PIN OLIMEXPCBOARD_PWM_L_PIN
