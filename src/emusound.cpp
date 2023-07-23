@@ -212,7 +212,7 @@ static void beginAudio(void)
       }
       else
       {
-        i2s_dreq = DREQ_PIO0_TX1 + i2s_pio_sm;
+        i2s_dreq = DREQ_PIO1_TX0 + i2s_pio_sm;
       }
     }
     else
