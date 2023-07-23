@@ -399,6 +399,10 @@ if(ay_change_count<AY_CHANGE_MAX)
   ay_change[ay_change_count].val=val;
   ay_change_count++;
   }
+  else
+  {
+    printf("ay_change_count exceeded AY_CHANGE_MAX\n");
+  }
 }
 
 
