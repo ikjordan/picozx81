@@ -160,6 +160,9 @@ void init_spi(void)
     gpio_set_dir(SDCARD_PIN_SPI0_MISO, GPIO_OUT);
     gpio_set_dir(SDCARD_PIN_SPI0_MOSI, GPIO_OUT);
 
+	// Find a free state machine and claim it, rather than take default
+	pio_spi.sm = pio_claim_unused_sm(pio_spi.pio, true);
+
 	float clkdiv = 3.0f;
 	int cpol = 0;
 	int cpha = 0;
