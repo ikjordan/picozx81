@@ -6,20 +6,19 @@ typedef unsigned char  byte;
 // Screen size
 #define DISPLAY_WIDTH       320
 #define DISPLAY_HEIGHT      240
-#define DISPLAY_BLANK       32   // Need this much padding to maintain 32 bit line alignment for DVI
+#define DISPLAY_BLANK       32      // Need this many padding bits to maintain 32 bit line alignment for DVI
 #define DISPLAY_BLANK_BYTE  (DISPLAY_BLANK >> 3)
 #define DISPLAY_STRIDE_BIT  (DISPLAY_WIDTH + DISPLAY_BLANK)
 #define DISPLAY_STRIDE_BYTE (DISPLAY_STRIDE_BIT >> 3)
 
-#define DISPLAY_START_X     40
-#define DISPLAY_START_Y     24
-#define DISPLAY_END_X       (DISPLAY_WIDTH + DISPLAY_START_X)
-#define DISPLAY_END_Y       (DISPLAY_HEIGHT + DISPLAY_START_Y)
-#define DISPLAY_PIXEL_OFF   6
+#define DISPLAY_START_PIXEL 46      // X Offset to first pixel with no centring
+#define DISPLAY_START_Y     24      // Y Offset to first pixel with no centring
+#define DISPLAY_ADJUST_X    4       // The number of pixels to adjust in X dimension to centre the display
 
-#define DISPLAY_START_PIXEL (DISPLAY_START_X + DISPLAY_PIXEL_OFF)
-#define DISPLAY_END_PIXEL   (DISPLAY_START_X + DISPLAY_PIXEL_OFF + DISPLAY_WIDTH)
-#define DISPLAY_OFFSET      (-(DISPLAY_STRIDE_BIT * DISPLAY_START_Y) - (DISPLAY_START_X + DISPLAY_PIXEL_OFF) + DISPLAY_BLANK)
+#define DISPLAY_END_PIXEL   (DISPLAY_START_PIXEL + DISPLAY_WIDTH)
+#define DISPLAY_END_Y       (DISPLAY_HEIGHT + DISPLAY_START_Y)
+
+#define DISPLAY_OFFSET      (-(DISPLAY_STRIDE_BIT * DISPLAY_START_Y) - (DISPLAY_START_PIXEL) + DISPLAY_BLANK)
 
 /* AY board types */
 #define AY_TYPE_NONE		0

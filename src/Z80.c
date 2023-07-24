@@ -152,15 +152,15 @@ static void __not_in_flash_func(displayAndNewScreen)(void)
 
   // Clear the new screen - we have 3 buffers, so will not
   // have race with switching the screens to be displayed
-  memset(scrnbmp_new, 0x00, DISPLAY_STRIDE_BYTE * DISPLAY_HEIGHT);
+  memset(scrnbmp_new, 0x00, DISPLAY_STRIDE_BYTE * DISPLAY_HEIGHT + DISPLAY_BLANK_BYTE);
 
 }
 
 static void __not_in_flash_func(vsync_raise)(void)
 {
-  /* save current pos */
-  vsx=RasterX;
-  vsy=RasterY;
+  /* save current pos - in screen coords*/
+  vsx=RasterX - (DISPLAY_START_PIXEL - adjustStartX);
+  vsy=RasterY - (DISPLAY_START_Y - adjustStartY);
 }
 
 /* for vsync on -> off */
@@ -168,66 +168,55 @@ static void __not_in_flash_func(vsync_lower)(void)
 {
   //  if (!vsync_visuals)
   //    return;
-  int ny=RasterY;
+  int ny = RasterY - (DISPLAY_START_Y - adjustStartY);
+  int nx = RasterX - (DISPLAY_START_PIXEL - adjustStartX);
 
-  // Prevent displaying normal vsync for NTSC - Note will still
-  // display in normal state if Centre is not enabled
-  if (useNTSC && (ny + adjustStartY) > DISPLAY_END_Y)
+  // Can ignore if nx: ny pair larger than vsx: vsy pair and both all off screen
+  if (((ny > vsy) || ((ny == vsy) && (nx >= vsx))) &&
+      (((ny < 0) && (vsy < 0)) || ((ny >= DISPLAY_HEIGHT) && (vsy >= DISPLAY_HEIGHT))))
     return;
 
-  // x can be out by 1 pixel when centred - but we can live with that
-  if (((ny < DISPLAY_END_Y) || (vsy < DISPLAY_END_Y)) &&
-      ((ny >= DISPLAY_START_Y) || (vsy >= DISPLAY_START_Y)))
+  // Something to display, so fit in display size
+  if (vsy < 0)
   {
-    int nx=RasterX;
-
-    if (vsy < DISPLAY_START_Y)
-    {
-      vsy = DISPLAY_START_Y;
-      vsx = DISPLAY_START_PIXEL;
-    }
-    else if (vsy >= DISPLAY_END_Y)
-    {
-      vsy = DISPLAY_END_Y - 1;
-      vsx = DISPLAY_END_X - 1;
-    }
-
-    if (ny < DISPLAY_START_Y)
-    {
-      ny = DISPLAY_START_Y;
-      nx = DISPLAY_START_PIXEL;
-    }
-    else if (ny >= DISPLAY_END_Y)
-    {
-      ny = DISPLAY_END_Y - 1;
-      nx = DISPLAY_END_X - 1;
-    }
-
-    vsy -= DISPLAY_START_Y;
-    ny -= DISPLAY_START_Y;
-
-    if (vsx < DISPLAY_START_PIXEL)
-      vsx = DISPLAY_START_PIXEL;
-    else if (vsx >= DISPLAY_END_X)
-      vsx = DISPLAY_END_X - 1;
-
-    if (nx < DISPLAY_START_PIXEL)
-      nx = DISPLAY_START_PIXEL;
-    else if (nx >= DISPLAY_END_PIXEL)
-      nx = DISPLAY_END_PIXEL - 1;
-
-    vsx -= DISPLAY_START_PIXEL;
-    nx -= DISPLAY_START_PIXEL;
-
-    if(ny<vsy)
-    {
-      /* must be wrapping around a frame edge; do bottom half */
-      memset(scrnbmp_new+vsy*DISPLAY_STRIDE_BYTE+(vsx>>3), 0xff, DISPLAY_STRIDE_BYTE*(DISPLAY_HEIGHT-vsy)-(vsx>>3));
-      vsy=0;
-      vsx=0;
-    }
-    memset(scrnbmp_new+vsy*DISPLAY_STRIDE_BYTE+(vsx>>3),0xff,DISPLAY_STRIDE_BYTE*(ny-vsy)+((nx-vsx)>>3));
+    vsy = 0;
+    vsx = 0;
   }
+  else if (vsy >= DISPLAY_HEIGHT)
+  {
+    vsy = DISPLAY_HEIGHT - 1;
+    vsx = DISPLAY_WIDTH - 1;
+  }
+
+  if (ny < 0)
+  {
+    ny = 0;
+    nx = 0;
+  }
+  else if (ny >= DISPLAY_HEIGHT)
+  {
+    ny = DISPLAY_HEIGHT - 1;
+    nx = DISPLAY_WIDTH - 1;
+  }
+
+  if (vsx < 0)
+    vsx = 0;
+  else if (vsx >= DISPLAY_WIDTH)
+    vsx = DISPLAY_WIDTH - 1;
+
+  if (nx < 0)
+    nx = 0;
+  else if (nx >= DISPLAY_WIDTH)
+    nx = DISPLAY_WIDTH - 1;
+
+  if((ny < vsy) || ((ny == vsy) && (nx < vsx)))
+  {
+    /* must be wrapping around a frame edge; do bottom half */
+    memset(scrnbmp_new+DISPLAY_BLANK_BYTE+vsy*DISPLAY_STRIDE_BYTE+(vsx>>3), 0xff, DISPLAY_STRIDE_BYTE*(DISPLAY_HEIGHT-vsy)-(vsx>>3));
+    vsy=0;
+    vsx=0;
+  }
+  memset(scrnbmp_new+DISPLAY_BLANK_BYTE+vsy*DISPLAY_STRIDE_BYTE+(vsx>>3),0xff,DISPLAY_STRIDE_BYTE*(ny-vsy)+((nx-vsx)>>3));
 }
 
 unsigned char a, f, b, c, d, e, h, l;
@@ -366,15 +355,16 @@ void __not_in_flash_func(ExecZ80)(void)
       break;
     }
 
-    /* Plot data in shift register */
-    /* Start prior to DISPLAY_START_X + DISPLAY_PIXEL_OFF*/
+    // Plot data in shift register
+    // Note subtract 6 as this leaves the smallest positive number
+    // of bits to carry to next byte (2)
     if (v &&
-        (RasterX >= (DISPLAY_START_X + DISPLAY_PIXEL_OFF - 8 + adjustStartX)) &&
-        (RasterX < (DISPLAY_END_X + DISPLAY_PIXEL_OFF + adjustStartX)) &&
-        ((RasterY + adjustStartY ) >= DISPLAY_START_Y) &&
-        ((RasterY + adjustStartY ) < DISPLAY_END_Y))
+        (RasterX >= (DISPLAY_START_PIXEL - adjustStartX - 6)) &&
+        (RasterX < (DISPLAY_END_PIXEL - adjustStartX)) &&
+        (RasterY >= (DISPLAY_START_Y - adjustStartY)) &&
+        (RasterY < (DISPLAY_END_Y - adjustStartY)))
     {
-      int k = dest + RasterX + adjustStartX ; // DISPLAY_PIXEL_OFF to align lhs to byte boundary
+      int k = dest + RasterX;
       {
         int kh = k >> 3;
         int kl = k & 7;

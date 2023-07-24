@@ -221,7 +221,7 @@ bool emu_NTSCRequested(void)
 int emu_CentreX(void)
 {
   if (specific.centre)
-    return (8-DISPLAY_PIXEL_OFF);
+    return DISPLAY_ADJUST_X;
   else
     return 0;
 }

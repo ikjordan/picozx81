@@ -103,7 +103,7 @@ The following can be configured:
 | ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXpand+ syntax|Off| See [Loading and Saving Memory Blocks](#loading-and-saving-memory-blocks)|
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 100 | See notes below|
-| Centre | When enabled the usual 32 by 24 character display is centred on screen| On | Set to OFF for programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
+| Centre | When enabled the usual 32 by 24 character display is centred on screen| On | Set to OFF for some programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
 | QSUDG | Enables emulation of the QS user defined graphics board| Off |Memory automatically limited to 16 when selected   |
 | Sound | Selects sound card (if any) | Off | Quicksilva and ZonX supported |
 | ACB | Enables ACB stereo if sound card enabled | Off |  |
@@ -326,8 +326,9 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
     + For the `QUICK` display mode to function correctly the `NTSC` option must be enabled. Works correctly in `FAST` and `SLOW` mode regardless of the `NTSC` option
 
 ### Demos
-These really show off the capabilities of the ZX81
+These really show off the capabilities of the ZX81. Both should be viewed with `centre` set to `On`. Both generate images more than 320 pixels wide, so some information is not displayed
 + [25thanni](https://bodo4all.fortunecity.ws/zx/25thanni.html)
+  + The scrolling "ticker" is more than 320 pixels wide, so all of it is not visible
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
   + The initial fast horizontal scrolling highlights the non-synchronised screen drawing of the emulator, leading to visible tearing
 
