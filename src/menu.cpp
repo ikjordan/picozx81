@@ -120,7 +120,7 @@ void pauseMenu(void)
 bool statusMenu(void)
 {
     uint8_t key = 0;
-    uint lcount = 4;
+    uint lcount = 2;
 
     char c[20];
     int lhs = 11;
@@ -176,7 +176,10 @@ bool statusMenu(void)
         writeString(emu_ACBRequested() ? "ON" : "OFF", rhs, lcount++);
     }
 
-    writeString("QS UDG:", lhs, ++lcount);
+    writeString("CHAR$128:", lhs, ++lcount);
+    writeString(emu_CHR128Requested() ? "Yes" : "No", rhs, lcount++);
+
+    writeString("QS UDG:", lhs, lcount);
     writeString(emu_QSUDGRequested() ? "Yes" : "No", rhs, lcount++);
     if (emu_QSUDGRequested())
     {
