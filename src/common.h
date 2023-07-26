@@ -53,6 +53,7 @@ extern bool useWRX;
 extern bool useQSUDG;
 extern bool UDGEnabled;
 extern bool LowRAM;
+extern bool chr128;
 extern bool useNTSC;
 extern int adjustStartX;
 extern int adjustStartY;

@@ -611,6 +611,7 @@ void z8x_Init(void)
   ramsize = emu_MemoryRequested();
   sound_ay = emu_soundRequested();
   m1not = emu_M1NOTRequested();
+  chr128 = emu_CHR128Requested();
   LowRAM = emu_LowRAMRequested();
   useQSUDG = emu_QSUDGRequested();
   useWRX = emu_WRXRequested();

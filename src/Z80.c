@@ -115,6 +115,7 @@ bool useWRX = false;
 bool UDGEnabled = false;
 bool useQSUDG = false;
 bool LowRAM = false;
+bool chr128 = false;
 bool useNTSC = false;
 int  adjustStartX=0;
 int  adjustStartY=0;
@@ -153,7 +154,6 @@ static void __not_in_flash_func(displayAndNewScreen)(void)
   // Clear the new screen - we have 3 buffers, so will not
   // have race with switching the screens to be displayed
   memset(scrnbmp_new, 0x00, DISPLAY_STRIDE_BYTE * DISPLAY_HEIGHT + DISPLAY_BLANK_BYTE);
-
 }
 
 static void __not_in_flash_func(vsync_raise)(void)
@@ -166,8 +166,6 @@ static void __not_in_flash_func(vsync_raise)(void)
 /* for vsync on -> off */
 static void __not_in_flash_func(vsync_lower)(void)
 {
-  //  if (!vsync_visuals)
-  //    return;
   int ny = RasterY - (DISPLAY_START_Y - adjustStartY);
   int nx = RasterX - (DISPLAY_START_PIXEL - adjustStartX);
 
@@ -274,7 +272,12 @@ void __not_in_flash_func(ExecZ80)(void)
 
         if ((i<0x20) || (i<0x40 && LowRAM && (!useWRX)))
         {
-          int addr = ((i&0xfe)<<8)|((op&63)<<3)|rowcounter;
+          int addr;
+          if (chr128 && i>0x20 && i&1)
+            addr = ((i&0xfe)<<8)|((((op&128)>>1)|(op&63))<<3)|rowcounter;
+          else
+            addr = ((i&0xfe)<<8)|((op&63)<<3)|rowcounter;
+
           if (UDGEnabled && addr>=0x1E00 && addr<0x2000)
           {
             v = font[addr-((op&128)?0x1C00:0x1E00)];
@@ -534,9 +537,9 @@ void ResetZ80(void)
       mem[sp + 1] = 0x06;
       mem[sp + 2] = 0x00;
       mem[sp + 3] = 0x3e;
-      /* Now override if RAM configuration changes things
-        * (there's a possibility these changes are unimportant)  - now disabled */
-      if (ramsize >= 4 && 0) {
+      /* Now override if RAM configuration changes things,
+         without these changes Multi-scroll sometimes fail to start */
+      if (ramsize >= 4) {
         d = 0x43; h = 0x43;
         a1 = 0xec; b1 = 0x81; c1 = 0x02;
         radjust = 0xa9;

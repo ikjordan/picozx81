@@ -8,7 +8,7 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + The small form factor makes the board easy to mount in period or reproduction cases. The low cost, relatively low performance and software generated display of the Pico is a 21st century analogue for the ZX80 and ZX81
 + Emulates pseudo and Hi-res graphics
 + Emulates ZonX and Quicksilva sound
-+ Emulates QS User Defined Graphics
++ Emulates user defined graphics, including CHR$128 and QS User Defined Graphics
 + Emulation runs at accurate speed of a 3.25MHz ZX81
 + Emulates 50Hz and 60Hz display
 + Support for up to 320 by 240 pixel display i.e. 40 character width and 30 character height
@@ -104,15 +104,16 @@ The following can be configured:
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 100 | See notes below|
 | Centre | When enabled the usual 32 by 24 character display is centred on screen| On | Set to OFF for some programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
+| CHR128 | Enables emulation of a 128 character user defined graphics board (CHR$128) in Low memory. | Off|When enabled LowRAM is forced to On, WRX and QSUDG are forced to off|
 | QSUDG | Enables emulation of the QS user defined graphics board| Off |Memory automatically limited to 16 when selected   |
 | Sound | Selects sound card (if any) | Off | Quicksilva and ZonX supported |
 | ACB | Enables ACB stereo if sound card enabled | Off |  |
 
 **Notes:**
-1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if UDG is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400  to 0x87ff)
-2. To emulate other UDG graphics cards that reside between 0x2000 and 0x3fff set LowRAM to On and WRX to Off. This setting is needed to run e.g. [Galaxians with user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388)
+1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if UDG is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400 to 0x87ff)
+2. To emulate other standard UDG graphics cards that reside between 0x2000 and 0x3fff set `LowRAM` to On and `WRX` to Off. This setting is needed to run e.g. [Galaxians with user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388). If emulation of CHR128 UDG graphics is required set `CHR128` to On. This setting is needed to run e.g. [zedgragon](https://github.com/charlierobson/zedragon)
 3. If `NTSC` is set to On and `Centre` is set to Off then a black vsync bar will be seen at the bottom of the display for programs that generate a typical 192 line display
-4. A higher tolerance value results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). The default value of 100 emulates a TV that very quickly regains vertical lock. Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
+4. A higher tolerance value set for `VTOL` results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). The default value of 100 emulates a TV that very quickly regains vertical lock. Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
 5. The "Big Bang" ROM can double the speed of BASIC programs
 ### Joystick
 In addition a USB joystick can be configured to generated key presses
@@ -161,6 +162,7 @@ The emulator is always reset if any of the following options are changed:
 + M1NOT
 + WRX
 + QSUDG
++ CHR128
 
 **Note:** Changing the virtual sound card, or the video display settings, does *not* trigger a reset
 ## File Storage
@@ -304,7 +306,11 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [QS Asteroids](http://www.zx81stuff.org.uk/zx81/tape/QSAsteroids) + [QS Scramble](http://www.zx81stuff.org.uk/zx81/tape/QSScramble)
 
 ### Other UDG graphics
-+ [Galaxians with sound and optionally user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388)
++ [HiRes Galaxian](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip)
++ [Airport HR](http://zx81.eu5.org/files/soft/toddy/AEROP-HR.zip)
+#### CHR128
+[zedragon](https://github.com/charlierobson/zedragon/blob/master/zedragon.p)
+[Panic HR](http://zx81.eu5.org/files/soft/toddy/panicohr.zip)
 
 ### Sound
 + [Pink Panther Demo](http://zx81.eu5.org/files/soft/toddy/pinkpthr.zip)
@@ -325,8 +331,14 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [Spirograph](http://www.pictureviewerpro.com/hosting/zx81/download/zx81/fred/spiro.zip)
     + For the `QUICK` display mode to function correctly the `NTSC` option must be enabled. Works correctly in `FAST` and `SLOW` mode regardless of the `NTSC` option
 
-### Demos
-These really show off the capabilities of the ZX81. Both should be viewed with `centre` set to `On`. Both generate images more than 320 pixels wide, so some information is not displayed
+### 16kB Demos
+These really show off the capabilities of the ZX81 and are a good test that the emulator is accurate
+#### Without WRX RAM
++ [Multi Scroller Demo](http://yerzmyey.i-demo.pl/multi_scroller_demo.zip)
+  + Plays sound, and also demos various text scrolling techniques on a basic 16kB ZX81. This demo requires very specific timing, so shows the accuracy of the emulator
++ [There are no limits](http://www.ag1976.com/prods.html?prodid=55)
+#### With WRX RAM
+Both generate a display more than 320 pixels wide, so some information is not displayed. Best viewed with `centre` set to `On`
 + [25thanni](https://bodo4all.fortunecity.ws/zx/25thanni.html)
   + The scrolling "ticker" is more than 320 pixels wide, so all of it is not visible
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)

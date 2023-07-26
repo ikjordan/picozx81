@@ -152,6 +152,7 @@ typedef struct
   bool centre;
   bool WRX;
   bool QSUDG;
+  bool CHR128;
   bool M1NOT;
   bool LowRAM;
   bool acb;
@@ -210,7 +211,7 @@ ComputerType emu_ComputerRequested(void)
 int emu_MemoryRequested(void)
 {
   // Do not allow more than 16k with QSUDG graphics
-  return ((specific.QSUDG) && (specific.memory>16)) ? 16 : specific.memory;
+  return ((emu_QSUDGRequested()) && (specific.memory>16)) ? 16 : specific.memory;
 }
 
 bool emu_NTSCRequested(void)
@@ -242,24 +243,28 @@ uint16_t emu_VTol(void)
 bool emu_WRXRequested(void)
 {
   // WRX always enabled if no memory expansion
-  return (specific.WRX || (specific.memory <= 2));
+  return ((specific.WRX || (specific.memory <= 2)) && (!specific.CHR128));
 }
 
 bool emu_M1NOTRequested(void)
 {
-  return (specific.M1NOT && (specific.memory>=32) && (!specific.QSUDG));
+  return (specific.M1NOT && (specific.memory>=32) && (!emu_QSUDGRequested()));
 }
 
 bool emu_LowRAMRequested(void)
 {
-  return specific.LowRAM;
+  return (specific.LowRAM || specific.CHR128);
 }
 
 bool emu_QSUDGRequested(void)
 {
-  return specific.QSUDG;
+  return (specific.QSUDG && (!specific.CHR128));
 }
 
+bool emu_CHR128Requested(void)
+{
+  return specific.CHR128;
+}
 bool emu_DoubleShiftRequested(void)
 {
   return specific.doubleshift;
@@ -463,6 +468,12 @@ static int handler(void *user, const char *section, const char *name,
       // if entry exists and is not "OFF" or 0
       c->conf->QSUDG = isEnabled(value);
     }
+    else if (!strcasecmp(name, "CHR128"))
+    {
+      // CHR128 enabled in LowRAM, with QSUDG and WRX disabled
+      // if entry exists and is not "OFF" or 0
+      c->conf->CHR128 = isEnabled(value);
+    }
     else if (!strcasecmp(name, "NTSC"))
     {
       // Defaults to off
@@ -588,6 +599,7 @@ void emu_ReadDefaultValues(void)
     general.computer = ZX81;
     general.M1NOT = false;
     general.WRX = false;
+    general.CHR128 = false;
     general.QSUDG = false;
     general.LowRAM = false;
     general.memory = 16;
@@ -655,6 +667,7 @@ void emu_ReadSpecificValues(const char *filename)
     resetNeeded =  ((specific.M1NOT != used.M1NOT) ||
                     (specific.memory != used.memory) ||
                     (specific.computer != used.computer) ||
+                    (specific.CHR128 != used.CHR128) ||
                     (specific.WRX != used.WRX) ||
                     (specific.QSUDG != used.QSUDG) ||
                     (specific.LowRAM != used.LowRAM));
