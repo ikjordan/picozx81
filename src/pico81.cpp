@@ -5,12 +5,12 @@
 #include "iopins.h"
 #include "emuapi.h"
 #include "emusound.h"
+#include "emuvideo.h"
 #include "zx8x.h"
 #include "display.h"
 #include "menu.h"
 
 static void mainLoop(void);
-#define CLOCK_RATE 250000   // Close enough to DVI timing, and better for sound
 
 int main(void)
 {
@@ -18,17 +18,19 @@ int main(void)
     vreg_set_voltage(VREG_VOLTAGE_1_20)
 #endif
 
-    set_sys_clock_khz(CLOCK_RATE, true);
-
-    stdio_init_all();
-
-    // Initialise display
-    displayInitialise();
-    displayStart();
-    displayBlank(false);
-
     // Initialise sd card and read config
     emu_init();
+
+    // Initialise display to get clock, using config
+    uint clock = emu_VideoInit(emu_576Requested());
+
+    // Set the clock, driven by the video rate
+    set_sys_clock_khz(clock, true);
+    stdio_init_all();
+
+    // start the display generation
+    displayBlank(false);
+    displayStart();
 
     // Set the autoload name (if any)
     z8x_Start(emu_GetLoadName());

@@ -5,13 +5,15 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + Supports sound over onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
++ Can be fully controlled from a ZX81 40 key keyboard
 + The small form factor makes the board easy to mount in period or reproduction cases. The low cost, relatively low performance and software generated display of the Pico is a 21st century analogue for the ZX80 and ZX81
 + Emulates pseudo and Hi-res graphics
 + Emulates ZonX and Quicksilva sound
 + Emulates user defined graphics, including CHR$128 and QS User Defined Graphics
 + Emulation runs at accurate speed of a 3.25MHz ZX81
-+ Emulates 50Hz and 60Hz display
-+ Support for up to 320 by 240 pixel display i.e. 40 character width and 30 character height
++ Can display at 640x480 or 720x576 (for an authentic display on a UK TV)
++ Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
++ Supports larger ZX81 generated displays of up to 320 by 240 pixels (40 character width and 30 character height) and beyond
 + Load `.p`, `.81`, `.o` and `.80` files from micro SD Card. Save `.p` and `.o` files
 + Supports loading and saving of memory blocks using [ZXpand like syntax](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual#load)
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
@@ -33,7 +35,7 @@ One intention of this project was to show what can be quickly achieved by levera
 + The intention of the emulator is to provide an authentic '80s feel. There have been amazing ZX81 developments in recent years, such as ([Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm), [ZXpand+](https://www.rwapsoftware.co.uk/zx812.html) etc). These are not supported. Instead it emulates the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. However, basic support to load and save memory blocks, using a syntax similar to ZXpand is implemented
 + The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
 + Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
-+ To achieve a full speed emulation the Pico is overclocked to 250MHz. There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_CLOCK` to the cmake command
++ To achieve a full speed emulation the Pico is overclocked to 250MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_CLOCK` to the cmake command
 + The Pico only has 1 USB port. The Pimoroni and Olimex boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
 + To connect more than one peripheral (e.g. a keyboard and joystick) at the same time, a powered USB OTG hub is required. These 3 hubs have been successfully tested. [1](https://www.amazon.co.uk/dp/B083WML1XB), [2](https://www.amazon.co.uk/dp/B078M3Z84Z), [3](https://www.amazon.co.uk/dp/B07Z4RHJ2D). Plug the hub directly into the USB port on the Pico, not the USB power connector on the Pimoroni board  
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
@@ -57,7 +59,7 @@ One intention of this project was to show what can be quickly achieved by levera
 
 3. Clone this repository (i.e. picozx81), including submodules
 
-    `git clone --recursive https://github.com/ikjordan/picozx81.git`
+    `git clone --recursive https://github.com/ikjordan/picozx81.git`  
 4. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board will be created.
 This will be named `picozx81_vga.uf2`
 
@@ -100,17 +102,17 @@ The following can be configured:
 | WRX | Selects if RAM supports Hi-res graphics | Off | Automatically set to on if Memory is 2kB or less |
 | LowRAM | Selects if RAM populated between 0x2000 and 0x3fff| Off | Typically used in conjunction with WRX to create a hires display file in low memory, can also be used for UDG graphics emulation if WRX off|
 | M1NOT | Allows machine code to be executed between 0x8000 and 0xbfff| Off |Memory must be set to 32 or 48   |
-| ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXpand+ syntax|Off| See [Loading and Saving Memory Blocks](#loading-and-saving-memory-blocks)|
+| ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXpand+ syntax|On| See [Loading and Saving Memory Blocks](#loading-and-saving-memory-blocks)|
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 100 | See notes below|
-| Centre | When enabled the usual 32 by 24 character display is centred on screen| On | Set to OFF for some programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
+| Centre | When enabled the usual 32 by 24 character display is centred on screen| On | When in 640 by 480 mode, set to Off for some programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
 | CHR128 | Enables emulation of a 128 character user defined graphics board (CHR$128) in Low memory. | Off|When enabled LowRAM is forced to On, WRX and QSUDG are forced to off|
 | QSUDG | Enables emulation of the QS user defined graphics board| Off |Memory automatically limited to 16 when selected   |
 | Sound | Selects sound card (if any) | Off | Quicksilva and ZonX supported |
 | ACB | Enables ACB stereo if sound card enabled | Off |  |
 
 **Notes:**
-1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if UDG is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400 to 0x87ff)
+1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if UDG is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400  to 0x87ff)
 2. To emulate other standard UDG graphics cards that reside between 0x2000 and 0x3fff set `LowRAM` to On and `WRX` to Off. This setting is needed to run e.g. [Galaxians with user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388). If emulation of CHR128 UDG graphics is required set `CHR128` to On. This setting is needed to run e.g. [zedgragon](https://github.com/charlierobson/zedragon)
 3. If `NTSC` is set to On and `Centre` is set to Off then a black vsync bar will be seen at the bottom of the display for programs that generate a typical 192 line display
 4. A higher tolerance value set for `VTOL` results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). The default value of 100 emulates a TV that very quickly regains vertical lock. Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
@@ -144,11 +146,14 @@ The order for configuring an item for a given program (e.g. `prog.p`) is as foll
 Two extra options can be set via the `[default]` section of the `config.ini` file in the root directory
 | Item | Description | Default Value |
 | --- | --- | --- |
+| FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz, otherwise a 640x480 display @ 60Hz is produced | Off |
+| FrameSync | Attempts to synchronise the display of full video frames generated by the ZX81 to the emulator frame rate | Off |
 | Dir | Sets the initial default directory to load and save programs | / |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
-| DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| Off |
+| DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load-menu) is selected. When off only files with extensions `.p`, `.o`, `.81` and `.80` are initially displayed|Off|
 
+**Note:** By default the European ZX81 generates frames slightly faster than 50Hz. Therefore `FiveSevenSix` enables a display mode slightly faster than the 50Hz TV standard, so that frame sync between the frame generates by the emulator and frames sent to the monitor can be achieved
 
 ### Examples
 Examples of the `config.ini` files used to test the programs listed in this [section](#applications-tested) can be found [here](examples)
@@ -177,7 +182,7 @@ The original ZX80/ZX81 40 key keyboard does not have function keys. A "double sh
 4. Shift is released, without another key being pressed
 5. To generate a function key, within one second, a numeric key in the range `1` to `5` is pressed without shift being pressed. If `0` is pressed `Escape` is generated
 
-To enable this mechanism set `DoubleShift` to `On` in the configuration file
+This mechanism is enabled by default. To disable it set `DoubleShift` to `Off` in the configuration file
 ### F1 - Reset
 Hard resets the emulator. It is equivalent to removing and reconnecting the power
 ### F2 - Load Menu
@@ -200,7 +205,7 @@ The ZX80 and ZX81 use single key press BASIC entry. Pressing `F5` displays a 4 c
 
 Press `Escape` to remove the keyboard display. The keyboard is also removed if another menu is selected
 
-If a ZX8x 40 key keyboard is being used, then set `DoubleShift` to `On` and remove the menu by pressing and releasing shift twice and then pressing `0` within one second of releasing shift
+If a ZX8x 40 key keyboard is being used and `DoubleShift` is enabled, the menu can be removed by pressing and releasing shift twice and then pressing `0` within one second of releasing shift
 
 ## Loading and saving options
 The emulator supports the loading  `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
@@ -230,7 +235,7 @@ The emulator supports extensions to `LOAD` and `SAVE` to support the loading and
 
 **Note:** There are differences in failure modes and error reporting compared to the ZXpand. Also `.p` is *not* appended when loading and saving memory blocks
 
-Set the `ExtendFile` config option to `On` to enable the extensions
+The extensions are enabled by default. Set the `ExtendFile` config option to `Off` to disable the extensions
 #### Load
 `LOAD "filename;nnnnn"`  
 where `nnnnn` represents a decimal number specifying the target address
@@ -290,7 +295,7 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [SplinterGU SInvaders](https://github.com/SplinterGU/SInvaders)
   + A very faithful clone of the arcade Space Invaders
 + [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html)
-  + Hi-res 320x240 and 40 by 30 characters. Set `Centre` to off to see the full image.
+  + Hi-res 320x240 and 40 by 30 characters. Set `Centre` to off to see the full image in 640 by 480 mode
   + The display routine is the most CPU intensive part of the emulator, so this is the best test that the emulator can run at 100% of the speed of "real" hardware
 + [HRDEMO3](https://www.zx81.nl/dload/utils/hrdemo3.p)
 + [HiRes Chess](https://spectrumcomputing.co.uk/entry/32021/ZX81/Hi-res_Chess)
@@ -309,8 +314,8 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [HiRes Galaxian](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip)
 + [Airport HR](http://zx81.eu5.org/files/soft/toddy/AEROP-HR.zip)
 #### CHR128
-[zedragon](https://github.com/charlierobson/zedragon/blob/master/zedragon.p)
-[Panic HR](http://zx81.eu5.org/files/soft/toddy/panicohr.zip)
++ [zedragon](https://github.com/charlierobson/zedragon/blob/master/zedragon.p)
++ [Panic HR](http://zx81.eu5.org/files/soft/toddy/panicohr.zip)
 
 ### Sound
 + [Pink Panther Demo](http://zx81.eu5.org/files/soft/toddy/pinkpthr.zip)
@@ -338,15 +343,15 @@ These really show off the capabilities of the ZX81 and are a good test that the 
   + Plays sound, and also demos various text scrolling techniques on a basic 16kB ZX81. This demo requires very specific timing, so shows the accuracy of the emulator
 + [There are no limits](http://www.ag1976.com/prods.html?prodid=55)
 #### With WRX RAM
-Both generate a display more than 320 pixels wide, so some information is not displayed. Best viewed with `centre` set to `On`
+Both generate a display more than 320 pixels wide, so some information is not displayed in 640 by 480 mode (i.e. `FiveSevenSix` is set to `off`)
 + [25thanni](https://bodo4all.fortunecity.ws/zx/25thanni.html)
-  + The scrolling "ticker" is more than 320 pixels wide, so all of it is not visible
+  + The scrolling "ticker" is more than 320 pixels wide, so all of it is not visible in 640 by 480 mode.
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
-  + The initial fast horizontal scrolling highlights the non-synchronised screen drawing of the emulator, leading to visible tearing
+  + The initial fast horizontal scrolling highlights the non-synchronised screen drawing of the emulator when running in 640 by 480 mode with `FrameSync` set to `Off`, leading to visible tearing
 
 ## ZX80
 + [ZX80 3K QS DEFENDER](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Defender.htm)
-  + This game generates 31 lines of text. The bottom line is not displayed in the emulator, but the game is still playable. The QS sound board is emulated
+  + This game generates 32 lines of text. The bottom two line is not displayed in the emulator, but the game is still playable. The QS sound board is emulated
 + [Breakout](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Breakout.htm)
 + [Double Breakout](http://www.fruitcake.plus.com/Sinclair/ZX80/SoftwareArchive4K/BeamSoftware.htm)
 + [Kong](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Kong.htm)
@@ -354,7 +359,9 @@ Both generate a display more than 320 pixels wide, so some information is not di
 
 ## Programs with limitations or artefacts
 + [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda)
-  + This game generates 31 lines of text. As the emulator only displays 30 line of text, one can choose to display either the top or the bottom line. Set `Centre` to `off` to display the top line (which includes the score). The game is still playable without the bottom line being visible. The QS sound board is emulated correctly
+  + This game generates 31 lines of text. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` to display the top lines (which includes the score). The game is still playable without the bottom line being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated correctly
++ [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
+  + The logo on the final screen "flashes" after the scrolling is complete. This is because the logo is displayed interlaced, at roughly 52Hz, so does not map well to 50Hz and 60Hz displays
 
 # Developer Notes
 ## Use with an original ZX80/ZX81 keyboard
@@ -362,19 +369,19 @@ There are not enough unused GPIO pins on the Pimoroni demo boards to allow the d
 
 Code to convert a ZX8x keyboard to USB can be found at [ZX81_USB_KBD](https://github.com/ikjordan/ZX81_USB_KBD). This code has been used to successfully connect a ZX81 keyboard to this emulator. If the keyboard is the only peripheral, then it can be plugged straight into the USB port of the Pico on the emulator board with the power connected to the USB power socket of the Pimoroni board. If other USB peripherals (such as another keyboard, or a USB joystick) also need to be connected then the ZX80/81 keyboard can be connected via a USB hub
 
-To access the function menus from a ZX80/81 keyboard enable the `doubleshift` configuration option
+To access the function menus from a ZX80/81 keyboard the `doubleshift` configuration option must be enabled
 
 ## Performance and constraints
 The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 90% of the available CPU clock cycles. An overclock to 250MHz is required
 
 Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n; set n,(hl); res n,(hl);`
 ## Possible Future Developments
-+ Add volume control
 + Add vsync (TV) based sound
 + There are some interesting developments to extend PicoDVI to include audio over the HDMI signal
 + Use the contents of a string variable to supply a file name to the ZX80 load and save commands
 + Support for USB gamepads as well as joysticks
 + Extend the VGA322 board type to support original DB9 joysticks
++ Support for composite video output
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 
 ## Comparison to MCUME

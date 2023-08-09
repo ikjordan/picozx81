@@ -52,6 +52,7 @@ set(ZX8X_SOURCES
     src/zx8x.c
     src/emuapi.cpp
     src/emusound.cpp
+    src/emuvideo.cpp
     src/pico81.cpp
     src/hid_usb.c
     src/sound.c
@@ -95,7 +96,7 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
                           hardware_dma)
     pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/audio_i2s.pio)
 elseif (NOT (${PICO_BOARD} STREQUAL "olimexpcboard"))
-    # Unless Olimex (which has channels on diffent slices) use PWM loaded by DMA sound
+    # Unless Olimex (which has channels on different slices) use PWM loaded by DMA sound
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
     target_link_libraries(${PROJECT} hardware_dma)
 endif()

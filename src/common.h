@@ -1,24 +1,9 @@
+#ifndef _COMMON_H_
+#define _COMMON_H_
 #include <stdbool.h>
 #include <stdint.h>
 
 typedef unsigned char  byte;
-
-// Screen size
-#define DISPLAY_WIDTH       320
-#define DISPLAY_HEIGHT      240
-#define DISPLAY_BLANK       32      // Need this many padding bits to maintain 32 bit line alignment for DVI
-#define DISPLAY_BLANK_BYTE  (DISPLAY_BLANK >> 3)
-#define DISPLAY_STRIDE_BIT  (DISPLAY_WIDTH + DISPLAY_BLANK)
-#define DISPLAY_STRIDE_BYTE (DISPLAY_STRIDE_BIT >> 3)
-
-#define DISPLAY_START_PIXEL 46      // X Offset to first pixel with no centring
-#define DISPLAY_START_Y     24      // Y Offset to first pixel with no centring
-#define DISPLAY_ADJUST_X    4       // The number of pixels to adjust in X dimension to centre the display
-
-#define DISPLAY_END_PIXEL   (DISPLAY_START_PIXEL + DISPLAY_WIDTH)
-#define DISPLAY_END_Y       (DISPLAY_HEIGHT + DISPLAY_START_Y)
-
-#define DISPLAY_OFFSET      (-(DISPLAY_STRIDE_BIT * DISPLAY_START_Y) - (DISPLAY_START_PIXEL) + DISPLAY_BLANK)
 
 /* AY board types */
 #define AY_TYPE_NONE		0
@@ -33,9 +18,6 @@ extern int sound_ay;
 #define LASTINSTOUTFD 3
 #define LASTINSTOUTFF 4
 extern int LastInstruction;
-
-/* Default TV Vertical tolerance */
-#define VTOL 100        // In scanlines
 
 #define MEMORYRAM_SIZE 0x10000
 
@@ -55,6 +37,7 @@ extern bool UDGEnabled;
 extern bool LowRAM;
 extern bool chr128;
 extern bool useNTSC;
+extern bool frameSync;
 extern int adjustStartX;
 extern int adjustStartY;
 
@@ -66,12 +49,10 @@ extern unsigned int in(int h,int l);
 extern unsigned int out(int l,int a);
 extern void save_p(int a);
 extern void load_p(int a);
-extern void bitbufBlit(unsigned char * buf);
-extern void blankScreen();
 
-extern unsigned char* getMenuBuffer(void);
-extern void setTVRange(bool fiftyHz, uint16_t vtol);
+extern void setEmulatedTVAndDisplay(bool fiftyHz, uint16_t vtol, bool fiveSevenSix);
 
 #ifdef __cplusplus
 }
+#endif
 #endif

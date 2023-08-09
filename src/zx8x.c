@@ -158,17 +158,6 @@ unsigned int out(int l,int a)
   return 0; // No additional tstates
 }
 
-
-void bitbufBlit(unsigned char * buf)
-{
-  emu_DisplayFrame(buf);
-}
-
-void blankScreen()
-{
-  emu_BlankScreen();
-}
-
 static char fname[256];
 
 void load_p(int a)
@@ -287,7 +276,7 @@ void load_p(int a)
     // Load the settings for this file
     emu_ReadSpecificValues(fname);
 
-    if (emu_resetNeeded())
+    if (emu_ResetNeeded())
     {
       // Have to schedule an autoload, which will trigger the reset
       emu_SetLoadName(&fname[nameSrt]);
@@ -609,19 +598,19 @@ void z8x_Init(void)
   // Get machine type and memory
   zx80 = emu_ZX80Requested();
   ramsize = emu_MemoryRequested();
-  sound_ay = emu_soundRequested();
+  sound_ay = emu_SoundRequested();
   m1not = emu_M1NOTRequested();
   chr128 = emu_CHR128Requested();
   LowRAM = emu_LowRAMRequested();
   useQSUDG = emu_QSUDGRequested();
   useWRX = emu_WRXRequested();
   useNTSC = emu_NTSCRequested();
-  adjustStartX=emu_CentreX();
-  adjustStartY=emu_CentreY();
-
+  adjustStartX = emu_CentreX();
+  adjustStartY = emu_CentreY();
+  frameSync = emu_FrameSyncRequested();
   UDGEnabled = false;
 
-  setTVRange(!useNTSC, emu_VTol());
+  setEmulatedTVAndDisplay(!useNTSC, emu_VTol(), emu_576Requested());
 
   hidInitialise(keyboard);
 
@@ -635,7 +624,7 @@ void z8x_Init(void)
   {
     if (emu_ComputerRequested() == ZX81)
     {
-    memcpy( mem + 0x0000, zx81rom, siz );
+      memcpy( mem + 0x0000, zx81rom, siz );
     }
     else
     {
@@ -703,7 +692,7 @@ void z8x_Start(const char * filename)
         emu_ReadSpecificValues(fname);
 
         // Determine the computer type from the ending
-        emu_setZX80(emu_endsWith(fname, ".o") || emu_endsWith(fname, ".80"));
+        emu_SetZX80(emu_EndsWith(fname, ".o") || emu_EndsWith(fname, ".80"));
       }
       emu_FileClose();
     }

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "pico/stdlib.h"
 #include "pico.h"
 #include "pico/scanvideo.h"
@@ -9,18 +10,11 @@
 #include "zx80bmp.h"
 #include "zx81bmp.h"
 
-typedef struct
-{
-    uint8_t* buff;          // pointer to start of buffer
-    uint16_t x;             // offset into line (in bytes) for first pixel to display
-    uint16_t y;             // First line to display
-    uint16_t stride;        // Number of bytes in display line
-} Display_t;
-
 // Unions to allow variable length data manipulation
 typedef union
 {
     uint16_t i16[256][8];
+    uint32_t i32[256][4];
     uint64_t i64[256][2];
 } Look_u;
 
@@ -31,19 +25,12 @@ typedef union
     uint64_t i64[2];
 } Fill_u;
 
-
-static const uint16_t PIXEL_WIDTH = 320;
-static const uint16_t WIDTH = PIXEL_WIDTH>>3;
-static const uint16_t HEIGHT = 240;
-static const uint16_t MIN_RUN = 3;
-
-static volatile uint16_t disp_index;
-static volatile bool blank = true;
-static volatile uint16_t blank_colour = BLACK;
-
-static Display_t disp[2];
 static Look_u lookup;
-static semaphore_t display_initialised;
+static uint16_t PIXEL_WIDTH = 0;
+static uint16_t BYTE_WIDTH = 0;
+static uint16_t HEIGHT = 0;
+
+static const uint16_t MIN_RUN = 3;
 
 static bool showKeyboard = false;
 static const KEYBOARD_PIC* keyboard = &ZX81KYBD;
@@ -52,27 +39,26 @@ static uint16_t keyboard_y = 0;
 
 // Define timing here due to sdk issue with h_pulse length
 const scanvideo_timing_t vga_timing_640x480_60_default1 =
-    {
-        .clock_freq = 25000000,
+{
+    .clock_freq = 25000000,
+    .h_active = 640,
+    .v_active = 480,
 
-        .h_active = 640,
-        .v_active = 480,
+    .h_front_porch = 16,
+    .h_pulse = 96,
+    .h_total = 800,
+    .h_sync_polarity = 1,
 
-        .h_front_porch = 16,
-        .h_pulse = 96,
-        .h_total = 800,
-        .h_sync_polarity = 1,
+    .v_front_porch = 10,
+    .v_pulse = 2,
+    .v_total = 525,
+    .v_sync_polarity = 1,
 
-        .v_front_porch = 10,
-        .v_pulse = 2,
-        .v_total = 525,
-        .v_sync_polarity = 1,
+    .enable_clock = 0,
+    .clock_polarity = 0,
 
-        .enable_clock = 0,
-        .clock_polarity = 0,
-
-        .enable_den = 0
-    };
+    .enable_den = 0
+};
 
 const scanvideo_mode_t vga_mode_320x240_60d =
 {
@@ -84,8 +70,38 @@ const scanvideo_mode_t vga_mode_320x240_60d =
     .yscale = 2,
 };
 
-#define XGA_MODE vga_mode_320x240_60d
+// 576p 50Hz accelerated by 625/623 * 50 -> 50.16 Hz
+const scanvideo_timing_t vga_timing_720x576_50 =
+{
+    .clock_freq = 27000000,
+    .h_active = 720,
+    .v_active = 576,
+    .h_front_porch = 12,
+    .h_pulse = 64,
+    .h_total = 864,
+    .h_sync_polarity = 1,
+    .v_front_porch = 5,
+    .v_pulse = 5,
+    .v_total = 623,
+    .v_sync_polarity = 1,
+    .enable_clock = 0,
+    .clock_polarity = 0,
+    .enable_den = 0
+};
 
+const scanvideo_mode_t vga_mode_360x288_50 =
+{
+    .default_timing = &vga_timing_720x576_50,
+    .pio_program = &video_24mhz_composable,
+    .width = 360,
+    .height = 288,
+    .xscale = 2,
+    .yscale = 2,
+};
+
+static const scanvideo_mode_t* video_mode = 0;
+
+#include "display_common.c"
 //
 // Private interface
 //
@@ -102,64 +118,53 @@ static void core1_main();
 // Public functions
 //
 
-void displayInitialise(void)
+uint displayInitialise(bool fiveSevenSix, uint16_t minBuffByte, uint16_t* pixelWidth,
+                       uint16_t* pixelHeight, uint16_t* strideBit)
 {
+    mutex_init(&next_frame_mutex);
+
+    // Determine the video mode
+    video_mode = fiveSevenSix ? &vga_mode_360x288_50 : &vga_mode_320x240_60d;
+
+    PIXEL_WIDTH = video_mode->width;
+    HEIGHT = video_mode->height;
+    BYTE_WIDTH = PIXEL_WIDTH >> 3;
+
+    // Is padding requested? For VGA can pad a single byte
+    stride = minBuffByte + BYTE_WIDTH;
+
+        // Allocate the buffers
+    for (int i=0; i<MAX_BUFFERS; ++i)
+    {
+        free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
+                         + minBuffByte;
+    }
+
+    max_free = 3;
+
+    // Return the values
+    *pixelWidth = PIXEL_WIDTH;
+    *pixelHeight = HEIGHT;
+    *strideBit = stride << 3;
+
+    // Configure the look up table, set default to blank screen and return clock speed
     initialise1bppLookup();
     blank = true;
-}
 
-void displayGetCurrent(uint8_t** buff, uint16_t* x_off, uint16_t* y_off, uint16_t* stride)
-{
-    *buff = disp[disp_index].buff;
-    *x_off = disp[disp_index].x;
-    *y_off = disp[disp_index].y;
-    *stride = disp[1-disp_index].stride;
-}
-
-void displaySetBuffer(uint8_t* buff, uint16_t x_off, uint16_t y_off, uint16_t stride)
-{
-    disp[1-disp_index].buff = buff;
-    disp[1-disp_index].x = x_off;
-    disp[1-disp_index].y = y_off;
-    disp[1-disp_index].stride = stride;
-    disp_index = 1 - disp_index;
-    blank = false;
-}
-
-void displayStart(void)
-{
-    // create a semaphore to be posted when video init is complete
-    sem_init(&display_initialised, 0, 1);
-
-    // launch all the video on core 1, so it isn't affected by USB handling on core 0
-    multicore_launch_core1(core1_main);
-
-    sem_acquire_blocking(&display_initialised);
+    return video_mode->default_timing->clock_freq / 100;
 }
 
 void displayShowKeyboard(bool zx81)
 {
     keyboard = zx81 ? &ZX81KYBD : &ZX80KYBD;
-    keyboard_x = (PIXEL_WIDTH - keyboard->width)>>2;    // Centre (>>1), then 2 pixels per byte (>>1)
-    keyboard_y = (HEIGHT - keyboard->height)>>1;
+    keyboard_x = (video_mode->width - keyboard->width) >> 2;    // Centre (>>1), then 2 pixels per byte (>>1)
+    keyboard_y = (HEIGHT - keyboard->height) >> 1;
     showKeyboard = true;
 }
 
 void displayHideKeyboard(void)
 {
     showKeyboard = false;
-}
-
-void displayBlank(bool black)
-{
-    blank_colour = black ? BLACK : WHITE;
-    blank = true;
-}
-
-bool displayIsBlank(bool* isBlack)
-{
-    *isBlack = (blank_colour == BLACK);
-    return blank;
 }
 
 //
@@ -223,12 +228,19 @@ static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, i
     buff[3] = first.i32[2];
     buff[4] = first.i32[3];
 
-    // Process the next 24 pixels
+    // Process the next 24 / 44 pixels up to a byte boundary
     uint64_t* dest = (uint64_t*)(&buff[5]);
     for (int i=1; i<(keyboard_x>>2); ++i)
     {
         *dest++ = lookup.i64[display_line[i]][0];
         *dest++ = lookup.i64[display_line[i]][1];
+    }
+
+    // Process any remaining pixels that are not in a full byte
+    for (int i = 0; i < (keyboard_x & 0x3); ++i)
+    {
+        // Add 1 to account for interlaced messages at start
+        buff[keyboard_x - (keyboard_x & 0x3) + 1 + i] = lookup.i32[display_line[keyboard_x>>2]][i];
     }
 
     // Process the keyboard
@@ -243,9 +255,17 @@ static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, i
     }
 
     // Process the pixels after the keyboard
-    dest = (uint64_t*)(&buff[(keyboard->width>>1)+keyboard_x+1]);
+    // Start with any that are not part of a full byte
+    for (int i = 0; i < (keyboard_x & 0x3); ++i)
+    {
+        // Add 1 to account for interlaced messages at start
+        buff[(keyboard->width>>1)+keyboard_x+1+i] = 
+         lookup.i32[display_line[(keyboard->width>>3)+(keyboard_x>>2)]][4-(keyboard_x&0x3)+i];
+    }
 
-    for (int i=WIDTH-(keyboard_x>>2); i<WIDTH; ++i)
+    // Now aligned to a byte boundary
+    dest = (uint64_t*)(&buff[(keyboard->width>>1)+keyboard_x+1+(keyboard_x & 0x3)]);
+    for (int i=BYTE_WIDTH-(keyboard_x>>2); i<BYTE_WIDTH; ++i)
     {
         *dest++ = lookup.i64[display_line[i]][0];
         *dest++ = lookup.i64[display_line[i]][1];
@@ -278,7 +298,7 @@ static int32_t __not_in_flash_func(populate_line)(uint8_t* display_line, uint32_
 
     // Process the remaining 320/8 - 1 bytes
     uint64_t* dest = (uint64_t*)(&buff[5]);
-    for (int i=1; i<WIDTH; ++i)
+    for (int i=1; i<BYTE_WIDTH; ++i)
     {
         *dest++ = lookup.i64[display_line[i]][0];
         *dest++ = lookup.i64[display_line[i]][1];
@@ -303,9 +323,15 @@ static void __not_in_flash_func(render_loop)()
     while (true)
     {
         struct scanvideo_scanline_buffer *buf = scanvideo_begin_scanline_generation(true);  // Wait to acquire a scanline
-	    unsigned int line_num = scanvideo_scanline_number(buf->scanline_id);                         // The scanline
+        unsigned int line_num = scanvideo_scanline_number(buf->scanline_id);                         // The scanline
 
-        uint16_t index = disp_index;    // As disp_index can change at any time
+        if (line_num == 0)
+        {
+            // Check if need to display new image
+            displayNewFrame();
+        }
+
+        uint8_t* current = curr_buff;    // As disp_index can change at any time
         if (showKeyboard && (line_num >= keyboard_y) && (line_num <(keyboard_y + keyboard->height)))
         {
             if (blank)
@@ -314,7 +340,7 @@ static void __not_in_flash_func(render_loop)()
             }
             else
             {
-                buf->data_used = populate_mixed_line(&disp[index].buff[disp[index].stride * (line_num + disp[index].y) + disp[index].x],
+                buf->data_used = populate_mixed_line(&current[stride * line_num],
                                                      line_num, buf->data);
             }
         }
@@ -326,7 +352,7 @@ static void __not_in_flash_func(render_loop)()
             }
             else
             {
-                buf->data_used = populate_line(&disp[index].buff[disp[index].stride * (line_num + disp[index].y) + disp[index].x],
+                buf->data_used = populate_line(&current[stride * line_num],
                                                buf->data);
             }
         }
@@ -349,7 +375,7 @@ static void initialise1bppLookup()
 
 static void core1_main()
 {
-    scanvideo_setup(&XGA_MODE);
+    scanvideo_setup(video_mode);
     scanvideo_timing_enable(true);
     sem_release(&display_initialised);
 
