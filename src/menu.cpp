@@ -4,8 +4,8 @@
 #include "tusb.h"
 
 #include "emuapi.h"
+#include "emuvideo.h"
 #include "zx81rom.h"
-#include "common.h"
 
 #include "hid_usb.h"
 #include "display.h"
@@ -13,7 +13,7 @@
 #include "menu.h"
 
 static bool buildMenu(bool clone);
-static void endMenu(void);
+static void endMenu(bool blank);
 static void delay(void);
 
 static void xorRow(uint row);
@@ -26,57 +26,53 @@ static bool getFile(char* inout, uint index, bool* direct);
 static bool wasBlank = false;
 static bool wasBlack = false;
 static uint8_t* currBuff = 0;
-static uint16_t curr_x_off = 0;
-static uint16_t curr_y_off = 0;
-static uint16_t curr_stride = 0;
 
-const static uint16_t MENU_X = DISPLAY_WIDTH;
-const static uint16_t MENU_Y = DISPLAY_HEIGHT;
 static uint8_t* menuscreen = 0;
 
 static bool allfiles = false;
 
 static bool buildMenu(bool clone)
 {
-    // Create a display buffer
-    menuscreen = getMenuBuffer();
+    // Obtain a display buffer
+    displayGetFreeBuffer(&menuscreen);
 
     // Store the current display
     wasBlank = displayIsBlank(&wasBlack);
 
     if (!wasBlank)
     {
-        // Needed as menu does not have a leading blanking word
-        displayGetCurrent(&currBuff, &curr_x_off, &curr_y_off, &curr_stride);
+        // Get the current displayed buffer
+        displayGetCurrentBuffer(&currBuff);
     }
 
     if (clone)
     {
         if (wasBlank)
         {
-            memset(menuscreen, wasBlack, DISPLAY_STRIDE_BYTE * MENU_Y);
+            memset(menuscreen, wasBlack, disp.stride_byte * disp.height);
         }
         else
         {
-            uint8_t* s = currBuff + curr_y_off * curr_stride + curr_x_off;
+            uint8_t* s = currBuff;
             uint8_t* d = menuscreen;
-            for (int i = 0; i < MENU_Y; i++)
+            for (int i = 0; i < disp.height; i++)
             {
-                memcpy(d, s, DISPLAY_STRIDE_BYTE);
-                d += DISPLAY_STRIDE_BYTE;
-                s += (curr_stride);
+                memcpy(d, s, disp.stride_byte);
+                d += disp.stride_byte;
+                s += disp.stride_byte;
             }
         }
     }
     else
     {
-        memset(menuscreen, 0x00, DISPLAY_STRIDE_BYTE * MENU_Y);
+        memset(menuscreen, 0x00, disp.stride_byte * disp.height);
     }
-    displaySetBuffer(menuscreen, 0, 0, DISPLAY_STRIDE_BYTE);
+    // Display 
+    displayBuffer(menuscreen, false, false);
     return true;
 }
 
-static void endMenu(void)
+static void endMenu(bool blank)
 {
     // Put the old screen back
     if (wasBlank)
@@ -85,7 +81,15 @@ static void endMenu(void)
     }
     else
     {
-        displaySetBuffer(currBuff, curr_x_off, curr_y_off, curr_stride);
+        if (blank)
+        {
+            displayBlank(false);
+            displayFreeBuffer(currBuff);
+        }
+        else
+        {
+            displayBuffer(currBuff, false, true);
+        }
     }
 }
 
@@ -98,11 +102,11 @@ void pauseMenu(void)
     if (!buildMenu(true))
         return;
 
-    // XOR a P in each corner
-    xorChar('P', 0, 0);
-    xorChar('P', 0, 29);
-    xorChar('P', 39, 0);
-    xorChar('P', 39, 29);
+    // XOR a P in each corner - allowing for over scan
+    xorChar('P', 1, 1);
+    xorChar('P', 1, (disp.height >> 3) - 2);
+    xorChar('P', (disp.width >> 3) - 2, 1);
+    xorChar('P', (disp.width >> 3) - 2, (disp.height >> 3) - 2);
 
     // Just wait for ESC to be pressed
     do
@@ -112,7 +116,7 @@ void pauseMenu(void)
         emu_WaitFor50HzTimer();
     } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
 
-    endMenu();
+    endMenu(false);
 }
 
 // Displays the status of the emulator, pausing execution
@@ -120,10 +124,10 @@ void pauseMenu(void)
 bool statusMenu(void)
 {
     uint8_t key = 0;
-    uint lcount = 2;
+    uint lcount = (disp.height >> 4) - 13;
 
     char c[20];
-    int lhs = 11;
+    int lhs = (disp.width >> 4) - 10;
     int rhs = lhs + 13;
 
     if (!buildMenu(false))
@@ -142,11 +146,16 @@ bool statusMenu(void)
     writeString("8K-16K RAM:", lhs, lcount);
     writeString(emu_LowRAMRequested() ? "Yes" : "No", rhs, lcount++);
     writeString("M1NOT:", lhs, lcount);
-    writeString(emu_M1NOTRequested() ? "ON" : "OFF", rhs, lcount++);
+    writeString(emu_M1NOTRequested() ? "On" : "Off", rhs, lcount++);
     writeString("Extend File:",lhs, lcount);
     writeString(emu_ExtendFileRequested() ? "Yes" : "No", rhs, lcount++);
 
-    writeString("TV Type:", lhs, ++lcount);
+    writeString("Resolution:", lhs, ++lcount);
+    writeString((emu_576Requested()) ? "720x568x50" : "640x480x60", rhs, lcount++);
+    writeString("Frame Sync:", lhs, lcount);
+    writeString((emu_FrameSyncRequested()) ? "Yes" : "No", rhs, lcount++);
+
+    writeString("Em TV Type:", lhs, ++lcount);
     writeString(emu_NTSCRequested() ? "NTSC" : "PAL", rhs, lcount++);
     writeString("Centre:", lhs, lcount);
     writeString((emu_CentreY()!=0) ? "Yes" : "No", rhs, lcount++);
@@ -155,7 +164,7 @@ bool statusMenu(void)
     writeString(c, rhs, lcount++);
 
     writeString("Sound:", lhs, ++lcount);
-    switch (emu_soundRequested())
+    switch (emu_SoundRequested())
     {
         case AY_TYPE_QUICKSILVA:
             strcpy(c,"QUICKSILVA");
@@ -170,7 +179,7 @@ bool statusMenu(void)
         break;
     }
     writeString(c, rhs, lcount++);
-    if (emu_soundRequested() != AY_TYPE_NONE)
+    if (emu_SoundRequested() != AY_TYPE_NONE)
     {
         writeString("ACB Stereo:", lhs, lcount);
         writeString(emu_ACBRequested() ? "ON" : "OFF", rhs, lcount++);
@@ -193,8 +202,8 @@ bool statusMenu(void)
     writeString("All Files:", lhs, lcount);
     writeString(emu_AllFilesRequested() ? "Yes" : "No", rhs, lcount++);
 
-    writeString("Fn Key Map:", lhs, ++lcount);
-    writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
+    //writeString("Fn Key Map:", lhs, ++lcount);
+    //writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
 
     do
     {
@@ -203,7 +212,7 @@ bool statusMenu(void)
         emu_WaitFor50HzTimer();
     } while (key != HID_KEY_ESCAPE);
 
-    endMenu();
+    endMenu(false);
 
     return true;
 }
@@ -219,6 +228,7 @@ bool loadMenu(void)
     uint row = 0;
     bool debounce = true;
     bool exit = false;
+    uint fullrow = (uint)((disp.height>>3)-2);
 
     if (!buildMenu(false))
         return false;
@@ -228,11 +238,11 @@ bool loadMenu(void)
     strcpy(working, emu_GetDirectory());
     strcpy(newdir,working);
     uint entries = populateFiles(working, 0);
-    uint maxrow = (entries < MENU_Y>>3) ? entries : MENU_Y>>3;
+    uint maxrow = (entries < fullrow) ? entries : fullrow;
     uint offset = 0;
 
     // Highlight first line
-    xorRow(row);
+    xorRow(row + 1);
 
     do
     {
@@ -257,21 +267,21 @@ bool loadMenu(void)
                 case HID_KEY_ARROW_RIGHT:
                     if (((row + 1) < maxrow) && (key == HID_KEY_ARROW_DOWN))
                     {
-                        xorRow(row++);
-                        xorRow(row);
+                        xorRow(row + 1);
+                        xorRow(++row + 1);
                     }
                     else
                     {
                         if ((((row + 1 + offset) < entries) && (key == HID_KEY_ARROW_DOWN)) ||
-                            (((offset + (MENU_Y>>3)) < entries) && (key == HID_KEY_ARROW_RIGHT)))
+                            (((offset + fullrow) < entries) && (key == HID_KEY_ARROW_RIGHT)))
                         {
                             // Move to next page
-                            offset += MENU_Y>>3;
-                            memset(menuscreen, 0x00, DISPLAY_STRIDE_BYTE * MENU_Y);
+                            offset += fullrow;
+                            memset(menuscreen, 0x00, disp.stride_byte * disp.height);
                             populateFiles(working, offset);
                             row = 0;
-                            maxrow = ((entries - offset) < (MENU_Y>>3)) ? entries - offset : (MENU_Y>>3);
-                            xorRow(row);
+                            maxrow = ((entries - offset) < fullrow) ? entries - offset : fullrow;
+                            xorRow(row + 1);
                         }
                     }
                 break;
@@ -280,20 +290,20 @@ bool loadMenu(void)
                 case HID_KEY_ARROW_LEFT:
                     if (row && (key == HID_KEY_ARROW_UP))
                     {
-                        xorRow(row--);
-                        xorRow(row);
+                        xorRow(row + 1);
+                        xorRow(--row + 1);
                     }
                     else
                     {
                         if (offset)
                         {
                             // Move to previous page
-                            offset -= MENU_Y>>3;
-                            memset(menuscreen, 0x00, DISPLAY_STRIDE_BYTE * MENU_Y);
+                            offset -= fullrow;
+                            memset(menuscreen, 0x00, disp.stride_byte * disp.height);
                             populateFiles(working, offset);
-                            row = (MENU_Y>>3) - 1;
-                            maxrow = MENU_Y>>3;
-                            xorRow(row);
+                            row = fullrow - 1;
+                            maxrow = fullrow;
+                            xorRow(row + 1);
                         }
                     }
                 break;
@@ -307,11 +317,11 @@ bool loadMenu(void)
                             // Move to the new directory
                             offset = 0;
                             strcpy(newdir,working);
-                            memset(menuscreen, 0x00, DISPLAY_STRIDE_BYTE * MENU_Y);
+                            memset(menuscreen, 0x00, disp.stride_byte * disp.height);
                             entries = populateFiles(working, 0);
                             row = 0;
-                            maxrow = (entries < MENU_Y>>3) ? entries : MENU_Y>>3;
-                            xorRow(row);
+                            maxrow = (entries < fullrow) ? entries : fullrow;
+                            xorRow(row + 1);
 
                             // Need to debounce the enter key again
                             debounce = true;
@@ -337,10 +347,10 @@ bool loadMenu(void)
                         allfiles = true;
                         offset = 0;
                         row = 0;
-                        memset(menuscreen, 0x00, DISPLAY_STRIDE_BYTE * MENU_Y);
-                        populateFiles(working, offset);
-                        maxrow = ((entries - offset) < (MENU_Y>>3)) ? entries - offset : (MENU_Y>>3);
-                        xorRow(row);
+                        memset(menuscreen, 0x00, disp.stride_byte * disp.height);
+                        entries = populateFiles(working, 0);
+                        maxrow = (entries < fullrow) ? entries : fullrow;
+                        xorRow(row + 1);
                     }
                 break;
 
@@ -350,10 +360,10 @@ bool loadMenu(void)
                         allfiles = false;
                         offset = 0;
                         row = 0;
-                        memset(menuscreen, 0x00, DISPLAY_STRIDE_BYTE * MENU_Y);
-                        populateFiles(working, offset);
-                        maxrow = ((entries - offset) < (MENU_Y>>3)) ? entries - offset : (MENU_Y>>3);
-                        xorRow(row);
+                        memset(menuscreen, 0x00, disp.stride_byte * disp.height);
+                        entries = populateFiles(working, 0);
+                        maxrow = (entries < fullrow) ? entries : fullrow;
+                        xorRow(row + 1);
                     }
                 break;
             }
@@ -361,7 +371,7 @@ bool loadMenu(void)
         delay();
     } while (!exit && (key != HID_KEY_ESCAPE));
 
-    endMenu();
+    endMenu(key == HID_KEY_ENTER);
     return (key == HID_KEY_ENTER);
 }
 
@@ -378,8 +388,8 @@ static void delay(void)
 static void xorRow(uint row)
 {
     uint8_t* screen = menuscreen;
-    screen += row * DISPLAY_STRIDE_BIT;
-    for (uint i=0; i<DISPLAY_STRIDE_BIT; ++i)
+    screen += row * disp.stride_bit;
+    for (uint i=0; i<disp.stride_bit; ++i)
     {
         *screen++ ^= 0xff;
     }
@@ -398,11 +408,11 @@ static char ascii2zx[96]=
 // Write string to screen, terminate string at screen edge
 static void writeString(const char* s, uint col, uint row)
 {
-    if ((col < (MENU_X>>3)) && row < ((MENU_Y>>3)))
+    if ((col < (uint)(disp.width>>3)) && (row < (uint)(disp.height>>3)))
     {
         unsigned int len = strlen(s);
 
-        len = len > ((MENU_X>>3)-col-1) ? ((MENU_X>>3)-col-1) : len;
+        len = len > ((disp.width>>3)-col-1) ? ((disp.width>>3)-col-1) : len;
         for (uint i=0; i<len; ++i)
         {
             writeChar(s[i], col+i, row);
@@ -413,8 +423,8 @@ static void writeString(const char* s, uint col, uint row)
 // Write one character to screen
 static void writeChar(char c, uint col, uint row)
 {
-    uint8_t* pos = menuscreen + row * DISPLAY_STRIDE_BIT + col;
-    uint16_t offset = 0x1e00;
+    uint8_t* pos = menuscreen + row * disp.stride_bit + col;
+    uint16_t offset = 0x1e00;   // Start of characters in ZX81 ROM
 
     // Convert from ascii to ZX
     if ((c >= 32) && (c < 128))
@@ -426,13 +436,13 @@ static void writeChar(char c, uint col, uint row)
     for (uint i=0; i<8; ++i)
     {
         *pos = zx81rom[offset+i];
-        pos += DISPLAY_STRIDE_BYTE;
+        pos += disp.stride_byte;
     }
 }
 
 static void xorChar(char c, uint col, uint row)
 {
-    uint8_t* pos = menuscreen + row * DISPLAY_STRIDE_BIT + col;
+    uint8_t* pos = menuscreen + row * disp.stride_bit + col;
     uint16_t offset = 0x1e00;
 
     // Convert from ascii to ZX
@@ -445,7 +455,7 @@ static void xorChar(char c, uint col, uint row)
     for (uint i=0; i<8; ++i)
     {
         *pos = (zx81rom[offset+i] ^ 0xff);
-        pos += DISPLAY_STRIDE_BYTE;
+        pos += disp.stride_byte;
     }
 }
 
@@ -458,13 +468,14 @@ static int populateFiles(const char* path, uint first)
     uint i = 0;
     uint count = 0;
     FILINFO fno;
+    uint fullrow = (uint)((disp.height>>3)-2);
 
     // Populate parent directory
     if (path[0])
     {
         if (!first)
         {
-            writeString("<..>", 1, 0);
+            writeString("<..>", 1, 1);
             ++i;
         }
         ++count;
@@ -473,7 +484,7 @@ static int populateFiles(const char* path, uint first)
     res = f_opendir(&dir, path);                            /* Open the directory */
     if (res == FR_OK)
     {
-        char name[(MENU_X>>3) + 1];
+        char name[(disp.width>>3) + 1];
         int len = 0;
         name[0] = '<';
 
@@ -487,23 +498,23 @@ static int populateFiles(const char* path, uint first)
                 ((strlen(path) + strlen(fno.fname) + 1) < MAX_DIRECTORY_LEN) &&
                 (strcasecmp(fno.fname, "SYSTEM VOLUME INFORMATION")))
             {
-                if ((count >= first) && (count < (first + (MENU_Y>>3))))
+                if ((count >= first) && (count < (first + fullrow)))
                 {
                     strncpy(&name[1], fno.fname, sizeof(name)-1);
 
                     len = strlen(fno.fname) + 1; // Position of closing >
-                    if (len > ((MENU_X>>3) - 3))
+                    if (len > ((disp.width>>3) - 3))
                     {
-                        name[((MENU_X>>3) - 4)] = '+';
-                        name[((MENU_X>>3) - 3)] = '>';
-                        name[((MENU_X>>3) - 2)] = '0';
+                        name[((disp.width>>3) - 4)] = '+';
+                        name[((disp.width>>3) - 3)] = '>';
+                        name[((disp.width>>3) - 2)] = '0';
                     }
                     else
                     {
                         name[len] = '>';
                         name[len + 1] = 0;
                     }
-                    writeString(name, 1, i);
+                    writeString(name, 1, i+1);
                     ++i;
                 }
                 ++count;
@@ -520,24 +531,24 @@ static int populateFiles(const char* path, uint first)
             if (res != FR_OK || fno.fname[0] == 0) break;   /* Break on error or end of entries */
 
             if ((!(fno.fattrib & AM_DIR) && (strlen(fno.fname) < MAX_FILENAME_LEN)) &&
-                ((emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p") ||
-                  emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81") ||
+                ((emu_EndsWith(fno.fname, ".o") || emu_EndsWith(fno.fname, ".p") ||
+                  emu_EndsWith(fno.fname, ".80") || emu_EndsWith(fno.fname, ".81") ||
                   allfiles)))
             {
-                if ((count >= first) && (count < (first + (MENU_Y>>3))))
+                if ((count >= first) && (count < (first + fullrow)))
                 {
                     // Terminate long file names with a +
-                    if (strlen(fno.fname) > ((MENU_X>>3) - 2))
+                    if (strlen(fno.fname) > (uint)((disp.width>>3) - 2))
                     {
                         // Copy and terminate with a +
                         strncpy(name, fno.fname, sizeof(name));
-                        name[((MENU_X>>3) - 3)] = '+';
-                        name[((MENU_X>>3) - 2)] = 0;
-                        writeString(name, 1, i);
+                        name[((disp.width>>3) - 3)] = '+';
+                        name[((disp.width>>3) - 2)] = 0;
+                        writeString(name, 1, i+1);
                     }
                     else
                     {
-                        writeString(fno.fname, 1, i);
+                        writeString(fno.fname, 1, i+1);
                     }
                     ++i;
                 }
@@ -618,8 +629,8 @@ static bool getFile(char* inout, uint index, bool* direct)
             if (!(fno.fattrib & AM_DIR))
             {
                 if ((strlen(fno.fname) < MAX_FILENAME_LEN) &&
-                    ((emu_endsWith(fno.fname, ".o") || emu_endsWith(fno.fname, ".p") ||
-                      emu_endsWith(fno.fname, ".80") || emu_endsWith(fno.fname, ".81")) ||
+                    ((emu_EndsWith(fno.fname, ".o") || emu_EndsWith(fno.fname, ".p") ||
+                      emu_EndsWith(fno.fname, ".80") || emu_EndsWith(fno.fname, ".81")) ||
                       allfiles))
                 {
                     ++count;

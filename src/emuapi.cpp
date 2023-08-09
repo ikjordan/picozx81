@@ -9,6 +9,7 @@
 #include "display.h"
 
 #include "emuapi.h"
+#include "emuvideo.h"
 #include "emupriv.h"
 
 #include "ini.h"
@@ -136,6 +137,7 @@ void emu_init(void)
  * Configuration File
  ********************************/
 #define CONFIG_FILE "config.ini"
+#define VTOL 100        // Default TV Vertical tolerance in scanlines
 
 typedef struct
 {
@@ -154,11 +156,13 @@ typedef struct
   bool QSUDG;
   bool CHR128;
   bool M1NOT;
-  bool LowRAM;
+  bool lowRAM;
   bool acb;
-  bool doubleshift;
-  bool extendfile;
-  bool allfiles;
+  bool doubleShift;
+  bool extendFile;
+  bool allFiles;
+  bool fiveSevenSix;
+  bool frameSync;
 } configuration_t;
 
 typedef struct
@@ -183,7 +187,7 @@ static int handler(void *user, const char *section, const char *name,
                    const char *value);
 static int ini_parse_fatfs(const char *filename, ini_handler handler, void *user);
 
-int emu_soundRequested(void)
+int emu_SoundRequested(void)
 {
   return specific.sound;
 }
@@ -222,7 +226,7 @@ bool emu_NTSCRequested(void)
 int emu_CentreX(void)
 {
   if (specific.centre)
-    return DISPLAY_ADJUST_X;
+      return disp.adjust_x;
   else
     return 0;
 }
@@ -253,7 +257,7 @@ bool emu_M1NOTRequested(void)
 
 bool emu_LowRAMRequested(void)
 {
-  return (specific.LowRAM || specific.CHR128);
+  return (specific.lowRAM || specific.CHR128);
 }
 
 bool emu_QSUDGRequested(void)
@@ -265,24 +269,35 @@ bool emu_CHR128Requested(void)
 {
   return specific.CHR128;
 }
+
 bool emu_DoubleShiftRequested(void)
 {
-  return specific.doubleshift;
+  return specific.doubleShift;
 }
 
 bool emu_ExtendFileRequested(void)
 {
-  return specific.extendfile;
+  return specific.extendFile;
 }
 
 bool emu_AllFilesRequested(void)
 {
-  return specific.allfiles;
+  return specific.allFiles;
 }
 
-bool emu_resetNeeded(void)
+bool emu_ResetNeeded(void)
 {
   return resetNeeded;
+}
+
+bool emu_FrameSyncRequested(void)
+{
+  return specific.frameSync;
+}
+
+bool emu_576Requested(void)
+{
+  return specific.fiveSevenSix;
 }
 
 const char* emu_GetDirectory(void)
@@ -350,7 +365,7 @@ static bool setDirectory(const char* dir)
   return retVal;
 }
 
-void emu_setZX80(bool zx80)
+void emu_SetZX80(bool zx80)
 {
   if (zx80)
   {
@@ -460,7 +475,7 @@ static int handler(void *user, const char *section, const char *name,
     {
       // RAM expansion in 0x2000 to 0x3FFF range enabled
       // if entry exists and is not "OFF" or 0
-      c->conf->LowRAM = isEnabled(value);
+      c->conf->lowRAM = isEnabled(value);
     }
     else if (!strcasecmp(name, "QSUDG"))
     {
@@ -526,7 +541,7 @@ static int handler(void *user, const char *section, const char *name,
     else if (!strcasecmp(name, "ExtendFile"))
     {
         // Defaults to off
-        c->conf->extendfile = isEnabled(value);
+        c->conf->extendFile = isEnabled(value);
     }
     else if ((!strcasecmp(section, "default")))
     {
@@ -539,15 +554,25 @@ static int handler(void *user, const char *section, const char *name,
       {
         setDirectory(value);
       }
-      else if (!strcasecmp(name, "DoubleShift"))
+      else if (!strcasecmp(name, "doubleShift"))
       {
-        // Defaults to off
-        c->conf->doubleshift = isEnabled(value);
+        // Defaults to on, set to Off or 0 to turn off
+        c->conf->doubleShift = isEnabled(value);
       }
       else if (!strcasecmp(name, "AllFiles"))
       {
         // Defaults to off
-        c->conf->allfiles = isEnabled(value);
+        c->conf->allFiles = isEnabled(value);
+      }
+      else if (!strcasecmp(name, "FiveSevenSix"))
+      {
+        // Defaults to off
+        c->conf->fiveSevenSix = isEnabled(value);
+      }
+      else if (!strcasecmp(name, "FrameSync"))
+      {
+        // Defaults to off
+        c->conf->frameSync = isEnabled(value);
       }
       else
       {
@@ -601,14 +626,17 @@ void emu_ReadDefaultValues(void)
     general.WRX = false;
     general.CHR128 = false;
     general.QSUDG = false;
-    general.LowRAM = false;
+    general.lowRAM = false;
     general.memory = 16;
     general.NTSC = false;
     general.VTol = VTOL;
     general.centre = true;
-    general.doubleshift = false;
-    general.extendfile = false;
-    general.allfiles = false;
+    general.doubleShift = true;
+    general.extendFile = true;
+    general.allFiles = false;
+    general.fiveSevenSix = false;
+    general.frameSync = false;
+
     selection[0] = 0;
   }
   else
@@ -670,7 +698,7 @@ void emu_ReadSpecificValues(const char *filename)
                     (specific.CHR128 != used.CHR128) ||
                     (specific.WRX != used.WRX) ||
                     (specific.QSUDG != used.QSUDG) ||
-                    (specific.LowRAM != used.LowRAM));
+                    (specific.lowRAM != used.lowRAM));
   }
 }
 
@@ -679,7 +707,7 @@ void emu_ReadSpecificValues(const char *filename)
  ********************************/
 bool emu_UpdateKeyboard(uint8_t* special)
 {
-  bool ret = hidReadUsbKeyboard(special, specific.doubleshift);
+  bool ret = hidReadUsbKeyboard(special, specific.doubleShift);
 
   if (!ret)
   {
@@ -693,7 +721,7 @@ bool emu_UpdateKeyboard(uint8_t* special)
   return ret;
 }
 
-bool emu_endsWith(const char * s, const char * suffix)
+bool emu_EndsWith(const char * s, const char * suffix)
 {
   bool retval = false;
   int len = strlen(s);
@@ -704,20 +732,6 @@ bool emu_endsWith(const char * s, const char * suffix)
     }
   }
    return (retval);
-}
-
-
-/********************************
- * Video
- ********************************/
-void emu_DisplayFrame(unsigned char *buf)
-{
-  displaySetBuffer(buf, DISPLAY_BLANK_BYTE, 0, DISPLAY_STRIDE_BYTE);
-}
-
-void emu_BlankScreen(void)
-{
-  displayBlank(true);
 }
 
 /********************************

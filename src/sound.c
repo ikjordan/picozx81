@@ -392,7 +392,7 @@ if(!sound_enabled || sound_ay == AY_TYPE_NONE) return;
 /* accept r15, in case of the two-I/O-port 8910 */
 if(reg>=16) return;
 
-if(ay_change_count<AY_CHANGE_MAX)
+if(tstates>=0 && ay_change_count<AY_CHANGE_MAX)
   {
   ay_change[ay_change_count].tstates=tstates;
   ay_change[ay_change_count].reg=reg;

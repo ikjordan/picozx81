@@ -22,6 +22,8 @@
 #include "pico.h"     /* For not in flash */
 #include "Z80.h"
 #include <stdio.h>
+#include "emuvideo.h"
+#include "display.h"
 
 #define parity(a) (partable[a])
 
@@ -47,12 +49,7 @@ unsigned char partable[256]={
 
 unsigned long tstates=0,tsmax=65000,frames=0;
 
-/* Use DISPLAY_BLANK_BYTE buffer at start-end of line - need + DISPLAY_STRIDE_BYTE for first start */
-/* Has to be word aligned for DVI pixel translation */
-static unsigned char __attribute__((aligned(4))) scrnbmp[3][DISPLAY_STRIDE_BYTE * DISPLAY_HEIGHT + DISPLAY_BLANK_BYTE];
-
-static int scrnbmp_index = 0;
-static unsigned char* scrnbmp_new = scrnbmp[0]; /* written */
+static unsigned char* scrnbmp_new = 0;
 
 static int vsx=0;
 static int vsy=0;
@@ -72,6 +69,7 @@ int LastInstruction;
 #define VMIN    170
 #define HMIN    8
 #define HMAX    32
+#define FMAX    6         // Tolerance in fixing sync
 
 static const int HSYNC_TOLERANCEMIN = HSCAN - HTOL;
 static const int HSYNC_TOLERANCEMAX = HSCAN + HTOL;
@@ -80,8 +78,11 @@ static const int HSYNC_MINLEN = HMIN;
 static const int HSYNC_MAXLEN = HMAX;
 static const int VSYNC_MINLEN = VMIN;
 
-static int VSYNC_TOLERANCEMIN = SCAN50 - VTOL;
-static int VSYNC_TOLERANCEMAX = SCAN50 + VTOL;
+static int VSYNC_TOLERANCEMIN = SCAN50 - 100;
+static int VSYNC_TOLERANCEMAX = SCAN50 + 100;
+
+static int FSYNC_MIN = SCAN50 - (FMAX >> 1);
+static int FSYNC_MAX = SCAN50 + (FMAX << 1);
 
 static const int HSYNC_START = 16;
 static const int HSYNC_END = 32;
@@ -98,8 +99,9 @@ static int VSYNC_state, HSYNC_state, SYNC_signal;
 static int psync, sync_len;
 static int rowcounter=0;
 static int hsync_counter=0;
+static bool rowcounter_hold = false;
 
-static void displayAndNewScreen(void);
+static void displayAndNewScreen(bool sync);
 static inline void checkhsync(int tolchk);
 static inline void checkvsync(int tolchk);
 static inline void checksync(int inc);
@@ -117,61 +119,75 @@ bool useQSUDG = false;
 bool LowRAM = false;
 bool chr128 = false;
 bool useNTSC = false;
+bool frameSync = false;
 int  adjustStartX=0;
 int  adjustStartY=0;
 
-unsigned char* getMenuBuffer(void)
+void setEmulatedTVAndDisplay(bool fiftyHz, uint16_t vtol, bool fiveSevenSix)
 {
-  // We can be filling index scrnbmp_index and displaying
-  // index (scrnbmp_index+2)%3  [+2 as 2=(-1+3)]
-  // So return (scrnbmp_index+1)%3
-  return scrnbmp[(scrnbmp_index+1)%3];
-}
-
-void setTVRange(bool fiftyHz, uint16_t vtol)
-{
+  // This can look confusing as we have an emulated display, and a real
+  // display, both can be at either 50 or 60 Hz
   if (fiftyHz)
   {
     VSYNC_TOLERANCEMIN = SCAN50 - vtol;
     VSYNC_TOLERANCEMAX = SCAN50 + vtol;
+
+    if (fiveSevenSix)
+    {
+      // Do not try to sync when frame rate too high for monitor
+      FSYNC_MIN = SCAN50 - (FMAX >> 1);
+    }
+    else
+    {
+      FSYNC_MIN = SCAN50 - (FMAX << 1);
+    }
+    FSYNC_MAX = SCAN50 + (FMAX << 1);
   }
   else
   {
     VSYNC_TOLERANCEMIN = SCAN60 - vtol;
     VSYNC_TOLERANCEMAX = SCAN60 + vtol;
+
+    if (!fiveSevenSix)
+    {
+      // Do not try to sync when frame rate too high for monitor
+      FSYNC_MIN = SCAN60 - (FMAX >> 1);
+    }
+    else
+    {
+      FSYNC_MIN = SCAN60 - (FMAX << 1);
+    }
+    FSYNC_MAX = SCAN60 + (FMAX << 1);
   }
 }
 
-static void __not_in_flash_func(displayAndNewScreen)(void)
+static void __not_in_flash_func(displayAndNewScreen)(bool sync)
 {
   // Display the current screen
-  bitbufBlit(scrnbmp_new);
-
-  // Move to the next screen
-  scrnbmp_index = (scrnbmp_index+1)%3;
-  scrnbmp_new = scrnbmp[scrnbmp_index];
+  displayBuffer(scrnbmp_new, sync, true);
+  displayGetFreeBuffer(&scrnbmp_new);
 
   // Clear the new screen - we have 3 buffers, so will not
   // have race with switching the screens to be displayed
-  memset(scrnbmp_new, 0x00, DISPLAY_STRIDE_BYTE * DISPLAY_HEIGHT + DISPLAY_BLANK_BYTE);
+  memset(scrnbmp_new, 0x00, disp.stride_byte * disp.height);
 }
 
 static void __not_in_flash_func(vsync_raise)(void)
 {
   /* save current pos - in screen coords*/
-  vsx=RasterX - (DISPLAY_START_PIXEL - adjustStartX);
-  vsy=RasterY - (DISPLAY_START_Y - adjustStartY);
+  vsx=RasterX - (disp.start_x - adjustStartX);
+  vsy=RasterY - (disp.start_y - adjustStartY);
 }
 
 /* for vsync on -> off */
 static void __not_in_flash_func(vsync_lower)(void)
 {
-  int ny = RasterY - (DISPLAY_START_Y - adjustStartY);
-  int nx = RasterX - (DISPLAY_START_PIXEL - adjustStartX);
+  int ny = RasterY - (disp.start_y - adjustStartY);
+  int nx = RasterX - (disp.start_x - adjustStartX);
 
   // Can ignore if nx: ny pair larger than vsx: vsy pair and both all off screen
   if (((ny > vsy) || ((ny == vsy) && (nx >= vsx))) &&
-      (((ny < 0) && (vsy < 0)) || ((ny >= DISPLAY_HEIGHT) && (vsy >= DISPLAY_HEIGHT))))
+      (((ny < 0) && (vsy < 0)) || ((ny >= disp.height) && (vsy >= disp.height))))
     return;
 
   // Something to display, so fit in display size
@@ -180,10 +196,10 @@ static void __not_in_flash_func(vsync_lower)(void)
     vsy = 0;
     vsx = 0;
   }
-  else if (vsy >= DISPLAY_HEIGHT)
+  else if (vsy >= disp.height)
   {
-    vsy = DISPLAY_HEIGHT - 1;
-    vsx = DISPLAY_WIDTH - 1;
+    vsy = disp.height - 1;
+    vsx = disp.width - 1;
   }
 
   if (ny < 0)
@@ -191,30 +207,51 @@ static void __not_in_flash_func(vsync_lower)(void)
     ny = 0;
     nx = 0;
   }
-  else if (ny >= DISPLAY_HEIGHT)
+  else if (ny >= disp.height)
   {
-    ny = DISPLAY_HEIGHT - 1;
-    nx = DISPLAY_WIDTH - 1;
+    ny = disp.height - 1;
+    nx = disp.width - 1;
   }
 
   if (vsx < 0)
     vsx = 0;
-  else if (vsx >= DISPLAY_WIDTH)
-    vsx = DISPLAY_WIDTH - 1;
+  else if (vsx >= disp.width)
+    vsx = disp.width - 1;
 
   if (nx < 0)
     nx = 0;
-  else if (nx >= DISPLAY_WIDTH)
-    nx = DISPLAY_WIDTH - 1;
+  else if (nx >= disp.width)
+    nx = disp.width - 1;
 
   if((ny < vsy) || ((ny == vsy) && (nx < vsx)))
   {
     /* must be wrapping around a frame edge; do bottom half */
-    memset(scrnbmp_new+DISPLAY_BLANK_BYTE+vsy*DISPLAY_STRIDE_BYTE+(vsx>>3), 0xff, DISPLAY_STRIDE_BYTE*(DISPLAY_HEIGHT-vsy)-(vsx>>3));
+    uint8_t* start = scrnbmp_new+vsy*disp.stride_byte+(vsx>>3);
+    *start++ = (0xff >> (vsx & 0x7));
+    memset(start, 0xff, disp.stride_byte*(disp.height-vsy)-(vsx>>3) -1);
     vsy=0;
     vsx=0;
   }
-  memset(scrnbmp_new+DISPLAY_BLANK_BYTE+vsy*DISPLAY_STRIDE_BYTE+(vsx>>3),0xff,DISPLAY_STRIDE_BYTE*(ny-vsy)+((nx-vsx)>>3));
+
+  uint8_t* start = scrnbmp_new+vsy*disp.stride_byte+(vsx>>3);
+  uint8_t* end = scrnbmp_new+ny*disp.stride_byte+(nx>>3);
+
+  if (end > start)
+  {
+    *start++ = (0xff >> (vsx & 0x7));
+    // end bits?
+    if (nx & 0x7)
+    {
+      *end = (0xff << (nx & 0x7));
+    }
+
+    if (end > start)
+      memset(start, 0xff, end-start);
+  }
+  else
+  {
+    *start = (0xff >> (vsx & 0x7)) & (0xff << (nx & 0x7));
+  }
 }
 
 unsigned char a, f, b, c, d, e, h, l;
@@ -298,7 +335,6 @@ void __not_in_flash_func(ExecZ80)(void)
         v = (op&128)?~v:v;
         op=0; /* the CPU sees a nop */
       }
-
       tstore = tstates;
 
       do
@@ -362,10 +398,10 @@ void __not_in_flash_func(ExecZ80)(void)
     // Note subtract 6 as this leaves the smallest positive number
     // of bits to carry to next byte (2)
     if (v &&
-        (RasterX >= (DISPLAY_START_PIXEL - adjustStartX - 6)) &&
-        (RasterX < (DISPLAY_END_PIXEL - adjustStartX)) &&
-        (RasterY >= (DISPLAY_START_Y - adjustStartY)) &&
-        (RasterY < (DISPLAY_END_Y - adjustStartY)))
+        (RasterX >= (disp.start_x - adjustStartX - 6)) &&
+        (RasterX < (disp.end_x - adjustStartX)) &&
+        (RasterY >= (disp.start_y - adjustStartY)) &&
+        (RasterY < (disp.end_y - adjustStartY)))
     {
       int k = dest + RasterX;
       {
@@ -425,9 +461,10 @@ void __not_in_flash_func(ExecZ80)(void)
         HSYNC_state = 1;
         since_hstart = hsync_counter - HSYNC_START + 1;
 
-        if (VSYNC_state)
+        if (VSYNC_state || rowcounter_hold)
         {
           rowcounter = 0;
+          rowcounter_hold = false;
         } else
         {
           rowcounter++;
@@ -479,7 +516,7 @@ void ResetZ80(void)
   nrmvideo=0;
   RasterX = 0;
   RasterY = 0;
-  dest = DISPLAY_OFFSET;
+  dest = disp.offset;
   psync = 1;
   sync_len = 0;
 
@@ -488,6 +525,16 @@ void ResetZ80(void)
   int_pending=0;
   hsync_pending=0;
   VSYNC_state=HSYNC_state=0;
+
+  if (!scrnbmp_new)
+  {
+    displayGetFreeBuffer(&scrnbmp_new);
+  }
+
+  if (scrnbmp_new)
+  {
+    memset(scrnbmp_new, 0x00, disp.stride_byte * disp.height);
+  }
 
   if(autoload)
   {
@@ -623,7 +670,7 @@ static inline void __not_in_flash_func(checkhsync)(int tolchk)
     else
       RasterX = ((hsync_counter - HSYNC_END) < MAX_JMP) ? ((hsync_counter - HSYNC_END) << 1) : 0;
     RasterY++;
-    dest += DISPLAY_STRIDE_BIT;
+    dest += disp.stride_bit;
   }
 }
 
@@ -632,19 +679,18 @@ static inline void __not_in_flash_func(checkvsync)(int tolchk)
   if ( ( !tolchk && sync_len >= VSYNC_MINLEN && RasterY>=VSYNC_TOLERANCEMIN ) ||
        (  tolchk &&                             RasterY>=VSYNC_TOLERANCEMAX ) )
   {
-    RasterY = 0;
-    dest = DISPLAY_OFFSET + (DISPLAY_STRIDE_BIT * adjustStartY) + adjustStartX;
-
     if (sync_len>(int)tsmax)
     {
       // If there has been no sync for an entire frame then blank the screen
-      blankScreen();
+      displayBlank(true);
       sync_len = 0;
     }
     else
     {
-      displayAndNewScreen();
+      displayAndNewScreen(frameSync && (RasterY > FSYNC_MIN) && (RasterY < FSYNC_MAX));
     }
+    RasterY = 0;
+    dest = disp.offset + (disp.stride_bit * adjustStartY) + adjustStartX;
   }
 }
 
@@ -680,6 +726,11 @@ static void anyout(void)
     else
     {
       VSYNC_state = 0;
+      // A fairly arbitrary value selected after comparing with a "real" ZX81
+      if (hsync_counter > 178)
+      {
+        rowcounter_hold = true;
+      }
       vsync_lower();
     }
   }

@@ -28,7 +28,7 @@ extern void emu_FileClose(void);
 
 extern unsigned int emu_FileSize(const char * filepath);
 extern bool emu_SaveFile(const char * filepath, void * buf, int size);
-extern bool emu_endsWith(const char * s, const char * suffix);
+extern bool emu_EndsWith(const char * s, const char * suffix);
 
 extern const char* emu_GetLoadName(void);
 extern void emu_SetLoadName(const char* name);
@@ -36,7 +36,7 @@ extern const char* emu_GetDirectory(void);
 extern void emu_SetDirectory(const char* dir);
 extern void emu_ReadDefaultValues(void);
 extern void emu_ReadSpecificValues(const char* filename);
-extern void emu_setZX80(bool zx80);
+extern void emu_SetZX80(bool zx80);
 extern int emu_MemoryRequested(void);
 extern bool emu_ZX80Requested(void);
 extern ComputerType emu_ComputerRequested(void);
@@ -46,7 +46,7 @@ extern bool emu_QSUDGRequested(void);
 extern bool emu_WRXRequested(void);
 extern bool emu_CHR128Requested(void);
 extern bool emu_NTSCRequested(void);
-extern int emu_soundRequested(void);
+extern int emu_SoundRequested(void);
 extern bool emu_DoubleShiftRequested(void);
 extern bool emu_ExtendFileRequested(void);
 extern bool emu_AllFilesRequested(void);
@@ -54,10 +54,10 @@ extern uint16_t emu_VTol(void);
 extern bool emu_ACBRequested(void);
 extern int emu_CentreX(void);
 extern int emu_CentreY(void);
-extern bool emu_resetNeeded(void);
+extern bool emu_ResetNeeded(void);
 
-extern void emu_DisplayFrame(unsigned char * buf);
-extern void emu_BlankScreen(void);
+extern bool emu_FrameSyncRequested(void);
+extern bool emu_576Requested(void);
 
 extern void emu_WaitFor50HzTimer(void);
 

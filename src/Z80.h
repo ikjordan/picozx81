@@ -22,8 +22,14 @@
 extern unsigned long tstates,tsmax,frames;
 extern int ay_reg;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern void ResetZ80(void);
 extern void ExecZ80(void);
+#ifdef __cplusplus
+}
+#endif
 
 #define fetch(x) (memptr[(unsigned short)(x)>>10][(x)&0x3FF])
 #define fetch2(x) ((fetch((x)+1)<<8)|fetch(x))
