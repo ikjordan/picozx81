@@ -50,7 +50,7 @@ extern unsigned int out(int l,int a);
 extern void save_p(int a);
 extern void load_p(int a);
 
-extern void setEmulatedTVAndDisplay(bool fiftyHz, uint16_t vtol, bool fiveSevenSix);
+extern void setEmulatedTV(bool fiftyHz, uint16_t vtol);
 
 #ifdef __cplusplus
 }

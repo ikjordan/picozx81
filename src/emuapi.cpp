@@ -509,6 +509,11 @@ static int handler(void *user, const char *section, const char *name,
       // Defaults to on, set to Off or 0 to turn off
       c->conf->centre = isEnabled(value);
     }
+    else if (!strcasecmp(name, "FrameSync"))
+    {
+      // Defaults to off
+      c->conf->frameSync = isEnabled(value);
+    }
     else if (!strcasecmp(name, "MEMORY"))
     {
       long res=strtol(value, NULL, 10);
@@ -568,11 +573,6 @@ static int handler(void *user, const char *section, const char *name,
       {
         // Defaults to off
         c->conf->fiveSevenSix = isEnabled(value);
-      }
-      else if (!strcasecmp(name, "FrameSync"))
-      {
-        // Defaults to off
-        c->conf->frameSync = isEnabled(value);
       }
       else
       {
