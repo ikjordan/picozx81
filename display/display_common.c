@@ -1,18 +1,24 @@
 /*
  * Common display code for VGA and DVI
  */
-#define MAX_BUFFERS 3
+#define MAX_BUFFERS 4
+#define MAX_NEXT 2
 
-static volatile bool blank = true;
-static volatile uint16_t blank_colour = BLACK;
+// Note: Need 40 buffers, as the ZX81 produces rates at greater than 50 Hz
+// so 2 frames can be created in one time slice, and 1 emulated time slice
+// may complete in 14ms, therefore a backlog of 2 frames is valid, even
+// when nominally frame matched
+static  bool blank = true;
+static  uint16_t blank_colour = BLACK;
 
 static semaphore_t display_initialised;
 static mutex_t next_frame_mutex;
 
 static uint8_t* curr_buff = 0;
-static uint8_t* next_buff = 0;
-static uint8_t* free_buff[MAX_BUFFERS] = {0, 0, 0};
+static uint8_t* next_buff[MAX_NEXT] = {0, 0};
+static uint8_t* free_buff[MAX_BUFFERS] = {0, 0, 0, 0};
 static uint8_t max_free = 0;
+static uint8_t next_count = 0;
 
 static uint16_t stride = 0;
 
@@ -36,7 +42,7 @@ void displayStart(void)
 }
 
 /* Obtain a buffer from the free list */
-void displayGetFreeBuffer(uint8_t** buff)
+void __not_in_flash_func(displayGetFreeBuffer)(uint8_t** buff)
 {
     mutex_enter_blocking(&next_frame_mutex);
     if (max_free)
@@ -51,52 +57,51 @@ void displayGetFreeBuffer(uint8_t** buff)
     }
     else
     {
-        // No buffer available - which means that must be a buffer waiting
+        // No buffer available - which means that must be 2 buffers waiting
         // to be displayed. We have the lock, so force the queued buffer now
         // and take the current one
         *buff = curr_buff;
-        curr_buff = next_buff;
-        next_buff = 0;
+        curr_buff = next_buff[0];
+        next_buff[0] = next_buff[1];
+        next_count = 1;
     }
-    mutex_exit(&next_frame_mutex);
-}
-
-/* Return a buffer to free list without displaying it */
-void displayFreeBuffer(uint8_t* buff)
-{
-    // Obtain lock
-    mutex_enter_blocking(&next_frame_mutex);
-
-    free_buff[max_free++] = buff;
-
-    // free lock
     mutex_exit(&next_frame_mutex);
 }
 
 /* Display the buffer, optionally delaying presentation until vsync
    Option to put the currently displayed buffer onto free list,
-   note the option to mot put the previous buffer onto the
+   note the option to not put the previous buffer onto the
    free list allows for it to be redisplayed later (e.g.
    after a menu is removed) */
-void displayBuffer(uint8_t* buff, bool sync, bool free)
+void __not_in_flash_func(displayBuffer)(uint8_t* buff, bool sync, bool free)
 {
     // Obtain lock
     mutex_enter_blocking(&next_frame_mutex);
 
-    // Return any existing queue to free list
-    if (next_buff)
-    {
-        free_buff[max_free++] = next_buff;
-    }
-
     if (sync && !blank)
     {
-        // Store in new frame buffer
-        next_buff = buff;
+        // Store in next, unless next is full
+        if (next_count != MAX_NEXT)
+        {
+            next_buff[next_count++] = buff;
+        }
+        else
+        {
+            // Already have two next buffers, so release 1
+            free_buff[max_free++] = next_buff[0];
+
+            next_buff[0] = next_buff[1];
+            next_buff[1] = buff;
+        }
     }
     else
     {
-        next_buff = 0;
+        // Display immediately
+        for (int i=0; i<next_count; ++i)
+        {
+            free_buff[max_free++] = next_buff[i];
+        }
+        next_count = 0;
 
         // Read existing
         uint8_t* temp_buff = curr_buff;
@@ -116,18 +121,24 @@ void displayBuffer(uint8_t* buff, bool sync, bool free)
 /* Get a pointer to the buffer currently being displayed
    typically this is done if the buffer should be redisplayed
    after a menu is displayed */
-void displayGetCurrentBuffer(uint8_t** buff)
+void __not_in_flash_func(displayGetCurrentBuffer)(uint8_t** buff)
 {
     // Obtain lock
     mutex_enter_blocking(&next_frame_mutex);
 
     // Want the current buffer, or the queued buffer if one exists
-    if (next_buff)
+    if (next_count)
     {
         // Free the current buffer
         free_buff[max_free++] = curr_buff;
-        curr_buff = next_buff;
-        next_buff = 0;
+
+        curr_buff = next_buff[--next_count];
+
+        for (int i=0; i<next_count; ++i)
+        {
+            free_buff[max_free++] = next_buff[i];
+        }
+        next_count = 0;
     }
     *buff = curr_buff;
 
@@ -135,7 +146,7 @@ void displayGetCurrentBuffer(uint8_t** buff)
     mutex_exit(&next_frame_mutex);
 }
 
-void displayBlank(bool black)
+void __not_in_flash_func(displayBlank)(bool black)
 {
     // Obtain lock
     mutex_enter_blocking(&next_frame_mutex);
@@ -144,11 +155,11 @@ void displayBlank(bool black)
     blank_colour = black ? BLACK : WHITE;
 
     /* Free all buffers */
-    if (next_buff)
+    for (int i=0; i<next_count; ++i)
     {
-        free_buff[max_free++] = next_buff;
-        next_buff = 0;
+        free_buff[max_free++] = next_buff[i];
     }
+    next_count = 0;
 
     if (curr_buff)
     {
@@ -169,14 +180,16 @@ bool displayIsBlank(bool* isBlack)
 // Private function
 //
 
-static inline void displayNewFrame(void)
+static inline void __not_in_flash_func(displayNewFrame)(void)
 {
     mutex_enter_blocking(&next_frame_mutex);
-    if (next_buff)
+    if (!blank && next_count)
     {
         free_buff[max_free++] = curr_buff;
-        curr_buff = next_buff;
-        next_buff = 0;
+        curr_buff = next_buff[0];
+        --next_count;
+        if (next_count)
+        next_buff[0] = next_buff[1];
     }
     mutex_exit(&next_frame_mutex);
 }
