@@ -69,7 +69,6 @@ int LastInstruction;
 #define VMIN    170
 #define HMIN    8
 #define HMAX    32
-#define FMAX    6         // Tolerance in fixing sync
 
 static const int HSYNC_TOLERANCEMIN = HSCAN - HTOL;
 static const int HSYNC_TOLERANCEMAX = HSCAN + HTOL;
@@ -80,9 +79,6 @@ static const int VSYNC_MINLEN = VMIN;
 
 static int VSYNC_TOLERANCEMIN = SCAN50 - 100;
 static int VSYNC_TOLERANCEMAX = SCAN50 + 100;
-
-static int FSYNC_MIN = SCAN50 - (FMAX >> 1);
-static int FSYNC_MAX = SCAN50 + (FMAX << 1);
 
 static const int HSYNC_START = 16;
 static const int HSYNC_END = 32;
@@ -123,7 +119,7 @@ bool frameSync = false;
 int  adjustStartX=0;
 int  adjustStartY=0;
 
-void setEmulatedTVAndDisplay(bool fiftyHz, uint16_t vtol, bool fiveSevenSix)
+void setEmulatedTV(bool fiftyHz, uint16_t vtol)
 {
   // This can look confusing as we have an emulated display, and a real
   // display, both can be at either 50 or 60 Hz
@@ -131,33 +127,11 @@ void setEmulatedTVAndDisplay(bool fiftyHz, uint16_t vtol, bool fiveSevenSix)
   {
     VSYNC_TOLERANCEMIN = SCAN50 - vtol;
     VSYNC_TOLERANCEMAX = SCAN50 + vtol;
-
-    if (fiveSevenSix)
-    {
-      // Do not try to sync when frame rate too high for monitor
-      FSYNC_MIN = SCAN50 - (FMAX >> 1);
-    }
-    else
-    {
-      FSYNC_MIN = SCAN50 - (FMAX << 1);
-    }
-    FSYNC_MAX = SCAN50 + (FMAX << 1);
   }
   else
   {
     VSYNC_TOLERANCEMIN = SCAN60 - vtol;
     VSYNC_TOLERANCEMAX = SCAN60 + vtol;
-
-    if (!fiveSevenSix)
-    {
-      // Do not try to sync when frame rate too high for monitor
-      FSYNC_MIN = SCAN60 - (FMAX >> 1);
-    }
-    else
-    {
-      FSYNC_MIN = SCAN60 - (FMAX << 1);
-    }
-    FSYNC_MAX = SCAN60 + (FMAX << 1);
   }
 }
 
@@ -687,7 +661,7 @@ static inline void __not_in_flash_func(checkvsync)(int tolchk)
     }
     else
     {
-      displayAndNewScreen(frameSync && (RasterY > FSYNC_MIN) && (RasterY < FSYNC_MAX));
+      displayAndNewScreen(frameSync);
     }
     RasterY = 0;
     dest = disp.offset + (disp.stride_bit * adjustStartY) + adjustStartX;
@@ -727,7 +701,7 @@ static void anyout(void)
     {
       VSYNC_state = 0;
       // A fairly arbitrary value selected after comparing with a "real" ZX81
-      if (hsync_counter > 178)
+      if ((hsync_counter < HSYNC_START) || (hsync_counter >= 178) )
       {
         rowcounter_hold = true;
       }

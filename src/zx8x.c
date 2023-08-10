@@ -610,7 +610,7 @@ void z8x_Init(void)
   frameSync = emu_FrameSyncRequested();
   UDGEnabled = false;
 
-  setEmulatedTVAndDisplay(!useNTSC, emu_VTol(), emu_576Requested());
+  setEmulatedTV(!useNTSC, emu_VTol());
 
   hidInitialise(keyboard);
 
