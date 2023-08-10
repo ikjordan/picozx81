@@ -83,13 +83,9 @@ static void endMenu(bool blank)
     {
         if (blank)
         {
-            displayBlank(false);
-            displayFreeBuffer(currBuff);
+            memset(currBuff, 0x00, disp.stride_byte * disp.height);
         }
-        else
-        {
-            displayBuffer(currBuff, false, true);
-        }
+        displayBuffer(currBuff, false, true);
     }
 }
 

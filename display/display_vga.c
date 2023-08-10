@@ -70,7 +70,7 @@ const scanvideo_mode_t vga_mode_320x240_60d =
     .yscale = 2,
 };
 
-// 576p 50Hz accelerated by 625/623 * 50 -> 50.16 Hz
+// 576p 50Hz accelerated by 625/617 * 50 -> 50.65 Hz
 const scanvideo_timing_t vga_timing_720x576_50 =
 {
     .clock_freq = 27000000,
@@ -82,7 +82,7 @@ const scanvideo_timing_t vga_timing_720x576_50 =
     .h_sync_polarity = 1,
     .v_front_porch = 5,
     .v_pulse = 5,
-    .v_total = 623,
+    .v_total = 617,
     .v_sync_polarity = 1,
     .enable_clock = 0,
     .clock_polarity = 0,
@@ -140,7 +140,7 @@ uint displayInitialise(bool fiveSevenSix, uint16_t minBuffByte, uint16_t* pixelW
                          + minBuffByte;
     }
 
-    max_free = 3;
+    max_free = MAX_BUFFERS;
 
     // Return the values
     *pixelWidth = PIXEL_WIDTH;

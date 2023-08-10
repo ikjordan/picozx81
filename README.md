@@ -364,7 +364,8 @@ Both generate a display more than 320 pixels wide, so some information is not di
 + [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda)
   + This game generates 31 lines of text. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` to display the top lines (which includes the score). The game is still playable without the bottom line being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated correctly
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
-  + The logo on the final screen "flashes" after the scrolling is complete. This is because the logo is displayed interlaced, at roughly 52Hz, so does not map well to fixed framerate 50Hz and 60Hz displays
+  + The logo on the final screen "flashes" after the scrolling is complete. This is because the logo is displayed interlaced, at roughly 52Hz, so does not map well to fixed framerate 50Hz and 60Hz displays.  
+  An example program [head.p](examples/ZX81/Demos/heap.p) and [config.ini](examples/ZX81/Demos/config.ini) for a frame rate adjusted version of the final Rezurrection screen exists in the [Demos](examples/ZX81/Demos) example directory. When run with `FiveSevenSix` and `FrameSync`  set to `on` a stable interlaced image can be seen after the scrolling is complete
 
 # Developer Notes
 ## Use with an original ZX80/ZX81 keyboard

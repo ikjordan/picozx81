@@ -13,7 +13,6 @@ extern void displayStart(void);
 extern void displayGetFreeBuffer(uint8_t** buff);
 extern void displayBuffer(uint8_t* buff, bool sync, bool free);
 extern void displayGetCurrentBuffer(uint8_t** buff);
-extern void displayFreeBuffer(uint8_t* buff);
 
 extern void displayBlank(bool black);
 extern bool displayIsBlank(bool* isBlack);
