@@ -148,7 +148,7 @@ typedef struct
   char button;
   int memory;
   int sound;
-  ComputerType computer;
+  ComputerType_T computer;
   bool NTSC;
   uint16_t VTol;
   bool centre;
@@ -162,7 +162,7 @@ typedef struct
   bool extendFile;
   bool allFiles;
   bool fiveSevenSix;
-  bool frameSync;
+  FrameSync_T frameSync;
 } configuration_t;
 
 typedef struct
@@ -207,7 +207,7 @@ bool emu_ZX80Requested(void)
   return (specific.computer == ZX80);
 }
 
-ComputerType emu_ComputerRequested(void)
+ComputerType_T emu_ComputerRequested(void)
 {
   return specific.computer;
 }
@@ -290,7 +290,7 @@ bool emu_ResetNeeded(void)
   return resetNeeded;
 }
 
-bool emu_FrameSyncRequested(void)
+FrameSync_T emu_FrameSyncRequested(void)
 {
   return specific.frameSync;
 }
@@ -513,8 +513,19 @@ static int handler(void *user, const char *section, const char *name,
     }
     else if (!strcasecmp(name, "FrameSync"))
     {
-      // Defaults to off
-      c->conf->frameSync = isEnabled(value);
+      if (!strcasecmp(value, "Interlaced"))
+      {
+        c->conf->frameSync = ON_INTERLACED;
+      }
+      else if (isEnabled(value))
+      {
+        c->conf->frameSync = ON;
+      }
+      else
+      {
+        // Defaults to off
+        c->conf->frameSync = OFF;
+      }
     }
     else if (!strcasecmp(name, "MEMORY"))
     {
@@ -637,7 +648,7 @@ void emu_ReadDefaultValues(void)
     general.extendFile = true;
     general.allFiles = false;
     general.fiveSevenSix = false;
-    general.frameSync = false;
+    general.frameSync = OFF;
 
     selection[0] = 0;
   }

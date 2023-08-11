@@ -15,14 +15,15 @@ static  uint16_t blank_colour = BLACK;
 static semaphore_t display_initialised;
 static mutex_t next_frame_mutex;
 
-static uint8_t* curr_buff = 0;
-static uint8_t* pend_buff[MAX_PEND] = {0, 0};
-static uint8_t* free_buff[MAX_FREE] = {0, 0, 0, 0};
+static uint8_t* curr_buff = 0;      // buffer being displayed
+static uint8_t* last_buff = 0;      // previously displayed buffer (interlace mode only)
+static uint8_t* pend_buff[MAX_PEND] = {0, 0};           // Buffers queued for display
+static uint8_t* free_buff[MAX_FREE] = {0, 0, 0, 0};     // Buffers available to be claimed
+
 static uint8_t free_count = 0;
 static uint8_t pend_count = 0;
-
 static uint16_t stride = 0;
-static bool interlace = true;
+static bool interlace = false;
 static bool no_skip = false;
 
 //
@@ -30,6 +31,8 @@ static bool no_skip = false;
 //
 static void core1_main();
 static inline void freeAllPending(void);
+static inline void freeLast(void);
+static inline void swapCurrAndLast(void);
 static inline void newFrame(void);
 
 //
@@ -44,6 +47,18 @@ void displayStart(void)
     multicore_launch_core1(core1_main);
 
     sem_acquire_blocking(&display_initialised);
+}
+
+void __not_in_flash_func(displaySetInterlace)(bool on)
+{
+    mutex_enter_blocking(&next_frame_mutex);
+    interlace = on;
+
+    if (!interlace)
+    {
+        freeLast();
+    }
+    mutex_exit(&next_frame_mutex);
 }
 
 /* Obtain a buffer from the free list */
@@ -63,19 +78,28 @@ void __not_in_flash_func(displayGetFreeBuffer)(uint8_t** buff)
     }
     else
     {
-        // No buffer available - which means that must be 2 buffers waiting
-        // to be displayed. We have the lock, so force the queued buffer now
-        // and take the current one
-        if (pend_count == 2)
+        // No buffer available - so must have at least 1 buffer pending
+        // If there is a last buffer take that
+        if (last_buff)
         {
+            *buff = last_buff;
+            last_buff = 0;
+        }
+        else if (curr_buff)
+        {
+            // Take the current
             *buff = curr_buff;
             curr_buff = pend_buff[0];
-            pend_buff[0] = pend_buff[1];
-            --pend_count;
+
+            if (--pend_count)
+            {
+                pend_buff[0] = pend_buff[1];
+            }
         }
         else
         {
-            printf("In displayGetFreeBuffer: pend_count = %i\n", pend_count);
+            // To get here is unexpected!
+            printf("In displayGetFreeBuffer No buffers\n");
         }
     }
     mutex_exit(&next_frame_mutex);
@@ -109,7 +133,6 @@ void __not_in_flash_func(displayBuffer)(uint8_t* buff, bool sync, bool free)
 
                 pend_buff[0] = buff;
                 pend_count = 1;
-                printf("D2\n");
             }
             else
             {
@@ -118,7 +141,6 @@ void __not_in_flash_func(displayBuffer)(uint8_t* buff, bool sync, bool free)
 
                 pend_buff[0] = pend_buff[1];
                 pend_buff[1] = buff;
-                printf("D1\n");
             }
         }
     }
@@ -126,6 +148,7 @@ void __not_in_flash_func(displayBuffer)(uint8_t* buff, bool sync, bool free)
     {
         // Display immediately
         freeAllPending();
+        freeLast();
 
         // Read existing
         uint8_t* temp_buff = curr_buff;
@@ -134,6 +157,7 @@ void __not_in_flash_func(displayBuffer)(uint8_t* buff, bool sync, bool free)
         curr_buff = buff;
         if (temp_buff && free)
             free_buff[free_count++] = temp_buff;
+
 
         blank = false;
     }
@@ -175,12 +199,14 @@ void __not_in_flash_func(displayBlank)(bool black)
 
     /* Free all buffers */
     freeAllPending();
+    freeLast();
 
     if (curr_buff)
     {
         free_buff[free_count++] = curr_buff;
         curr_buff = 0;
     }
+
     // free lock
     mutex_exit(&next_frame_mutex);
 }
@@ -192,34 +218,86 @@ bool displayIsBlank(bool* isBlack)
 }
 
 //
-// Private function
+// Private functions
 //
 
 static inline void __not_in_flash_func(newFrame)(void)
 {
     mutex_enter_blocking(&next_frame_mutex);
-    if (!blank && pend_count)
+    if (!blank)
     {
-        if ((!interlace) || no_skip)
+        if (pend_count)
         {
-            free_buff[free_count++] = curr_buff;
-            curr_buff = pend_buff[0];
-            --pend_count;
-            if (pend_count)
+            if (interlace)
             {
-                pend_buff[0] = pend_buff[1];
+                if (no_skip)
+                {
+                    // Free the last frame
+                    if (last_buff)
+                    {
+                        free_buff[free_count++] = last_buff;
+                    }
+
+                    // Store a new last frame, unless we have another pending buffer
+                    if (pend_count == MAX_PEND)
+                    {
+                        last_buff = 0;
+                        free_buff[free_count++] = curr_buff;
+                    }
+                    else
+                    {
+                        last_buff = curr_buff;
+                    }
+                    curr_buff = pend_buff[0];
+                    --pend_count;
+                    if (pend_count)
+                    {
+                        pend_buff[0] = pend_buff[1];
+                    }
+                }
+                else
+                {
+                    // We are displaying the last_buffer, because we
+                    // missed earlier, so either swap, or jump forward if we have
+                    // the buffers to do it
+                    if (pend_count == MAX_PEND)
+                    {
+                        // Free the current and last buffers
+                        freeLast();
+                        free_buff[free_count++] = curr_buff;
+
+                        curr_buff = pend_buff[1];
+                        last_buff = pend_buff[0];
+                        pend_count = 0;
+                    }
+                    else
+                    {
+                        swapCurrAndLast();
+                    }
+                    no_skip = !no_skip;
+                }
+            }
+            else
+            {
+                // Just display next frame
+                free_buff[free_count++] = curr_buff;
+                curr_buff = pend_buff[0];
+                --pend_count;
+                if (pend_count)
+                {
+                    pend_buff[0] = pend_buff[1];
+                }
             }
         }
         else
         {
-            no_skip = !no_skip;
-            printf("S\n");
-
+            if (interlace)
+            {
+                // Have to swap back to previous, if there is one
+                swapCurrAndLast();
+                no_skip = !no_skip;
+            }
         }
-    }
-    else
-    {
-        no_skip = !no_skip;
     }
     mutex_exit(&next_frame_mutex);
 }
@@ -231,4 +309,23 @@ static inline void __not_in_flash_func(freeAllPending)(void)
         free_buff[free_count++] = pend_buff[i];
     }
     pend_count = 0;
+}
+
+static inline void __not_in_flash_func(freeLast)(void)
+{
+    if (last_buff)
+    {
+        free_buff[free_count++] = last_buff;
+        last_buff = 0;
+    }
+}
+
+static inline void __not_in_flash_func(swapCurrAndLast)(void)
+{
+    if (last_buff)
+    {
+        uint8_t* tmp_buff = curr_buff;
+        curr_buff = last_buff;
+        last_buff = tmp_buff;
+    }
 }

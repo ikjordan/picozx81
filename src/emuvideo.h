@@ -24,6 +24,8 @@ typedef struct
 extern Display_t disp;
 
 extern uint emu_VideoInit(bool fiveSevenSix);
+extern void emu_VideoSetInterlace(void);
+
 
 #ifdef __cplusplus
 }

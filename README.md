@@ -11,10 +11,12 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + Emulates ZonX and Quicksilva sound
 + Emulates user defined graphics, including CHR$128 and QS User Defined Graphics
 + Emulation runs at accurate speed of a 3.25MHz ZX81
-+ Can display at 640x480 or 720x576 (for an authentic display on a UK TV)
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of up to 320 by 240 pixels (40 character width and 30 character height) and beyond
 + Load `.p`, `.81`, `.o` and `.80` files from micro SD Card. Save `.p` and `.o` files
++ Can display at 640x480 or 720x576 (for an authentic display on a UK TV)
++ 720x576 runs at a frame rate to match the "real" ZX81 (~50.6 Hz).
++ An interlaced mode can be selected to display interlaced images with minimal flicker
 + Supports loading and saving of memory blocks using [ZXpand like syntax](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual#load)
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
@@ -103,9 +105,9 @@ The following can be configured:
 | LowRAM | Selects if RAM populated between 0x2000 and 0x3fff| Off | Typically used in conjunction with WRX to create a hires display file in low memory, can also be used for UDG graphics emulation if WRX off|
 | M1NOT | Allows machine code to be executed between 0x8000 and 0xbfff| Off |Memory must be set to 32 or 48   |
 | ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXpand+ syntax|On| See [Loading and Saving Memory Blocks](#loading-and-saving-memory-blocks)|
-| Centre | When enabled the usual 32 by 24 character display is centred on screen| On | When in 640 by 480 mode, set to Off for some programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
-| FrameSync | Synchronises screen updates to the start of the display frame| Off |Reduces "tearing" in programs with vertical scrolling, at the expense of a possible small lag |
-| CHR128 | Enables emulation of a 128 character user defined graphics board (CHR$128) in Low memory. | Off|When enabled LowRAM is forced to On, WRX and QSUDG are forced to off|
+| Centre | When enabled the usual 32 by 24 character display is centred on screen| On | When in 640 by 480 mode, set to `Off` for some programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
+| FrameSync | Synchronises screen updates to the start of the display frame. Option to synchronise frame pairs for programs that display interlaced images| Off |`On` reduces "tearing" in programs with horizontal scrolling, at the expense of a possible small lag. `Interlaced` reduces flickering in programs that display interlaced images|
+| CHR128 | Enables emulation of a 128 character user defined graphics board (CHR$128) in Low memory. | Off|When enabled LowRAM is forced to `On`, WRX and QSUDG are forced to `off`|
 | QSUDG | Enables emulation of the QS user defined graphics board| Off |Memory automatically limited to 16 when selected   |
 | Sound | Selects sound card (if any) | Off | Quicksilva and ZonX supported |
 | ACB | Enables ACB stereo if sound card enabled | Off |  |
@@ -115,8 +117,8 @@ The following can be configured:
 
 **Notes:**
 1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if UDG is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400  to 0x87ff)
-2. To emulate other standard UDG graphics cards that reside between 0x2000 and 0x3fff set `LowRAM` to On and `WRX` to Off. This setting is needed to run e.g. [Galaxians with user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388). If emulation of CHR128 UDG graphics is required set `CHR128` to On. This setting is needed to run e.g. [zedgragon](https://github.com/charlierobson/zedragon)
-3. If `NTSC` is set to On and `Centre` is set to Off then a black vsync bar will be seen at the bottom of the display for programs that generate a typical 192 line display
+2. To emulate other standard UDG graphics cards that reside between 0x2000 and 0x3fff set `LowRAM` to `On` and `WRX` to `Off`. This setting is needed to run e.g. [Galaxians with user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388). If emulation of CHR128 UDG graphics is required set `CHR128` to `On`. This setting is needed to run e.g. [zedgragon](https://github.com/charlierobson/zedragon)
+3. If `NTSC` is set to `On` and `Centre` is set to `Off` then a black vsync bar will be seen at the bottom of the display for programs that generate a typical 192 line display
 4. A higher tolerance value set for `VTOL` results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). The default value of 100 emulates a TV that very quickly regains vertical lock. Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
 5. The "Big Bang" ROM can double the speed of BASIC programs
 ### Joystick
@@ -335,7 +337,7 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 ### NTSC
 + [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p)
   + This is written for a 60Hz ZX81. For the second count to be accurate the `NTSC` option must be enabled. If `NTSC` is not selected the clock will run at 50/60 speed. Nova generates up to 26 rows of 34 characters. These are displayed correctly
-  + To see the clock when `NTSC` is *not* enabled, `Centre` must be set to Off. In this case a vsync bar will be seen at the bottom of the display
+  + To see the clock when `NTSC` is *not* enabled, `Centre` must be set to `Off`. In this case a vsync bar will be seen at the bottom of the display
 + [Spirograph](http://www.pictureviewerpro.com/hosting/zx81/download/zx81/fred/spiro.zip)
     + For the `QUICK` display mode to function correctly the `NTSC` option must be enabled. Works correctly in `FAST` and `SLOW` mode regardless of the `NTSC` option
 
@@ -352,6 +354,10 @@ Both generate a display more than 320 pixels wide, so some information is not di
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
   + The initial fast horizontal scrolling highlights the non-synchronised screen drawing of the emulator when running in 640 by 480 mode with `FrameSync` set to `Off`, leading to visible tearing
 
+### Interlaced Images
++ [Ilena](https://www.sinclairzxworld.com/viewtopic.php?p=16058)
+  + Best viewed with `FrameSync` set to `Interlaced`
+
 ## ZX80
 + [ZX80 3K QS DEFENDER](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Defender.htm)
   + This game generates 32 lines of text. The bottom two line is not displayed in the emulator, but the game is still playable. The QS sound board is emulated
@@ -364,8 +370,8 @@ Both generate a display more than 320 pixels wide, so some information is not di
 + [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda)
   + This game generates 31 lines of text. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` to display the top lines (which includes the score). The game is still playable without the bottom line being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated correctly
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
-  + The logo on the final screen "flashes" after the scrolling is complete. This is because the logo is displayed interlaced, at roughly 52Hz, so does not map well to fixed framerate 50Hz and 60Hz displays.  
-  An example program [head.p](examples/ZX81/Demos/heap.p) and [config.ini](examples/ZX81/Demos/config.ini) for a frame rate adjusted version of the final Rezurrection screen exists in the [Demos](examples/ZX81/Demos) example directory. When run with `FiveSevenSix` and `FrameSync`  set to `on` a stable interlaced image can be seen after the scrolling is complete
+  + The logo on the final screen "flashes" after the scrolling is complete. This is because the logo is displayed interlaced, at roughly 52Hz. Set `FrameSync` to `Interlaced` to display the final screen correctly without flashes.  
+  A frame rate adjusted version of the final Rezurrection screen exists in the [Demos](examples/ZX81/Demos) example directory: [head.p](examples/ZX81/Demos/heap.p) and [config.ini](examples/ZX81/Demos/config.ini). When run with `FiveSevenSix` and `FrameSync`  set to `on` or `interlaced` a stable interlaced image can be seen after the scrolling is complete
 
 # Developer Notes
 ## Use with an original ZX80/ZX81 keyboard

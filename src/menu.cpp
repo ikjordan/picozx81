@@ -149,7 +149,7 @@ bool statusMenu(void)
     writeString("Resolution:", lhs, ++lcount);
     writeString((emu_576Requested()) ? "720x568x50" : "640x480x60", rhs, lcount++);
     writeString("Frame Sync:", lhs, lcount);
-    writeString((emu_FrameSyncRequested()) ? "Yes" : "No", rhs, lcount++);
+    writeString((emu_FrameSyncRequested() == OFF) ? "Off" : (emu_FrameSyncRequested() == ON) ? "On" : "On Int", rhs, lcount++);
 
     writeString("Em TV Type:", lhs, ++lcount);
     writeString(emu_NTSCRequested() ? "NTSC" : "PAL", rhs, lcount++);

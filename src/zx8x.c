@@ -607,11 +607,10 @@ void z8x_Init(void)
   useNTSC = emu_NTSCRequested();
   adjustStartX = emu_CentreX();
   adjustStartY = emu_CentreY();
-  frameSync = emu_FrameSyncRequested();
+  frameSync = (emu_FrameSyncRequested() != OFF);
   UDGEnabled = false;
 
   setEmulatedTV(!useNTSC, emu_VTol());
-
   hidInitialise(keyboard);
 
   /* load rom with ghosting at 0x2000 */
