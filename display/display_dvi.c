@@ -19,7 +19,7 @@
 // approx 0.5% faster than 50%
 // The increase in frame rate is achieved by reducing the back porch
 // Adjusting the timing to 50 * 625 / (625 - 39 + 31) = 50.65 Hz
-const struct dvi_timing __dvi_const(dvi_timing_720x576p_51hz)
+const struct dvi_timing __dvi_const(dvi_timing_720x576p_51hz) =
 {
     .h_sync_polarity   = false,
     .h_front_porch     = 12,

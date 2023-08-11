@@ -370,10 +370,12 @@ void emu_SetZX80(bool zx80)
   if (zx80)
   {
     general.computer = ZX80;
+    specific.computer = ZX80;
   }
   else if (general.computer == ZX80)
   {
       general.computer = ZX81;
+      specific.computer = ZX81;
   }
 }
 
