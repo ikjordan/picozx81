@@ -10,14 +10,7 @@
 #include "zx80bmp.h"
 #include "zx81bmp.h"
 
-// Unions to allow variable length data manipulation
-typedef union
-{
-    uint16_t i16[256][8];
-    uint32_t i32[256][4];
-    uint64_t i64[256][2];
-} Look_u;
-
+// Union to allow variable length data manipulation
 typedef union
 {
     uint16_t i16[8];
@@ -25,7 +18,7 @@ typedef union
     uint64_t i64[2];
 } Fill_u;
 
-static Look_u lookup;
+static Fill_u lookup[256];
 static uint16_t PIXEL_WIDTH = 0;
 static uint16_t BYTE_WIDTH = 0;
 static uint16_t HEIGHT = 0;
@@ -134,13 +127,13 @@ uint displayInitialise(bool fiveSevenSix, uint16_t minBuffByte, uint16_t* pixelW
     stride = minBuffByte + BYTE_WIDTH;
 
         // Allocate the buffers
-    for (int i=0; i<MAX_BUFFERS; ++i)
+    for (int i=0; i<MAX_FREE; ++i)
     {
         free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
                          + minBuffByte;
     }
 
-    max_free = MAX_BUFFERS;
+    free_count = MAX_FREE;
 
     // Return the values
     *pixelWidth = PIXEL_WIDTH;
@@ -214,8 +207,8 @@ static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, i
     Fill_u first;
 
     // Extract the data for the first 8 pixels
-    first.i64[0] = lookup.i64[display_line[0]][0];
-    first.i64[1] = lookup.i64[display_line[0]][1];
+    first.i64[0] = lookup[display_line[0]].i64[0];
+    first.i64[1] = lookup[display_line[0]].i64[1];
 
     // interlace the first two
     buff[0] = COMPOSABLE_RAW_RUN          | (first.i16[0] << 16);
@@ -232,15 +225,15 @@ static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, i
     uint64_t* dest = (uint64_t*)(&buff[5]);
     for (int i=1; i<(keyboard_x>>2); ++i)
     {
-        *dest++ = lookup.i64[display_line[i]][0];
-        *dest++ = lookup.i64[display_line[i]][1];
+        *dest++ = lookup[display_line[i]].i64[0];
+        *dest++ = lookup[display_line[i]].i64[1];
     }
 
     // Process any remaining pixels that are not in a full byte
     for (int i = 0; i < (keyboard_x & 0x3); ++i)
     {
         // Add 1 to account for interlaced messages at start
-        buff[keyboard_x - (keyboard_x & 0x3) + 1 + i] = lookup.i32[display_line[keyboard_x>>2]][i];
+        buff[keyboard_x - (keyboard_x & 0x3) + 1 + i] = lookup[display_line[keyboard_x>>2]].i32[i];
     }
 
     // Process the keyboard
@@ -260,15 +253,15 @@ static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, i
     {
         // Add 1 to account for interlaced messages at start
         buff[(keyboard->width>>1)+keyboard_x+1+i] = 
-         lookup.i32[display_line[(keyboard->width>>3)+(keyboard_x>>2)]][4-(keyboard_x&0x3)+i];
+         lookup[display_line[(keyboard->width>>3)+(keyboard_x>>2)]].i32[4-(keyboard_x&0x3)+i];
     }
 
     // Now aligned to a byte boundary
     dest = (uint64_t*)(&buff[(keyboard->width>>1)+keyboard_x+1+(keyboard_x & 0x3)]);
     for (int i=BYTE_WIDTH-(keyboard_x>>2); i<BYTE_WIDTH; ++i)
     {
-        *dest++ = lookup.i64[display_line[i]][0];
-        *dest++ = lookup.i64[display_line[i]][1];
+        *dest++ = lookup[display_line[i]].i64[0];
+        *dest++ = lookup[display_line[i]].i64[1];
     }
 
     // Must end with a black pixel
@@ -282,8 +275,8 @@ static int32_t __not_in_flash_func(populate_line)(uint8_t* display_line, uint32_
     Fill_u first;
 
     // Extract the data for the first 8 pixels
-    first.i64[0] = lookup.i64[display_line[0]][0];
-    first.i64[1] = lookup.i64[display_line[0]][1];
+    first.i64[0] = lookup[display_line[0]].i64[0];
+    first.i64[1] = lookup[display_line[0]].i64[1];
 
     // interlace the first two
     buff[0] = COMPOSABLE_RAW_RUN          | (first.i16[0] << 16);
@@ -300,8 +293,8 @@ static int32_t __not_in_flash_func(populate_line)(uint8_t* display_line, uint32_
     uint64_t* dest = (uint64_t*)(&buff[5]);
     for (int i=1; i<BYTE_WIDTH; ++i)
     {
-        *dest++ = lookup.i64[display_line[i]][0];
-        *dest++ = lookup.i64[display_line[i]][1];
+        *dest++ = lookup[display_line[i]].i64[0];
+        *dest++ = lookup[display_line[i]].i64[1];
     }
 
     // Must end with a black pixel
@@ -328,7 +321,7 @@ static void __not_in_flash_func(render_loop)()
         if (line_num == 0)
         {
             // Check if need to display new image
-            displayNewFrame();
+            newFrame();
         }
 
         uint8_t* current = curr_buff;    // As disp_index can change at any time
@@ -368,7 +361,7 @@ static void initialise1bppLookup()
         for (int j=0; j<8; ++j)
         {
             // If the bit is set, then the byte will be black
-            lookup.i16[i][j] = ((i<<j)&0x80) ? BLACK : WHITE;
+            lookup[i].i16[j] = ((i<<j)&0x80) ? BLACK : WHITE;
         }
     }
 }

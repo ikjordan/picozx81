@@ -85,13 +85,13 @@ uint displayInitialise(bool fiveSevenSix, uint16_t minBuffByte, uint16_t* pixelW
     stride = linePad + byte_width;
 
     // Allocate the buffers
-    for (int i=0; i<MAX_BUFFERS; ++i)
+    for (int i=0; i<MAX_FREE; ++i)
     {
         free_buff[i] = (uint8_t*)malloc(startPad + stride * HEIGHT)
                          + startPad;
     }
 
-    max_free = MAX_BUFFERS;
+    free_count = MAX_FREE;
 
     // Return the values
     *pixelWidth = PIXEL_WIDTH;
@@ -127,7 +127,7 @@ static void __not_in_flash_func(render_loop)()
 {
     while (true)
     {
-        displayNewFrame();
+        newFrame();
 
         // 1 pixel generates 1 word = 4 bytes of tmds
         for (uint y = 0; y < HEIGHT; ++y)
