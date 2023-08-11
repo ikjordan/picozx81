@@ -16,7 +16,13 @@ typedef enum {
     ZX80 = 0,
     ZX81,
     ZX81X2 // Big bang ROM
-} ComputerType;
+} ComputerType_T;
+
+typedef enum {
+    OFF = 0,
+    ON,
+    ON_INTERLACED
+} FrameSync_T;
 
 extern void emu_init(void);
 
@@ -39,7 +45,7 @@ extern void emu_ReadSpecificValues(const char* filename);
 extern void emu_SetZX80(bool zx80);
 extern int emu_MemoryRequested(void);
 extern bool emu_ZX80Requested(void);
-extern ComputerType emu_ComputerRequested(void);
+extern ComputerType_T emu_ComputerRequested(void);
 extern bool emu_M1NOTRequested(void);
 extern bool emu_LowRAMRequested(void);
 extern bool emu_QSUDGRequested(void);
@@ -56,7 +62,7 @@ extern int emu_CentreX(void);
 extern int emu_CentreY(void);
 extern bool emu_ResetNeeded(void);
 
-extern bool emu_FrameSyncRequested(void);
+extern FrameSync_T emu_FrameSyncRequested(void);
 extern bool emu_576Requested(void);
 
 extern void emu_WaitFor50HzTimer(void);

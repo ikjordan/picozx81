@@ -500,6 +500,8 @@ void ResetZ80(void)
   hsync_pending=0;
   VSYNC_state=HSYNC_state=0;
 
+  emu_VideoSetInterlace();
+
   if (!scrnbmp_new)
   {
     displayGetFreeBuffer(&scrnbmp_new);

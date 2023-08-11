@@ -44,3 +44,9 @@ uint emu_VideoInit(bool fiveSevenSix)
 
     return clock;
 }
+
+void emu_VideoSetInterlace(void)
+{
+    displaySetInterlace(emu_FrameSyncRequested() == ON_INTERLACED);
+}
+
