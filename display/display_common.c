@@ -5,7 +5,7 @@
 #define MAX_FREE 4
 #define MAX_PEND 2
 
-// Note: Need 40 buffers, as the ZX81 produces rates at greater than 50 Hz
+// Note: Need 4 buffers, as the ZX81 produces rates at greater than 50 Hz
 // so 2 frames can be created in one time slice, and 1 emulated time slice
 // may complete in 14ms, therefore a backlog of 2 frames is valid, no_skip
 // when nominally frame matched
