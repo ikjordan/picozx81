@@ -15,7 +15,7 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + Supports larger ZX81 generated displays of up to 320 by 240 pixels (40 character width and 30 character height) and beyond
 + Load `.p`, `.81`, `.o` and `.80` files from micro SD Card. Save `.p` and `.o` files
 + Can display at 640x480 or 720x576 (for an authentic display on a UK TV)
-+ 720x576 runs at a frame rate to match the "real" ZX81 (~50.65 Hz).
++ 720x576 can be configured to run at a frame rate to match the "real" ZX81 (~50.65 Hz).
 + An interlaced mode can be selected to display interlaced images with minimal flicker
 + Supports loading and saving of memory blocks using [ZXpand like syntax](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual#load)
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
@@ -377,6 +377,8 @@ Both generate a display more than 320 pixels wide, so some information is not di
 ## Programs with limitations or artefacts
 + [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda)
   + This game generates 31 lines of text. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` to display the top lines (which includes the score). The game is still playable without the bottom line being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated correctly
++ [Wa-Tor](http://www.pictureviewerpro.com/hosting/zx81/download/zx81/fred/wator.zip)
+  + This has a pseudo hi-res introduction screen. Towards the bottom of the screen is the text: "Experiment with predators and prey". On a "real" ZX81 the text is distorted, due to a variation in the horizontal starting position. This emulator does not show this distortion
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
   + The logo on the final screen "flashes" after the scrolling is complete. This is because the logo is displayed interlaced, at roughly 52Hz. Set `FrameSync` to `Interlaced` to display the final screen correctly without flashes.  
   A frame rate adjusted version of the final Rezurrection screen exists in the [Demos](examples/ZX81/Demos) example directory: [head.p](examples/ZX81/Demos/heap.p) and [config.ini](examples/ZX81/Demos/config.ini). When run with `FiveSevenSix` and `FrameSync`  set to `on` or `interlaced` a stable interlaced image can be seen after the scrolling is complete
