@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include "pico/stdlib.h"
+#include "hardware/watchdog.h"
 #include <stdio.h>
 #include <string.h>
 #include "tusb.h"
@@ -137,6 +138,7 @@ void emu_init(void)
  * Configuration File
  ********************************/
 #define CONFIG_FILE "config.ini"
+#define REBOOT_FILE "reboot.ini"
 #define VTOL 100        // Default TV Vertical tolerance in scanlines
 
 typedef struct
@@ -161,22 +163,22 @@ typedef struct
   bool doubleShift;
   bool extendFile;
   bool allFiles;
-  bool fiveSevenSix;
+  FiveSevenSix_T fiveSevenSix;
   FrameSync_T frameSync;
-} configuration_t;
+} Configuration_T;
 
 typedef struct
 {
   const char *section;
-  configuration_t *conf;
-} conf_handler_t;
+  Configuration_T *conf;
+} ConfHandler_T;
 
 static char selection[MAX_FILENAME_LEN] = "";
 static char dirPath[MAX_DIRECTORY_LEN] = "";
 
-static configuration_t specific;    // The specific settings for the file to be loaded
-static configuration_t general;     // The settings specified in the default section
-static configuration_t root_config; // The settings specified in the default section
+static Configuration_T specific;    // The specific settings for the file to be loaded
+static Configuration_T general;     // The settings specified in the default section
+static Configuration_T root_config; // The settings specified in the default section
 
 static bool resetNeeded = false;
 
@@ -221,6 +223,11 @@ int emu_MemoryRequested(void)
 bool emu_NTSCRequested(void)
 {
   return specific.NTSC;
+}
+
+bool emu_Centre(void)
+{
+  return specific.centre;
 }
 
 int emu_CentreX(void)
@@ -295,7 +302,7 @@ FrameSync_T emu_FrameSyncRequested(void)
   return specific.frameSync;
 }
 
-bool emu_576Requested(void)
+FiveSevenSix_T emu_576Requested(void)
 {
   return specific.fiveSevenSix;
 }
@@ -374,8 +381,61 @@ void emu_SetZX80(bool zx80)
   }
   else if (general.computer == ZX80)
   {
-      general.computer = ZX81;
-      specific.computer = ZX81;
+    general.computer = ZX81;
+    specific.computer = ZX81;
+  }
+}
+
+void emu_SetComputer(ComputerType_T computer)
+{
+  general.computer = computer;
+  specific.computer = computer;
+}
+
+void emu_SetFrameSync(FrameSync_T fsync)
+{
+  general.frameSync = fsync;
+  specific.frameSync = fsync;
+}
+
+extern void emu_SetNTSC(bool ntsc)
+{
+  general.NTSC = ntsc;
+  specific.NTSC = ntsc;
+}
+
+void emu_SetVTol(uint16_t vTol)
+{
+  general.VTol = vTol;
+  specific.VTol = vTol;
+}
+
+void emu_SetCentre(bool centre)
+{
+  general.centre = centre;
+  specific.centre = centre;
+}
+
+void emu_SetRebootMode(FiveSevenSix_T mode)
+{
+  char filepath[MAX_FULLPATH_LEN];
+
+  strcpy(filepath, "/");
+  strcat(filepath, REBOOT_FILE);
+
+  // Open the file
+  FRESULT res = f_open(&file, filepath, FA_CREATE_ALWAYS|FA_WRITE);
+  if (res == FR_OK)
+  {
+    UINT bw;
+    strcpy(filepath, "[Default]\n");
+    f_write(&file, filepath, strlen(filepath), &bw);
+    sprintf(filepath, "FiveSevenSix = %s\n", (mode == MATCH) ? "MATCH" : (mode == ON) ? "ON" : "OFF");
+    f_write(&file, filepath, strlen(filepath), &bw);
+    f_close(&file);
+
+    // Set the watchdog to trigger a reboot
+    watchdog_enable(10, true);
   }
 }
 
@@ -403,7 +463,7 @@ static bool isEnabled(const char* val)
 static int handler(void *user, const char *section, const char *name,
                    const char *value)
 {
-  conf_handler_t *c = (conf_handler_t *)user;
+  ConfHandler_T *c = (ConfHandler_T *)user;
   if (!strcasecmp(section, c->section))
   {
     if (!strcasecmp(name, "UP"))
@@ -515,16 +575,16 @@ static int handler(void *user, const char *section, const char *name,
     {
       if (!strcasecmp(value, "Interlaced"))
       {
-        c->conf->frameSync = ON_INTERLACED;
+        c->conf->frameSync = SYNC_ON_INTERLACED;
       }
       else if (isEnabled(value))
       {
-        c->conf->frameSync = ON;
+        c->conf->frameSync = SYNC_ON;
       }
       else
       {
         // Defaults to off
-        c->conf->frameSync = OFF;
+        c->conf->frameSync = SYNC_OFF;
       }
     }
     else if (!strcasecmp(name, "MEMORY"))
@@ -584,8 +644,19 @@ static int handler(void *user, const char *section, const char *name,
       }
       else if (!strcasecmp(name, "FiveSevenSix"))
       {
-        // Defaults to off
-        c->conf->fiveSevenSix = isEnabled(value);
+        if (!strcasecmp(value, "Match"))
+        {
+          c->conf->fiveSevenSix = MATCH;
+        }
+        else if (isEnabled(value))
+        {
+          c->conf->fiveSevenSix = ON;
+        }
+        else
+        {
+          // Defaults to off
+          c->conf->fiveSevenSix = OFF;
+        }
       }
       else
       {
@@ -620,7 +691,7 @@ static int ini_parse_fatfs(const char *filename, ini_handler handler, void *user
 
 void emu_ReadDefaultValues(void)
 {
-  conf_handler_t hand;
+  ConfHandler_T hand;
   char name[] = "default";
   static bool first = true;
 
@@ -647,8 +718,8 @@ void emu_ReadDefaultValues(void)
     general.doubleShift = true;
     general.extendFile = true;
     general.allFiles = false;
-    general.fiveSevenSix = false;
-    general.frameSync = OFF;
+    general.fiveSevenSix = OFF;
+    general.frameSync = SYNC_OFF;
 
     selection[0] = 0;
   }
@@ -669,6 +740,17 @@ void emu_ReadDefaultValues(void)
 
   if (first)
   {
+    // Check for reboot
+    config[0] = 0;
+    strcat(config, REBOOT_FILE);
+    if (emu_FileSize(config))
+    {
+      // Parse reboot.ini if it exists
+      ini_parse_fatfs(config, handler, &hand);
+
+      // remove the file
+      f_unlink(config);
+    }
     memcpy(&root_config, &general, sizeof(general));
   }
 
@@ -683,8 +765,8 @@ void emu_ReadDefaultValues(void)
 // Note this should be called after the filename has been validated
 void emu_ReadSpecificValues(const char *filename)
 {
-  conf_handler_t hand;
-  configuration_t used;
+  ConfHandler_T hand;
+  Configuration_T used;
 
   // Store the settings we have before
   memcpy(&used, &specific, (sizeof(specific)));

@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-extern uint displayInitialise(bool fiveSevenSix, uint16_t minBuffByte, uint16_t* pixelWidth,
+extern uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                               uint16_t* pixelHeight, uint16_t* strideBit);
 extern void displayStart(void);
 

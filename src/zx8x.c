@@ -7,6 +7,7 @@
 #include "zx8x.h"
 #include "emuapi.h"
 #include "emusound.h"
+#include "emuvideo.h"
 #include "common.h"
 #include "hid_app.h"
 #include "hid_usb.h"
@@ -607,7 +608,7 @@ void z8x_Init(void)
   useNTSC = emu_NTSCRequested();
   adjustStartX = emu_CentreX();
   adjustStartY = emu_CentreY();
-  frameSync = (emu_FrameSyncRequested() != OFF);
+  frameSync = (emu_FrameSyncRequested() != SYNC_OFF);
   UDGEnabled = false;
 
   setEmulatedTV(!useNTSC, emu_VTol());
@@ -641,6 +642,16 @@ void z8x_Init(void)
 
   ResetZ80();
   emu_sndInit(sound_ay != AY_TYPE_NONE);
+}
+
+void z8x_updateValues(void)
+{
+  useNTSC = emu_NTSCRequested();
+  adjustStartX = emu_CentreX();
+  adjustStartY = emu_CentreY();
+  frameSync = (emu_FrameSyncRequested() != SYNC_OFF);
+  setEmulatedTV(!useNTSC, emu_VTol());
+  emu_VideoSetInterlace();
 }
 
 bool z8x_Step(void)

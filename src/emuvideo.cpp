@@ -16,11 +16,19 @@
 #define DISPLAY_START_Y_720      0  // Y Offset to first pixel with no centring
 #define DISPLAY_ADJUST_X_720     2  // The number of pixels to adjust in X dimension to centre the display
 
-Display_t disp;                     // Dimension information for the display
+Display_T disp;                     // Dimension information for the display
 
-uint emu_VideoInit(bool fiveSevenSix)
+uint emu_VideoInit(FiveSevenSix_T fiveSevenSix)
 {
-    uint clock = displayInitialise(fiveSevenSix, 1, &disp.width, 
+    bool match = false;
+    bool five = (emu_576Requested() != OFF);
+
+    if (five)
+    {
+        match = (emu_576Requested() != ON);
+    }
+
+    uint clock = displayInitialise(five, match, 1, &disp.width,
                                    &disp.height, &disp.stride_bit);
 
     if (fiveSevenSix)
@@ -35,7 +43,7 @@ uint emu_VideoInit(bool fiveSevenSix)
         disp.start_y = DISPLAY_START_Y_640;
         disp.adjust_x = DISPLAY_ADJUST_X_640;
     }
-    
+
     // Initialise the rest of the structure
     disp.stride_byte = disp.stride_bit >> 3;
     disp.end_x = disp.start_x + disp.width;
@@ -47,6 +55,6 @@ uint emu_VideoInit(bool fiveSevenSix)
 
 void emu_VideoSetInterlace(void)
 {
-    displaySetInterlace(emu_FrameSyncRequested() == ON_INTERLACED);
+    displaySetInterlace(emu_FrameSyncRequested() == SYNC_ON_INTERLACED);
 }
 

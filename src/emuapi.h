@@ -19,10 +19,16 @@ typedef enum {
 } ComputerType_T;
 
 typedef enum {
+    SYNC_OFF = 0,
+    SYNC_ON,
+    SYNC_ON_INTERLACED
+} FrameSync_T;
+
+typedef enum {
     OFF = 0,
     ON,
-    ON_INTERLACED
-} FrameSync_T;
+    MATCH
+} FiveSevenSix_T;
 
 extern void emu_init(void);
 
@@ -42,7 +48,6 @@ extern const char* emu_GetDirectory(void);
 extern void emu_SetDirectory(const char* dir);
 extern void emu_ReadDefaultValues(void);
 extern void emu_ReadSpecificValues(const char* filename);
-extern void emu_SetZX80(bool zx80);
 extern int emu_MemoryRequested(void);
 extern bool emu_ZX80Requested(void);
 extern ComputerType_T emu_ComputerRequested(void);
@@ -58,12 +63,22 @@ extern bool emu_ExtendFileRequested(void);
 extern bool emu_AllFilesRequested(void);
 extern uint16_t emu_VTol(void);
 extern bool emu_ACBRequested(void);
+extern bool emu_Centre(void);
 extern int emu_CentreX(void);
 extern int emu_CentreY(void);
 extern bool emu_ResetNeeded(void);
 
 extern FrameSync_T emu_FrameSyncRequested(void);
-extern bool emu_576Requested(void);
+extern FiveSevenSix_T emu_576Requested(void);
+
+extern void emu_SetZX80(bool zx80);
+extern void emu_SetFrameSync(FrameSync_T fsync);
+extern void emu_SetNTSC(bool ntsc);
+extern void emu_SetVTol(uint16_t vTol);
+extern void emu_SetCentre(bool centre);
+extern void emu_SetComputer(ComputerType_T computer);
+
+extern void emu_SetRebootMode(FiveSevenSix_T mode);
 
 extern void emu_WaitFor50HzTimer(void);
 

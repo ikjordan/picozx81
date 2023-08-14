@@ -2,6 +2,7 @@
 #define EMUVIDEO_H
 
 #include <stdint.h>
+#include "emuapi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,11 +20,11 @@ typedef struct
     uint16_t end_y;         // Y Offset in lines to last line to display
     int16_t  adjust_x;      // Pixels to adjust in X dimension to centre the display
     int16_t  offset;        // Offset in bits to convert from raster to display coords
-} Display_t;
+} Display_T;
 
-extern Display_t disp;
+extern Display_T disp;
 
-extern uint emu_VideoInit(bool fiveSevenSix);
+extern uint emu_VideoInit(FiveSevenSix_T fiveSevenSix);
 extern void emu_VideoSetInterlace(void);
 
 
