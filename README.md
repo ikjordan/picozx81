@@ -15,7 +15,7 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + Supports larger ZX81 generated displays of up to 320 by 240 pixels (40 character width and 30 character height) and beyond
 + Load `.p`, `.81`, `.o` and `.80` files from micro SD Card. Save `.p` and `.o` files
 + Can display at 640x480 or 720x576 (for an authentic display on a UK TV)
-+ 720x576 runs at a frame rate to match the "real" ZX81 (~50.6 Hz).
++ 720x576 runs at a frame rate to match the "real" ZX81 (~50.65 Hz).
 + An interlaced mode can be selected to display interlaced images with minimal flicker
 + Supports loading and saving of memory blocks using [ZXpand like syntax](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual#load)
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
@@ -88,9 +88,9 @@ This will be named `picozx81_vga.uf2`
 # Use
 ## Quick Start
 + If the emulator is started with no SD Card, or with an empty SD Card, then it will emulate a 16K ZX81
-+ To switch to always starting emulating a ZX80, a populated SD Card is required. If it is present, the machine that is emulated is specified by the `config.ini` file in the root directory, see [configuring the emulator](#configuring-the-emulator)
++ To switch to always starting emulating a ZX80, a populated SD Card is required. If it is present, the machine that is emulated is specified by the `config.ini` file in the root directory, see [configuring the emulator](#configuring-the-emulator). 
 + If the contents of the [examples](examples) directory have been copied to the SD Card, then the included programs can be loaded. Press `F2` to see files in the current directory that can be loaded
-+ To make picozx81 emulate a ZX80, without changing `config.ini`, a ZX80 program can be loaded. Press `F2`, navigate up one directory and then select the `ZX80` directory. Select `simple.o` and load it. The emulator will now be in ZX80 mode, with a simple 1 line ZX80 BASIC program loaded
++ To make picozx81 emulate a ZX80, without changing `config.ini`, either a ZX80 program can be loaded, or the computer type `ZX80` can be selected from the Modify menu. Press F6 to bring up the Modify menu
 + The current settings used by the emulator can be viewed by pressing `F3`
 + The following sections describe how to configure the emulator and provide links to programs that can be downloaded, copied to the SD Card and then run using the emulator
 
@@ -150,13 +150,13 @@ The order for configuring an item for a given program (e.g. `prog.p`) is as foll
 Two extra options can be set via the `[default]` section of the `config.ini` file in the root directory
 | Item | Description | Default Value |
 | --- | --- | --- |
-| FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz, otherwise a 640x480 display @ 60Hz is produced | Off |
+| FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz `On` , or 720x576p display @ 50.65Hz `Match`. If set to `Off` a 640x480 display @ 60Hz is produced | Off |
 | Dir | Sets the initial default directory to load and save programs | / |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load-menu) is selected. When off only files with extensions `.p`, `.o`, `.81` and `.80` are initially displayed|Off|
 
-**Note:** By default the European ZX81 generates frames slightly faster than 50Hz. Therefore `FiveSevenSix` enables a display mode slightly faster than the 50Hz TV standard, so that frame sync between the frame generates by the emulator and frames sent to the monitor can be achieved
+**Note:** By default the European ZX81 generates frames slightly faster than 50Hz (50.65Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.6 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50Hz frame rate
 
 ### Examples
 Examples of the `config.ini` files used to test the programs listed in this [section](#applications-tested) can be found [here](examples)
@@ -211,6 +211,14 @@ The ZX80 and ZX81 use single key press BASIC entry. Pressing `F5` displays a 4 c
 Press `Escape` to remove the keyboard display. The keyboard is also removed if another menu is selected
 
 If a ZX8x 40 key keyboard is being used and `DoubleShift` is enabled, the menu can be removed by pressing and releasing shift twice and then pressing `0` within one second of releasing shift
+
+### F6 - Modify
+Allows some values to be modified "on the fly" to see the impact of the changes without having to edit the config files. Select the item to modify using the `up` and `down` keys. The `7` key also generates `up` and the `6` key also generates `down`. Change the value of an item using the `left` and `right` keys. The `5` key also generates `left` and the `8` key also generates `right`.
+
+The changes are *not* written back to the config files, so will be lost when the emulator is rebooted. Exit by pressing `Enter` to see the effect of the changes. Press `Escape` to exit without changes.
+
+### F7 - Reboot
+Allows the impact of changes to display resolution and frequency to be seen without editing config files. If change are made and the menu is then exited by pressing `Enter` the emulator will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost of subsequent reboots
 
 ## Loading and saving options
 The emulator supports the loading  `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.

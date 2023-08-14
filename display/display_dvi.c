@@ -16,7 +16,7 @@
 #define __dvi_const(x) __not_in_flash_func(x)
 
 // Define a slightly higher frame rate, as the ZX81 also produces a display
-// approx 0.5% faster than 50%
+// approx 0.6% faster than 50%
 // The increase in frame rate is achieved by reducing the back porch
 // Adjusting the timing to 50 * 625 / (625 - 39 + 31) = 50.65 Hz
 const struct dvi_timing __dvi_const(dvi_timing_720x576p_51hz) =
@@ -61,13 +61,13 @@ static void render_loop();
 // Public functions
 //
 
-uint displayInitialise(bool fiveSevenSix, uint16_t minBuffByte, uint16_t* pixelWidth,
+uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit)
 {
     mutex_init(&next_frame_mutex);
 
     // Determine the video mode
-    video_mode = fiveSevenSix ? &dvi_timing_720x576p_51hz : &dvi_timing_640x480p_60hz;
+    video_mode = (!fiveSevenSix) ? &dvi_timing_640x480p_60hz : (match) ? &dvi_timing_720x576p_51hz : &dvi_timing_720x576p_50hz;
 
     PIXEL_WIDTH = video_mode->h_active_pixels >> 1;
     HEIGHT = video_mode->v_active_lines >> 1;

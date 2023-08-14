@@ -63,8 +63,36 @@ const scanvideo_mode_t vga_mode_320x240_60d =
     .yscale = 2,
 };
 
-// 576p 50Hz accelerated by 625/617 * 50 -> 50.65 Hz
 const scanvideo_timing_t vga_timing_720x576_50 =
+{
+    .clock_freq = 27000000,
+    .h_active = 720,
+    .v_active = 576,
+    .h_front_porch = 12,
+    .h_pulse = 64,
+    .h_total = 864,
+    .h_sync_polarity = 1,
+    .v_front_porch = 5,
+    .v_pulse = 5,
+    .v_total = 625,
+    .v_sync_polarity = 1,
+    .enable_clock = 0,
+    .clock_polarity = 0,
+    .enable_den = 0
+};
+
+const scanvideo_mode_t vga_mode_360x288_50 =
+{
+    .default_timing = &vga_timing_720x576_50,
+    .pio_program = &video_24mhz_composable,
+    .width = 360,
+    .height = 288,
+    .xscale = 2,
+    .yscale = 2,
+};
+
+// 576p 50Hz accelerated by 625/617 * 50 -> 50.65 Hz
+const scanvideo_timing_t vga_timing_720x576_51 =
 {
     .clock_freq = 27000000,
     .h_active = 720,
@@ -82,9 +110,9 @@ const scanvideo_timing_t vga_timing_720x576_50 =
     .enable_den = 0
 };
 
-const scanvideo_mode_t vga_mode_360x288_50 =
+const scanvideo_mode_t vga_mode_360x288_51 =
 {
-    .default_timing = &vga_timing_720x576_50,
+    .default_timing = &vga_timing_720x576_51,
     .pio_program = &video_24mhz_composable,
     .width = 360,
     .height = 288,
@@ -111,13 +139,15 @@ static void core1_main();
 // Public functions
 //
 
-uint displayInitialise(bool fiveSevenSix, uint16_t minBuffByte, uint16_t* pixelWidth,
+    // Determine the video mode
+uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit)
 {
     mutex_init(&next_frame_mutex);
 
     // Determine the video mode
-    video_mode = fiveSevenSix ? &vga_mode_360x288_50 : &vga_mode_320x240_60d;
+    video_mode = (!fiveSevenSix) ? &vga_mode_320x240_60d : (match) ? &vga_mode_360x288_51 : &vga_mode_360x288_50;
+
 
     PIXEL_WIDTH = video_mode->width;
     HEIGHT = video_mode->height;

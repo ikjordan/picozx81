@@ -12,16 +12,44 @@
 #include "ff.h"
 #include "menu.h"
 
+typedef enum
+{
+    PINC = 2,
+    PTOP = 12,
+    PSYNC = PTOP,
+    PNTSC = PSYNC + PINC,
+    PCENTRE = PNTSC + PINC,
+    PVTOL = PCENTRE + PINC,
+    PCOMPUTER = PVTOL + PINC,
+    PBOTTOM = PCOMPUTER
+} Position_T;
+
+typedef struct
+{
+    FrameSync_T fsync;
+    bool        ntsc;
+    bool        centre;
+    uint16_t    vTol;
+    ComputerType_T computer;
+
+} Modify_T;
+
 static bool buildMenu(bool clone);
 static void endMenu(bool blank);
 static void delay(void);
+static void debounceEnter(void);
 
 static void xorRow(uint row);
 static void xorChar(char c, uint col, uint row);
 static void writeChar(char c, uint col, uint row);
 static void writeString(const char* s, uint col, uint row);
+static void writeInvertString(const char* s, uint col, uint row, bool invert);
+
 static int populateFiles(const char* path, uint first);
 static bool getFile(char* inout, uint index, bool* direct);
+
+static void showModify(Position_T pos, Modify_T* modify);
+static void showReboot(FiveSevenSix_T mode);
 
 static bool wasBlank = false;
 static bool wasBlack = false;
@@ -31,190 +59,12 @@ static uint8_t* menuscreen = 0;
 
 static bool allfiles = false;
 
-static bool buildMenu(bool clone)
-{
-    // Obtain a display buffer
-    displayGetFreeBuffer(&menuscreen);
-
-    // Store the current display
-    wasBlank = displayIsBlank(&wasBlack);
-
-    if (!wasBlank)
-    {
-        // Get the current displayed buffer
-        displayGetCurrentBuffer(&currBuff);
-    }
-
-    if (clone)
-    {
-        if (wasBlank)
-        {
-            memset(menuscreen, wasBlack, disp.stride_byte * disp.height);
-        }
-        else
-        {
-            uint8_t* s = currBuff;
-            uint8_t* d = menuscreen;
-            for (int i = 0; i < disp.height; i++)
-            {
-                memcpy(d, s, disp.stride_byte);
-                d += disp.stride_byte;
-                s += disp.stride_byte;
-            }
-        }
-    }
-    else
-    {
-        memset(menuscreen, 0x00, disp.stride_byte * disp.height);
-    }
-    // Display 
-    displayBuffer(menuscreen, false, false);
-    return true;
-}
-
-static void endMenu(bool blank)
-{
-    // Put the old screen back
-    if (wasBlank)
-    {
-        displayBlank(wasBlack);
-    }
-    else
-    {
-        if (blank)
-        {
-            memset(currBuff, 0x00, disp.stride_byte * disp.height);
-        }
-        displayBuffer(currBuff, false, true);
-    }
-}
-
-// Pauses emulator execution, displays P in the 4 corners and waits for
-// ESC to be pressed
-void pauseMenu(void)
-{
-    uint8_t key = 0;
-
-    if (!buildMenu(true))
-        return;
-
-    // XOR a P in each corner - allowing for over scan
-    xorChar('P', 1, 1);
-    xorChar('P', 1, (disp.height >> 3) - 2);
-    xorChar('P', (disp.width >> 3) - 2, 1);
-    xorChar('P', (disp.width >> 3) - 2, (disp.height >> 3) - 2);
-
-    // Just wait for ESC to be pressed
-    do
-    {
-        tuh_task();
-        hidNavigateMenu(&key);
-        emu_WaitFor50HzTimer();
-    } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
-
-    endMenu(false);
-}
-
-// Displays the status of the emulator, pausing execution
-// ESC to exit
-bool statusMenu(void)
-{
-    uint8_t key = 0;
-    uint lcount = (disp.height >> 4) - 13;
-
-    char c[20];
-    int lhs = (disp.width >> 4) - 10;
-    int rhs = lhs + 13;
-
-    if (!buildMenu(false))
-        return false;
-
-    writeString("Status", lhs + 6, lcount++);
-    writeString("======", lhs + 6, lcount++);
-
-    writeString("Computer:", lhs, ++lcount);
-    writeString((emu_ComputerRequested() == ZX80) ? "ZX80" : (emu_ComputerRequested() == ZX81X2) ? "ZX81X2" : "ZX81", rhs, lcount++);
-    writeString("Memory:", lhs, lcount);
-    sprintf(c,"%0d KB\n",emu_MemoryRequested());
-    writeString(c, rhs, lcount++);
-    writeString("WRX RAM:", lhs, lcount);
-    writeString(emu_WRXRequested() ? "Yes" : "No", rhs, lcount++);
-    writeString("8K-16K RAM:", lhs, lcount);
-    writeString(emu_LowRAMRequested() ? "Yes" : "No", rhs, lcount++);
-    writeString("M1NOT:", lhs, lcount);
-    writeString(emu_M1NOTRequested() ? "On" : "Off", rhs, lcount++);
-    writeString("Extend File:",lhs, lcount);
-    writeString(emu_ExtendFileRequested() ? "Yes" : "No", rhs, lcount++);
-
-    writeString("Resolution:", lhs, ++lcount);
-    writeString((emu_576Requested()) ? "720x568x50" : "640x480x60", rhs, lcount++);
-    writeString("Frame Sync:", lhs, lcount);
-    writeString((emu_FrameSyncRequested() == OFF) ? "Off" : (emu_FrameSyncRequested() == ON) ? "On" : "On Int", rhs, lcount++);
-
-    writeString("Em TV Type:", lhs, ++lcount);
-    writeString(emu_NTSCRequested() ? "NTSC" : "PAL", rhs, lcount++);
-    writeString("Centre:", lhs, lcount);
-    writeString((emu_CentreY()!=0) ? "Yes" : "No", rhs, lcount++);
-    writeString("Vert Tol:", lhs, lcount);
-    sprintf(c,"%d lines\n",emu_VTol());
-    writeString(c, rhs, lcount++);
-
-    writeString("Sound:", lhs, ++lcount);
-    switch (emu_SoundRequested())
-    {
-        case AY_TYPE_QUICKSILVA:
-            strcpy(c,"QUICKSILVA");
-        break;
-
-        case AY_TYPE_ZONX:
-            strcpy(c,"ZonX");
-        break;
-
-        default:
-            strcpy(c,"NONE");
-        break;
-    }
-    writeString(c, rhs, lcount++);
-    if (emu_SoundRequested() != AY_TYPE_NONE)
-    {
-        writeString("ACB Stereo:", lhs, lcount);
-        writeString(emu_ACBRequested() ? "ON" : "OFF", rhs, lcount++);
-    }
-
-    writeString("CHAR$128:", lhs, ++lcount);
-    writeString(emu_CHR128Requested() ? "Yes" : "No", rhs, lcount++);
-
-    writeString("QS UDG:", lhs, lcount);
-    writeString(emu_QSUDGRequested() ? "Yes" : "No", rhs, lcount++);
-    if (emu_QSUDGRequested())
-    {
-        writeString("QS UDG On:", lhs, lcount);
-        writeString(UDGEnabled ? "Yes" : "No", rhs, lcount++);
-    }
-
-    writeString("Directory:", lhs, ++lcount);
-    writeString(emu_GetDirectory(), rhs, lcount++);
-
-    writeString("All Files:", lhs, lcount);
-    writeString(emu_AllFilesRequested() ? "Yes" : "No", rhs, lcount++);
-
-    //writeString("Fn Key Map:", lhs, ++lcount);
-    //writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
-
-    do
-    {
-        tuh_task();
-        hidNavigateMenu(&key);
-        emu_WaitFor50HzTimer();
-    } while (key != HID_KEY_ESCAPE);
-
-    endMenu(false);
-
-    return true;
-}
+/* 
+ * Public interface
+ */
 
 // Displays files on screen and allows user to select which file
-// to load. Exits with ENTER (load) or ESC (do not load)
+// to load. Exits with ENTER (load) or ESC (do not load) (f2)
 bool loadMenu(void)
 {
     char working[MAX_DIRECTORY_LEN];
@@ -367,9 +217,481 @@ bool loadMenu(void)
         delay();
     } while (!exit && (key != HID_KEY_ESCAPE));
 
-    endMenu(key == HID_KEY_ENTER);
-    return (key == HID_KEY_ENTER);
+    bool change = (key == HID_KEY_ENTER);
+
+    if (change)
+        debounceEnter();
+
+    endMenu(change);
+    return (change);
 }
+
+// Displays the status of the emulator, pausing execution
+// ESC to exit (f3)
+bool statusMenu(void)
+{
+    uint8_t key = 0;
+    uint lcount = (disp.height >> 4) - 13;
+
+    char c[20];
+    int lhs = (disp.width >> 4) - 10;
+    int rhs = lhs + 13;
+
+    if (!buildMenu(false))
+        return false;
+
+    writeString("Status", lhs + 6, lcount++);
+    writeString("======", lhs + 6, lcount++);
+
+    writeString("Computer:", lhs, ++lcount);
+    writeString((emu_ComputerRequested() == ZX80) ? "ZX80" : (emu_ComputerRequested() == ZX81X2) ? "ZX81X2" : "ZX81", rhs, lcount++);
+    writeString("Memory:", lhs, lcount);
+    sprintf(c,"%0d KB\n",emu_MemoryRequested());
+    writeString(c, rhs, lcount++);
+    writeString("WRX RAM:", lhs, lcount);
+    writeString(emu_WRXRequested() ? "Yes" : "No", rhs, lcount++);
+    writeString("8K-16K RAM:", lhs, lcount);
+    writeString(emu_LowRAMRequested() ? "Yes" : "No", rhs, lcount++);
+    writeString("M1NOT:", lhs, lcount);
+    writeString(emu_M1NOTRequested() ? "On" : "Off", rhs, lcount++);
+    writeString("Extend File:",lhs, lcount);
+    writeString(emu_ExtendFileRequested() ? "Yes" : "No", rhs, lcount++);
+
+    writeString("Resolution:", lhs, ++lcount);
+    writeString((emu_576Requested() == OFF) ? "640x480x60" : (emu_576Requested() == MATCH) ? "720x568x50.6" : "720x568x50", rhs, lcount++);
+    writeString("Frame Sync:", lhs, lcount);
+    writeString((emu_FrameSyncRequested() == SYNC_OFF) ? "Off" : (emu_FrameSyncRequested() == SYNC_ON) ? "On" : "On Int", rhs, lcount++);
+
+    writeString("Em TV Type:", lhs, ++lcount);
+    writeString(emu_NTSCRequested() ? "NTSC" : "PAL", rhs, lcount++);
+    writeString("Centre:", lhs, lcount);
+    writeString((emu_CentreY()!=0) ? "Yes" : "No", rhs, lcount++);
+    writeString("Vert Tol:", lhs, lcount);
+    sprintf(c,"%d lines\n",emu_VTol());
+    writeString(c, rhs, lcount++);
+
+    writeString("Sound:", lhs, ++lcount);
+    switch (emu_SoundRequested())
+    {
+        case AY_TYPE_QUICKSILVA:
+            strcpy(c,"QUICKSILVA");
+        break;
+
+        case AY_TYPE_ZONX:
+            strcpy(c,"ZonX");
+        break;
+
+        default:
+            strcpy(c,"NONE");
+        break;
+    }
+    writeString(c, rhs, lcount++);
+    if (emu_SoundRequested() != AY_TYPE_NONE)
+    {
+        writeString("ACB Stereo:", lhs, lcount);
+        writeString(emu_ACBRequested() ? "ON" : "OFF", rhs, lcount++);
+    }
+
+    writeString("CHAR$128:", lhs, ++lcount);
+    writeString(emu_CHR128Requested() ? "Yes" : "No", rhs, lcount++);
+
+    writeString("QS UDG:", lhs, lcount);
+    writeString(emu_QSUDGRequested() ? "Yes" : "No", rhs, lcount++);
+    if (emu_QSUDGRequested())
+    {
+        writeString("QS UDG On:", lhs, lcount);
+        writeString(UDGEnabled ? "Yes" : "No", rhs, lcount++);
+    }
+
+    writeString("Directory:", lhs, ++lcount);
+    writeString(emu_GetDirectory(), rhs, lcount++);
+
+    writeString("All Files:", lhs, lcount);
+    writeString(emu_AllFilesRequested() ? "Yes" : "No", rhs, lcount++);
+
+    //writeString("Fn Key Map:", lhs, ++lcount);
+    //writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
+
+    do
+    {
+        tuh_task();
+        hidNavigateMenu(&key);
+        emu_WaitFor50HzTimer();
+    } while (key != HID_KEY_ESCAPE);
+
+    endMenu(false);
+
+    return true;
+}
+
+// Pauses emulator execution, displays P in the 4 corners and waits for
+// ESC to be pressed (f4)
+void pauseMenu(void)
+{
+    uint8_t key = 0;
+
+    if (!buildMenu(true))
+        return;
+
+    // XOR a P in each corner - allowing for over scan
+    xorChar('P', 1, 1);
+    xorChar('P', 1, (disp.height >> 3) - 2);
+    xorChar('P', (disp.width >> 3) - 2, 1);
+    xorChar('P', (disp.width >> 3) - 2, (disp.height >> 3) - 2);
+
+    // Just wait for ESC to be pressed
+    do
+    {
+        tuh_task();
+        hidNavigateMenu(&key);
+        emu_WaitFor50HzTimer();
+    } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
+
+    debounceEnter();
+    endMenu(false);
+}
+
+// Entries that can be modified without rebooting the emulator (f6)
+bool modifyMenu(bool* reset)
+{
+    uint8_t key = 0;
+    uint8_t debounce = 0;
+    Position_T field = PSYNC;
+    Modify_T modify;
+
+    modify.fsync = emu_FrameSyncRequested();
+    modify.ntsc = emu_NTSCRequested();
+    modify.centre = emu_Centre();
+    modify.vTol = emu_VTol();
+    modify.computer = emu_ComputerRequested();
+    ComputerType_T initialComputer = modify.computer;
+    *reset = false;
+
+    if (!buildMenu(false))
+        return false;
+
+    showModify(field, &modify);
+
+    do
+    {
+        key = 0;
+        tuh_task();
+        hidNavigateMenu(&key);
+        emu_WaitFor50HzTimer();
+
+        if (debounce != key)
+        {
+            switch (key)
+            {
+                case HID_KEY_ARROW_UP:
+                    if (field == PTOP)
+                    {
+                        field = PBOTTOM;
+                    }
+                    else
+                    {
+                        field = (Position_T)((int)field - (int)Position_T::PINC);
+                    }
+                    showModify(field, &modify);
+                break;
+
+                case HID_KEY_ARROW_DOWN:
+                    if (field == PBOTTOM)
+                    {
+                        field = PTOP;
+                    }
+                    else
+                    {
+                        field = (Position_T)((int)field + (int)Position_T::PINC);
+                    }
+                    showModify(field, &modify);
+                break;
+
+                case HID_KEY_ARROW_RIGHT:
+                    if (field == PSYNC)
+                    {
+                        if (modify.fsync == SYNC_ON_INTERLACED)
+                        {
+                            modify.fsync = SYNC_OFF;
+                        }
+                        else
+                        {
+                            modify.fsync = (FrameSync_T)(((int)modify.fsync) + 1);
+                        }
+                    }
+                    else if (field == PNTSC)
+                    {
+                        modify.ntsc = ! modify.ntsc;
+                    }
+                    else if (field == PCENTRE)
+                    {
+                        modify.centre = ! modify.centre;
+                    }
+                    else if (field == PVTOL)
+                    {
+                        if (modify.vTol < 200)
+                        {
+                            modify.vTol +=5;
+                        }
+                    }
+                    else if (field == PCOMPUTER)
+                    {
+                        if (modify.computer == ZX81X2)
+                        {
+                            modify.computer = ZX80;
+                        }
+                        else
+                        {
+                            modify.computer = (ComputerType_T)(((int)modify.computer) + 1);
+                        }
+                    }
+                    showModify(field, &modify);
+                break;
+
+                case HID_KEY_ARROW_LEFT:
+                    if (field == PSYNC)
+                    {
+                        if (modify.fsync == SYNC_OFF)
+                        {
+                            modify.fsync = SYNC_ON_INTERLACED;
+                        }
+                        else
+                        {
+                            modify.fsync = (FrameSync_T)(((int)modify.fsync) - 1);
+                        }
+                    }
+                    else if (field == PNTSC)
+                    {
+                        modify.ntsc = ! modify.ntsc;
+                    }
+                    else if (field == PCENTRE)
+                    {
+                        modify.centre = ! modify.centre;
+                    }
+                    else if (field == PVTOL)
+                    {
+                        if (modify.vTol > 5)
+                        {
+                            modify.vTol -=5;
+                        }
+                    }
+                    else if (field == PCOMPUTER)
+                    {
+                        if (modify.computer == ZX80)
+                        {
+                            modify.computer = ZX81X2;
+                        }
+                        else
+                        {
+                            modify.computer = (ComputerType_T)(((int)modify.computer) - 1);
+                        }
+                    }
+                    showModify(field, &modify);
+                break;
+            }
+            debounce = key;
+
+        }
+    } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
+
+    // Update values if requested
+    bool update = (key == HID_KEY_ENTER);
+
+    if (update)
+    {
+        emu_SetFrameSync(modify.fsync);
+        emu_SetNTSC(modify.ntsc);
+        emu_SetCentre(modify.centre);
+        emu_SetVTol(modify.vTol);
+        emu_SetComputer(modify.computer);
+
+        // wait for Enter to be released
+        debounceEnter();
+    
+        *reset = (modify.computer != initialComputer);
+    }
+    endMenu(false);
+
+    return update;
+}
+
+// Entries that will trigger an emulator reboot (f7)
+void rebootMenu(void)
+{
+    uint8_t key = 0;
+    uint8_t debounce = 0;
+    FiveSevenSix_T initialMode = emu_576Requested();
+    FiveSevenSix_T mode = initialMode;
+
+    if (!buildMenu(false))
+        return;
+    
+    showReboot(mode);
+
+    do
+    {
+        key = 0;
+        tuh_task();
+        hidNavigateMenu(&key);
+        emu_WaitFor50HzTimer();
+
+        if (debounce != key)
+        {
+            switch (key)
+            {
+
+                case HID_KEY_ARROW_RIGHT:
+                    if (mode == MATCH)
+                    {
+                        mode = OFF;
+                    }
+                    else
+                    {
+                        mode = (FiveSevenSix_T)(((int)mode) + 1);
+                    }
+                    showReboot(mode);
+                break;
+
+                case HID_KEY_ARROW_LEFT:
+                    if (mode == OFF)
+                    {
+                        mode = MATCH;
+                    }
+                    else
+                    {
+                        mode = (FiveSevenSix_T)(((int)mode) - 1);
+                    }
+                    showReboot(mode);
+                break;
+            }
+            debounce = key;
+
+        }
+    } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
+    
+    endMenu(false);
+
+    if (key == HID_KEY_ENTER)
+    {
+        if (initialMode != mode)
+        {
+            // Write file and reboot
+            emu_SetRebootMode(mode);
+        }
+    }
+}
+
+/*
+ * Private interface
+ */
+static bool buildMenu(bool clone)
+{
+    // Obtain a display buffer
+    displayGetFreeBuffer(&menuscreen);
+
+    // Store the current display
+    wasBlank = displayIsBlank(&wasBlack);
+
+    if (!wasBlank)
+    {
+        // Get the current displayed buffer
+        displayGetCurrentBuffer(&currBuff);
+    }
+
+    if (clone)
+    {
+        if (wasBlank)
+        {
+            memset(menuscreen, wasBlack, disp.stride_byte * disp.height);
+        }
+        else
+        {
+            uint8_t* s = currBuff;
+            uint8_t* d = menuscreen;
+            for (int i = 0; i < disp.height; i++)
+            {
+                memcpy(d, s, disp.stride_byte);
+                d += disp.stride_byte;
+                s += disp.stride_byte;
+            }
+        }
+    }
+    else
+    {
+        memset(menuscreen, 0x00, disp.stride_byte * disp.height);
+    }
+    // Display 
+    displayBuffer(menuscreen, false, false);
+    return true;
+}
+
+static void endMenu(bool blank)
+{
+    // Put the old screen back
+    if (wasBlank)
+    {
+        displayBlank(wasBlack);
+    }
+    else
+    {
+        if (blank)
+        {
+            memset(currBuff, 0x00, disp.stride_byte * disp.height);
+        }
+        displayBuffer(currBuff, false, true);
+    }
+}
+
+static void showModify(Position_T pos, Modify_T* modify)
+{ 
+    uint lcount = (disp.height >> 4) - 13;
+
+    int lhs = (disp.width >> 4) - 10;
+    int rhs = lhs + 13;
+    char c[20];
+
+    writeString("Modify", lhs + 6, lcount);
+    writeString("======", lhs + 6, lcount+1);
+
+    writeString("Note: CHANGING COMPUTER", lhs - 1, lcount + 3);
+    writeString("      WILL RESET THE", lhs - 1, lcount + 4);
+    writeString("      EMULATED MACHINE", lhs - 1, lcount + 5);
+
+    writeInvertString("Frame Sync:", lhs, lcount + Position_T::PSYNC, pos == Position_T::PSYNC);
+    writeString((modify->fsync == SYNC_OFF) ? "Off      " : (modify->fsync == SYNC_ON) ? "On       " : "Interlace", rhs , lcount + Position_T::PSYNC);
+
+    writeInvertString("Em TV Type:", lhs, lcount + Position_T::PNTSC, pos == Position_T::PNTSC);
+    writeString(modify->ntsc ? "NTSC" : "PAL ", rhs, lcount + Position_T::PNTSC);
+    
+    writeInvertString("Vert Tol:", lhs, lcount + Position_T::PVTOL, pos == Position_T::PVTOL);
+    sprintf(c,"%d lines  \n",modify->vTol);
+    writeString(c, rhs , lcount + Position_T::PVTOL);
+
+    writeInvertString("Centre:", lhs, lcount + Position_T::PCENTRE, pos == Position_T::PCENTRE);
+    writeString(modify->centre ? "YES" : "NO ", rhs , lcount + Position_T::PCENTRE);
+
+    writeInvertString("Computer:", lhs, lcount + Position_T::PCOMPUTER, pos == Position_T::PCOMPUTER);
+    writeString((modify->computer == ZX80) ? "ZX80  " : (modify->computer == ZX81X2) ? "ZX81X2" : "ZX81  ", rhs , lcount + Position_T::PCOMPUTER);
+}
+
+static void showReboot(FiveSevenSix_T mode)
+{ 
+    uint lcount = (disp.height >> 4) - 13;
+
+    int lhs = (disp.width >> 4) - 10;
+    int rhs = lhs + 13;
+
+    writeString("Reboot", lhs + 6, lcount);
+    writeString("======", lhs + 6, lcount+1);
+
+    writeString("Note: RESOLUTION CHANGE", lhs - 1, lcount + 3);
+    writeString("      WILL REBOOT THE", lhs - 1, lcount + 4);
+    writeString("      EMULATOR", lhs - 1, lcount + 5);
+
+    writeInvertString("Resolution:", lhs, lcount + 12, true);
+    writeString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
+}
+
 
 // Waits for 12th of a second
 static void delay(void)
@@ -378,6 +700,20 @@ static void delay(void)
     emu_WaitFor50HzTimer();
     emu_WaitFor50HzTimer();
     emu_WaitFor50HzTimer();
+}
+
+static void debounceEnter(void)
+{
+    uint8_t key = 0;
+    
+    hidNavigateMenu(&key);
+
+    while (key == HID_KEY_ENTER)
+    {    
+        tuh_task();
+        emu_WaitFor50HzTimer();
+        hidNavigateMenu(&key);
+    }
 }
 
 // Inverts a row
@@ -412,6 +748,28 @@ static void writeString(const char* s, uint col, uint row)
         for (uint i=0; i<len; ++i)
         {
             writeChar(s[i], col+i, row);
+        }
+    }
+}
+
+// Write string to screen, terminate string at screen edge, optionally inverting characters
+static void writeInvertString(const char* s, uint col, uint row, bool invert)
+{
+    if ((col < (uint)(disp.width>>3)) && (row < (uint)(disp.height>>3)))
+    {
+        unsigned int len = strlen(s);
+
+        len = len > ((disp.width>>3)-col-1) ? ((disp.width>>3)-col-1) : len;
+        for (uint i=0; i<len; ++i)
+        {
+            if (invert)
+            {
+                xorChar(s[i], col+i, row);
+            }
+            else
+            {
+                writeChar(s[i], col+i, row);
+            }
         }
     }
 }

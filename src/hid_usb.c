@@ -155,6 +155,7 @@ bool hidNavigateMenu(uint8_t* key)
     hid_keyboard_report_t report;
 
     hid_app_get_latest_keyboard_report(&report);
+    *key = 0;
 
     for(unsigned int i = 0; i < 6; ++i)
     {
@@ -249,7 +250,7 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
     for(unsigned int i = 0; i < 6; ++i)
     {
         if (usedouble && (doubleshift == 2) && (!shift) &&
-            (((report.keycode[i] >= HID_KEY_1) && (report.keycode[i] <= HID_KEY_5)) || (report.keycode[i] == HID_KEY_0)))
+            (((report.keycode[i] >= HID_KEY_1) && (report.keycode[i] <= HID_KEY_7)) || (report.keycode[i] == HID_KEY_0)))
         {
             if (report.keycode[i] != HID_KEY_0)
             {
@@ -279,7 +280,7 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
             else
             {
                 // Check for non Sinclair keys here:
-                if (((report.keycode[i] >= HID_KEY_F1) && (report.keycode[i] <= HID_KEY_F5)) ||
+                if (((report.keycode[i] >= HID_KEY_F1) && (report.keycode[i] <= HID_KEY_F7)) ||
                     (report.keycode[i] == HID_KEY_ESCAPE))
                 {
                     *special = report.keycode[i];
