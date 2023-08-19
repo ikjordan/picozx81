@@ -60,7 +60,9 @@ Click on the uf2 name corresponding to your board in the table below to download
 ## Connect to a keyboard
 1. Remove the USB cable from the Pico. Plug a USB keyboard into the Pico. You will need an [OTG adaptor cable](https://www.google.co.uk/search?q=otg+adaptor) to do this
 2. Plug a micro USB power supply into the USB connector on your board. You can also power your board directly from your PC using a micro USB cable
-3. You now have an emulated ZX81 with a working keyboard and display. Read on for more information!
+3. You now have an emulated ZX81 with a working keyboard and display
+### Next Steps
+Read on for more information. The [Applications Tested](#applications-tested) section contains links to free downloads of some of the most iconic ZX80 and ZX81 software
 
 # Use
 ## First Time
