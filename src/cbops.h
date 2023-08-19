@@ -40,15 +40,15 @@
    unsigned short addr;
    unsigned char op;
    if(ixoriy){
-      addr=(ixoriy==1?ix:iy)+(signed char)fetch(pc);
+      addr=(ixoriy==1?ix:iy)+(signed char)fetchm(pc);
       pc++;
       tstates+=8;
-      op=fetch(pc);
+      op=fetchm(pc);
       reg=op&7;
       op=(op&0xf8)|6;
    }
    else{
-      op=fetch(pc);
+      op=fetchm(pc);
       tstates+=4;
       radjust++;
       addr=hl;
