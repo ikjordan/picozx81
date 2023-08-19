@@ -58,7 +58,7 @@ int32_t sound_count = 0;
 int64_t int_count = 0;
 #endif
 
-void emu_sndInit(bool playSound)
+void emu_sndInit(bool playSound, bool reset)
 {
   genSound = playSound;
 
@@ -71,7 +71,7 @@ void emu_sndInit(bool playSound)
   // Call each time, as sound type may have changed
   if (soundCreated)
   {
-    sound_init(emu_ACBRequested());
+    sound_init(emu_ACBRequested(), reset);
   }
 
   // Begin sound regardless, as needed for 50 Hz

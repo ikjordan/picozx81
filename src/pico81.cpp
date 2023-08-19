@@ -103,24 +103,25 @@ static void mainLoop(void)
 
                     case HID_KEY_F6:
                     {
-                        bool reset;
-
-                        if (modifyMenu(&reset))
+                        if (modifyMenu())
                         {
-                            if (reset)
-                            {
-                                return;
-                            }
-                            else
-                            {
-                                z8x_updateValues();
-                            }
+                            z8x_updateValues();
                         }
                     }
                     break;
 
                     case HID_KEY_F7:
+                    {
+                        if (restartMenu())
+                        {
+                            return;
+                        }
+                    }
+                    break;
+
+                    case HID_KEY_F8:
                         rebootMenu();
+                        // Never return from this call
                     break;
                 }
             }

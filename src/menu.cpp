@@ -14,15 +14,30 @@
 
 typedef enum
 {
-    PINC = 2,
-    PTOP = 12,
-    PSYNC = PTOP,
-    PNTSC = PSYNC + PINC,
-    PCENTRE = PNTSC + PINC,
-    PVTOL = PCENTRE + PINC,
-    PCOMPUTER = PVTOL + PINC,
-    PBOTTOM = PCOMPUTER
-} Position_T;
+    PINCF6 = 2,
+    PTOPF6 = 8,
+    PSYNC = PTOPF6,
+    PNTSC = PSYNC + PINCF6,
+    PCENTRE = PNTSC + PINCF6,
+    PVTOL = PCENTRE + PINCF6,
+    PWRX = PVTOL + PINCF6,
+    PSOUNDTYPE = PWRX + PINCF6,
+    PSTEREOACB = PSOUNDTYPE + PINCF6,
+    PBOTTOMF6 = PSTEREOACB
+} PositionF6_T;
+
+typedef enum
+{
+    PINCF7 = 2,
+    PTOPF7 = 12,
+    PCOMPUTER = PTOPF7,
+    PMSIZE = PCOMPUTER + PINCF7,
+    PLOWRAM = PMSIZE + PINCF7,
+    PM1NOT = PLOWRAM + PINCF7,
+    PQSUDG = PM1NOT + PINCF7,
+    PCHR128 = PQSUDG + PINCF7,
+    PBOTTOMF7 = PCHR128
+} PositionF7_T;
 
 typedef struct
 {
@@ -30,9 +45,20 @@ typedef struct
     bool        ntsc;
     bool        centre;
     uint16_t    vTol;
-    ComputerType_T computer;
+    bool        wrx;
+    uint16_t    sound;
+    bool        stereo;
+} ModifyF6_T;
 
-} Modify_T;
+typedef struct
+{
+    ComputerType_T computer;
+    uint16_t    msize;
+    bool        lowRAM;
+    bool        m1not;
+    bool        qsudg;
+    bool        chr128;
+} RestartF7_T;
 
 static bool buildMenu(bool clone);
 static void endMenu(bool blank);
@@ -48,7 +74,8 @@ static void writeInvertString(const char* s, uint col, uint row, bool invert);
 static int populateFiles(const char* path, uint first);
 static bool getFile(char* inout, uint index, bool* direct);
 
-static void showModify(Position_T pos, Modify_T* modify);
+static void showModify(PositionF6_T pos, ModifyF6_T* modify);
+static void showRestart(PositionF7_T pos, RestartF7_T* restart);
 static void showReboot(FiveSevenSix_T mode);
 
 static bool wasBlank = false;
@@ -352,20 +379,20 @@ void pauseMenu(void)
 }
 
 // Entries that can be modified without rebooting the emulator (f6)
-bool modifyMenu(bool* reset)
+bool modifyMenu(void)
 {
     uint8_t key = 0;
     uint8_t debounce = 0;
-    Position_T field = PSYNC;
-    Modify_T modify;
+    PositionF6_T field = PTOPF6;
+    ModifyF6_T modify;
 
     modify.fsync = emu_FrameSyncRequested();
     modify.ntsc = emu_NTSCRequested();
     modify.centre = emu_Centre();
     modify.vTol = emu_VTol();
-    modify.computer = emu_ComputerRequested();
-    ComputerType_T initialComputer = modify.computer;
-    *reset = false;
+    modify.wrx = emu_WRXRequested();
+    modify.sound = emu_SoundRequested();
+    modify.stereo = emu_ACBRequested();
 
     if (!buildMenu(false))
         return false;
@@ -384,25 +411,25 @@ bool modifyMenu(bool* reset)
             switch (key)
             {
                 case HID_KEY_ARROW_UP:
-                    if (field == PTOP)
+                    if (field == PTOPF6)
                     {
-                        field = PBOTTOM;
+                        field = PBOTTOMF6;
                     }
                     else
                     {
-                        field = (Position_T)((int)field - (int)Position_T::PINC);
+                        field = (PositionF6_T)((int)field - (int)PositionF6_T::PINCF6);
                     }
                     showModify(field, &modify);
                 break;
 
                 case HID_KEY_ARROW_DOWN:
-                    if (field == PBOTTOM)
+                    if (field == PBOTTOMF6)
                     {
-                        field = PTOP;
+                        field = PTOPF6;
                     }
                     else
                     {
-                        field = (Position_T)((int)field + (int)Position_T::PINC);
+                        field = (PositionF6_T)((int)field + (int)PositionF6_T::PINCF6);
                     }
                     showModify(field, &modify);
                 break;
@@ -434,16 +461,17 @@ bool modifyMenu(bool* reset)
                             modify.vTol +=5;
                         }
                     }
-                    else if (field == PCOMPUTER)
+                    else if (field == PWRX)
                     {
-                        if (modify.computer == ZX81X2)
+                        modify.wrx = !modify.wrx;
+                    }
+                    else if (field == PSOUNDTYPE)
                         {
-                            modify.computer = ZX80;
+                        modify.sound = (modify.sound + 1) % 3;
                         }
-                        else
+                    else if (field == PSTEREOACB)
                         {
-                            modify.computer = (ComputerType_T)(((int)modify.computer) + 1);
-                        }
+                        modify.stereo = ! modify.stereo;
                     }
                     showModify(field, &modify);
                 break;
@@ -475,16 +503,13 @@ bool modifyMenu(bool* reset)
                             modify.vTol -=5;
                         }
                     }
-                    else if (field == PCOMPUTER)
+                    else if (field == PSOUNDTYPE)
                     {
-                        if (modify.computer == ZX80)
-                        {
-                            modify.computer = ZX81X2;
+                        modify.sound = (modify.sound + 2) % 3;
                         }
-                        else
+                    else if (field == PSTEREOACB)
                         {
-                            modify.computer = (ComputerType_T)(((int)modify.computer) - 1);
-                        }
+                        modify.stereo = ! modify.stereo;
                     }
                     showModify(field, &modify);
                 break;
@@ -503,19 +528,210 @@ bool modifyMenu(bool* reset)
         emu_SetNTSC(modify.ntsc);
         emu_SetCentre(modify.centre);
         emu_SetVTol(modify.vTol);
-        emu_SetComputer(modify.computer);
+        emu_SetWRX(modify.wrx);
+        emu_SetSound(modify.sound);
+        emu_SetACB(modify.stereo);
 
         // wait for Enter to be released
         debounceEnter();
+    }
+    endMenu(false);
     
-        *reset = (modify.computer != initialComputer);
+    return update;
+}
+
+static const int allowedMem[] {1, 2, 3, 4, 16, 32, 48};
+
+// Entries that can be modified without rebooting the emulator (f6)
+bool restartMenu(void)
+{
+    uint8_t key = 0;
+    uint8_t debounce = 0;
+    PositionF7_T field = PTOPF7;
+    RestartF7_T restart;
+
+    restart.msize = emu_MemoryRequested();
+    restart.lowRAM = emu_LowRAMRequested();
+    restart.m1not = emu_M1NOTRequested();
+    restart.computer = emu_ComputerRequested();
+    restart.qsudg = emu_QSUDGRequested();
+    restart.chr128 = emu_CHR128Requested();
+
+    int memLength = (sizeof(allowedMem) / sizeof(int)) - 1;
+    int memPos = 0;
+    for (int i=0; i<=memLength; ++i)
+    {
+        if (allowedMem[i] == restart.msize)
+        {
+            memPos = i;
+            break;
+        }
+    }
+
+    if (!buildMenu(false))
+        return false;
+
+    showRestart(field, &restart);
+
+    do
+    {
+        key = 0;
+        tuh_task();
+        hidNavigateMenu(&key);
+        emu_WaitFor50HzTimer();
+
+        if (debounce != key)
+        {
+            switch (key)
+            {
+                case HID_KEY_ARROW_UP:
+                    if (field == PTOPF7)
+                    {
+                        field = PBOTTOMF7;
+                    }
+                    else
+                    {
+                        field = (PositionF7_T)((int)field - (int)PositionF7_T::PINCF7);
+                    }
+                    showRestart(field, &restart);
+                break;
+
+                case HID_KEY_ARROW_DOWN:
+                    if (field == PBOTTOMF7)
+                    {
+                        field = PTOPF7;
+                    }
+                    else
+                    {
+                        field = (PositionF7_T)((int)field + (int)PositionF7_T::PINCF7);
+                    }
+                    showRestart(field, &restart);
+                break;
+
+                case HID_KEY_ARROW_RIGHT:
+                    if (field == PCOMPUTER)
+                    {
+                        if (restart.computer == ZX81X2)
+                        {
+                            restart.computer = ZX80;
+                        }
+                        else
+                        {
+                            restart.computer = (ComputerType_T)(((int)restart.computer) + 1);
+                        }
+                    }
+                    else if (field == PMSIZE)
+                    {
+                        if (memPos < memLength)
+                        {
+                            restart.msize = allowedMem[++memPos];
+                        }
+                        else
+                        {
+                            memPos = 0;
+                            restart.msize = allowedMem[memPos];
+                        }
+                    }
+                    else if (field == PLOWRAM)
+                    {
+                        restart.lowRAM = !restart.lowRAM;
+                    }
+                    else if (field == PM1NOT)
+                    {
+                        restart.m1not = !restart.m1not;
+                    }
+                    else if (field == PQSUDG)
+                    {
+                        restart.qsudg = !restart.qsudg;
+                    }
+                    else if (field == PCHR128)
+                    {
+                        restart.chr128 = !restart.chr128;
+                    }
+                    showRestart(field, &restart);
+                break;
+
+                case HID_KEY_ARROW_LEFT:
+                    if (field == PCOMPUTER)
+                    {
+                        if (restart.computer == ZX80)
+                        {
+                            restart.computer = ZX81X2;
+                        }
+                        else
+                        {
+                            restart.computer = (ComputerType_T)(((int)restart.computer) - 1);
+                        }
+                    }
+                    else if (field == PMSIZE)
+                    {
+                        if (memPos)
+                        {
+                            restart.msize = allowedMem[--memPos];
+                        }
+                        else
+                        {
+                            memPos = memLength;
+                            restart.msize = allowedMem[memPos];
+                        }
+                    }
+                    else if (field == PLOWRAM)
+                    {
+                        restart.lowRAM = !restart.lowRAM;
+                    }
+                    else if (field == PM1NOT)
+                    {
+                        restart.m1not = !restart.m1not;
+                    }
+                    else if (field == PQSUDG)
+                    {
+                        restart.qsudg = !restart.qsudg;
+                    }
+                    else if (field == PCHR128)
+                    {
+                        restart.chr128 = !restart.chr128;
+                    }
+                    showRestart(field, &restart);
+                break;
+            }
+            debounce = key;
+
+        }
+    } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
+
+    // Update values if requested
+    bool update = (key == HID_KEY_ENTER);
+
+    if (update)
+    {
+        // Validate the something was changed
+        if ((restart.computer != emu_ComputerRequested()) ||
+            (restart.m1not != emu_M1NOTRequested()) ||
+            (restart.msize != emu_MemoryRequested()) ||
+            (restart.lowRAM != emu_LowRAMRequested()) ||
+            (restart.qsudg != emu_QSUDGRequested()) ||
+            (restart.chr128 != emu_CHR128Requested()))
+        {
+            emu_SetComputer(restart.computer);
+            emu_SetMemory(restart.msize);
+            emu_SetLowRAM(restart.lowRAM);
+            emu_SetM1NOT(restart.m1not);
+            emu_SetQSUDG(restart.qsudg);
+            emu_SetCHR128(restart.chr128);
+        }
+        else
+        {
+            update = false;
+        }
+        // wait for Enter to be released
+        debounceEnter();
     }
     endMenu(false);
 
     return update;
 }
 
-// Entries that will trigger an emulator reboot (f7)
+// Entries that will trigger an emulator reboot (f8)
 void rebootMenu(void)
 {
     uint8_t key = 0;
@@ -642,7 +858,7 @@ static void endMenu(bool blank)
     }
 }
 
-static void showModify(Position_T pos, Modify_T* modify)
+static void showModify(PositionF6_T pos, ModifyF6_T* modify)
 { 
     uint lcount = (disp.height >> 4) - 13;
 
@@ -653,25 +869,62 @@ static void showModify(Position_T pos, Modify_T* modify)
     writeString("Modify", lhs + 6, lcount);
     writeString("======", lhs + 6, lcount+1);
 
-    writeString("Note: CHANGING COMPUTER", lhs - 1, lcount + 3);
-    writeString("      WILL RESET THE", lhs - 1, lcount + 4);
-    writeString("      EMULATED MACHINE", lhs - 1, lcount + 5);
+    writeInvertString("Frame Sync:", lhs, lcount + PositionF6_T::PSYNC, pos == PositionF6_T::PSYNC);
+    writeString((modify->fsync == SYNC_OFF) ? "Off      " : (modify->fsync == SYNC_ON) ? "On       " : "Interlace", rhs , lcount + PositionF6_T::PSYNC);
 
-    writeInvertString("Frame Sync:", lhs, lcount + Position_T::PSYNC, pos == Position_T::PSYNC);
-    writeString((modify->fsync == SYNC_OFF) ? "Off      " : (modify->fsync == SYNC_ON) ? "On       " : "Interlace", rhs , lcount + Position_T::PSYNC);
+    writeInvertString("Em TV Type:", lhs, lcount + PositionF6_T::PNTSC, pos == PositionF6_T::PNTSC);
+    writeString(modify->ntsc ? "NTSC" : "PAL ", rhs, lcount + PositionF6_T::PNTSC);
 
-    writeInvertString("Em TV Type:", lhs, lcount + Position_T::PNTSC, pos == Position_T::PNTSC);
-    writeString(modify->ntsc ? "NTSC" : "PAL ", rhs, lcount + Position_T::PNTSC);
-    
-    writeInvertString("Vert Tol:", lhs, lcount + Position_T::PVTOL, pos == Position_T::PVTOL);
+    writeInvertString("Vert Tol:", lhs, lcount + PositionF6_T::PVTOL, pos == PositionF6_T::PVTOL);
     sprintf(c,"%d lines  \n",modify->vTol);
-    writeString(c, rhs , lcount + Position_T::PVTOL);
+    writeString(c, rhs , lcount + PositionF6_T::PVTOL);
 
-    writeInvertString("Centre:", lhs, lcount + Position_T::PCENTRE, pos == Position_T::PCENTRE);
-    writeString(modify->centre ? "YES" : "NO ", rhs , lcount + Position_T::PCENTRE);
+    writeInvertString("Centre:", lhs, lcount + PositionF6_T::PCENTRE, pos == PositionF6_T::PCENTRE);
+    writeString(modify->centre ? "YES" : "NO ", rhs , lcount + PositionF6_T::PCENTRE);
 
-    writeInvertString("Computer:", lhs, lcount + Position_T::PCOMPUTER, pos == Position_T::PCOMPUTER);
-    writeString((modify->computer == ZX80) ? "ZX80  " : (modify->computer == ZX81X2) ? "ZX81X2" : "ZX81  ", rhs , lcount + Position_T::PCOMPUTER);
+    writeInvertString("WRX RAM:", lhs, lcount + PositionF6_T::PWRX, pos == PositionF6_T::PWRX);
+    writeString(modify->wrx ? "YES" : "NO ", rhs , lcount + PositionF6_T::PWRX);
+
+    writeInvertString("Sound:", lhs, lcount + PositionF6_T::PSOUNDTYPE, pos == PositionF6_T::PSOUNDTYPE);
+    writeString((modify->sound == AY_TYPE_QUICKSILVA) ? "QUICKSILVA" : (modify->sound == AY_TYPE_ZONX) ? "ZonX      " : "None      ", rhs , lcount + PositionF6_T::PSOUNDTYPE);
+
+    writeInvertString("Stereo:", lhs, lcount + PositionF6_T::PSTEREOACB, pos == PositionF6_T::PSTEREOACB);
+    writeString(modify->stereo ? "ON-ACB" : "OFF   ", rhs , lcount + PositionF6_T::PSTEREOACB);
+}
+
+static void showRestart(PositionF7_T pos, RestartF7_T* restart)
+{
+    uint lcount = (disp.height >> 4) - 13;
+
+    int lhs = (disp.width >> 4) - 10;
+    int rhs = lhs + 13;
+    char c[20];
+
+    writeString("Restart", lhs + 6, lcount);
+    writeString("=======", lhs + 6, lcount+1);
+
+    writeString("Note: CHANGING VALUES", lhs - 1, lcount + 4);
+    writeString("      WILL RESTART THE", lhs - 1, lcount + 5);
+    writeString("      EMULATED MACHINE", lhs - 1, lcount + 6);
+
+    writeInvertString("Computer:", lhs, lcount + PositionF7_T::PCOMPUTER, pos == PositionF7_T::PCOMPUTER);
+    writeString((restart->computer == ZX80) ? "ZX80  " : (restart->computer == ZX81X2) ? "ZX81X2" : "ZX81  ", rhs , lcount + PositionF7_T::PCOMPUTER);
+
+    writeInvertString("Memory:", lhs, lcount + PositionF7_T::PMSIZE, pos == PositionF7_T::PMSIZE);
+    sprintf(c,"%0d KB\n",restart->msize);
+    writeString(c, rhs , lcount + PositionF7_T::PMSIZE);
+
+    writeInvertString("LOW RAM:", lhs, lcount + PositionF7_T::PLOWRAM, pos == PositionF7_T::PLOWRAM);
+    writeString((restart->lowRAM) ? "On " : "Off", rhs , lcount + PositionF7_T::PLOWRAM);
+
+    writeInvertString("MINOT:", lhs, lcount + PositionF7_T::PM1NOT, pos == PositionF7_T::PM1NOT);
+    writeString((restart->m1not) ? "On " : "Off", rhs , lcount + PositionF7_T::PM1NOT);
+
+    writeInvertString("CHAR$128:", lhs, lcount + PositionF7_T::PCHR128, pos == PositionF7_T::PCHR128);
+    writeString((restart->chr128) ? "On " : "Off", rhs , lcount + PositionF7_T::PCHR128);
+
+    writeInvertString("QS UDG:", lhs, lcount + PositionF7_T::PQSUDG, pos == PositionF7_T::PQSUDG);
+    writeString((restart->qsudg) ? "On " : "Off", rhs , lcount + PositionF7_T::PQSUDG);
 }
 
 static void showReboot(FiveSevenSix_T mode)
@@ -684,9 +937,9 @@ static void showReboot(FiveSevenSix_T mode)
     writeString("Reboot", lhs + 6, lcount);
     writeString("======", lhs + 6, lcount+1);
 
-    writeString("Note: RESOLUTION CHANGE", lhs - 1, lcount + 3);
-    writeString("      WILL REBOOT THE", lhs - 1, lcount + 4);
-    writeString("      EMULATOR", lhs - 1, lcount + 5);
+    writeString("Note: RESOLUTION", lhs - 1, lcount + 4);
+    writeString("      CHANGE WILL", lhs - 1, lcount + 5);
+    writeString("      REBOOT THE PICO", lhs - 1, lcount + 6);
 
     writeInvertString("Resolution:", lhs, lcount + 12, true);
     writeString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);

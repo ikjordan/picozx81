@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 extern bool sound_create(int freq, int framesize);
-extern void sound_init(bool acb);
+extern void sound_init(bool acb, bool reset);
 extern void sound_ay_write(int reg,int val);
 extern void sound_frame(uint16_t* buff);
 

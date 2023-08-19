@@ -641,11 +641,14 @@ void z8x_Init(void)
   memset( keyboard, 255, sizeof( keyboard ) );
 
   ResetZ80();
-  emu_sndInit(sound_ay != AY_TYPE_NONE);
+  emu_sndInit(sound_ay != AY_TYPE_NONE, true);
 }
 
 void z8x_updateValues(void)
 {
+  sound_ay = emu_SoundRequested();
+  emu_sndInit(sound_ay != AY_TYPE_NONE, false);
+  useWRX = emu_WRXRequested();
   useNTSC = emu_NTSCRequested();
   adjustStartX = emu_CentreX();
   adjustStartY = emu_CentreY();

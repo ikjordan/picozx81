@@ -410,10 +410,58 @@ void emu_SetVTol(uint16_t vTol)
   specific.VTol = vTol;
 }
 
+void emu_SetWRX(bool wrx)
+{
+  general.WRX = wrx;
+  specific.WRX = wrx;
+}
+
 void emu_SetCentre(bool centre)
 {
   general.centre = centre;
   specific.centre = centre;
+}
+
+void emu_SetSound(int soundType)
+{
+  general.sound = soundType;
+  specific.sound = soundType;
+}
+
+void emu_SetACB(bool stereo)
+{
+  general.acb = stereo;
+  specific.acb = stereo;
+}
+
+void emu_SetMemory(int memory)
+{
+  general.memory = memory;
+  specific.memory = memory;
+}
+
+void emu_SetLowRAM(bool lowRAM)
+{
+  general.lowRAM = lowRAM;
+  specific.lowRAM = lowRAM;
+}
+
+void emu_SetM1NOT(bool m1NOT)
+{
+  general.M1NOT = m1NOT;
+  specific.M1NOT = m1NOT;
+}
+
+void emu_SetQSUDG(bool qsudg)
+{
+  general.QSUDG = qsudg;
+  specific.QSUDG = qsudg;
+}
+
+void emu_SetCHR128(bool chr128)
+{
+  general.CHR128 = chr128;
+  specific.CHR128 = chr128;
 }
 
 void emu_SetRebootMode(FiveSevenSix_T mode)
@@ -791,7 +839,6 @@ void emu_ReadSpecificValues(const char *filename)
                     (specific.memory != used.memory) ||
                     (specific.computer != used.computer) ||
                     (specific.CHR128 != used.CHR128) ||
-                    (specific.WRX != used.WRX) ||
                     (specific.QSUDG != used.QSUDG) ||
                     (specific.lowRAM != used.lowRAM));
   }

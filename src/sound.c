@@ -158,7 +158,7 @@ bool sound_create(int freq, int framesize)
   return (sound_framesiz == framesize);
 }
 
-void sound_init(bool acb)
+void sound_init(bool acb, bool reset)
 {
 if(!sound_stereo)
 {
@@ -169,11 +169,12 @@ else
   sound_stereo_acb = acb;
 }
 
+if (reset)
 sound_ay_reset();
 
 sound_enabled=1;
 
-if(sound_ay != AY_TYPE_NONE)
+if((sound_ay != AY_TYPE_NONE) && reset)
   sound_ay_init();
 }
 
