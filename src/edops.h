@@ -45,7 +45,7 @@
             f=(a&0xa8)|((!a)<<6)|(((a&15)>0)<<4)|((a==128)<<2)|2|(a>0))
 
 {
-   unsigned char op=fetch(pc&0x7fff);
+   unsigned char op=fetchm(pc);
    pc++;
    radjust++;
    switch(op){
