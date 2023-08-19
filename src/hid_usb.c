@@ -250,7 +250,7 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
     for(unsigned int i = 0; i < 6; ++i)
     {
         if (usedouble && (doubleshift == 2) && (!shift) &&
-            (((report.keycode[i] >= HID_KEY_1) && (report.keycode[i] <= HID_KEY_7)) || (report.keycode[i] == HID_KEY_0)))
+            (((report.keycode[i] >= HID_KEY_1) && (report.keycode[i] <= HID_KEY_8)) || (report.keycode[i] == HID_KEY_0)))
         {
             if (report.keycode[i] != HID_KEY_0)
             {
@@ -280,7 +280,7 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
             else
             {
                 // Check for non Sinclair keys here:
-                if (((report.keycode[i] >= HID_KEY_F1) && (report.keycode[i] <= HID_KEY_F7)) ||
+                if (((report.keycode[i] >= HID_KEY_F1) && (report.keycode[i] <= HID_KEY_F8)) ||
                     (report.keycode[i] == HID_KEY_ESCAPE))
                 {
                     *special = report.keycode[i];

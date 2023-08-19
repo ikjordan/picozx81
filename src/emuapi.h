@@ -75,8 +75,16 @@ extern void emu_SetZX80(bool zx80);
 extern void emu_SetFrameSync(FrameSync_T fsync);
 extern void emu_SetNTSC(bool ntsc);
 extern void emu_SetVTol(uint16_t vTol);
+extern void emu_SetWRX(bool wrx);
 extern void emu_SetCentre(bool centre);
+extern void emu_SetSound(int soundType);
+extern void emu_SetACB(bool stereo);
 extern void emu_SetComputer(ComputerType_T computer);
+extern void emu_SetMemory(int memory);
+extern void emu_SetLowRAM(bool lowRAM);
+extern void emu_SetM1NOT(bool m1NOT);
+extern void emu_SetQSUDG(bool qsudg);
+extern void emu_SetCHR128(bool chr128);
 
 extern void emu_SetRebootMode(FiveSevenSix_T mode);
 

@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern void emu_sndInit(bool playSound);
+extern void emu_sndInit(bool playSound, bool reset);
 extern void emu_generateSoundSamples(void);
 extern void emu_silenceSound(void);
 
