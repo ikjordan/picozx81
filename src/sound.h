@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-#ifdef I2S
+#if defined (I2S) || defined (SOUND_HDMI)
 #define ZEROSOUND 0         // Zero point for I2S sound
 #else
 #define ZEROSOUND 500       // Zero point for PWM sound

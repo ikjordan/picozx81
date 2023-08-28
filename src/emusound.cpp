@@ -19,6 +19,10 @@
 #endif
 #include "hardware/clocks.h"
 #include "pico/sync.h"
+#ifdef SOUND_HDMI
+#include "audio_ring.h"
+#include "display.h"
+#endif
 #include "sound.h"
 #include "emuapi.h"
 #include "emupriv.h"
@@ -28,7 +32,8 @@
 semaphore_t timer_sem;
 
 #define SAMPLE_FREQ   32000
-static const uint16_t NUMSAMPLES = 640;
+
+static const uint16_t NUMSAMPLES = (SAMPLE_FREQ / 50); // samples in 50th of second
 
 static uint16_t soundBuffer16[NUMSAMPLES << 2]; // Effectively two stereo buffers
 static uint16_t* soundBuffer2 = &soundBuffer16[NUMSAMPLES << 1];
@@ -41,6 +46,18 @@ static void beginAudio(void);
 
 #ifdef SOUND_DMA
 static int dma_channel_sound;
+#endif
+
+#ifdef SOUND_HDMI
+#define FIFTYHZMS   20    // ms between 50 HZ ticks
+#define TICKMS      2     // ms ticks to service hdmi audio ring buffer
+#define TICKCOUNT   (FIFTYHZMS/TICKMS)  // number of ring buffer ticks per 50Hz tick
+#define TICK_SAMPLES        (NUMSAMPLES / TICKCOUNT)
+
+struct repeating_timer audio_timer;
+audio_ring_t* ring;
+audio_sample_t* hdmi_buffer;
+int hdmi_buffer_size;
 #endif
 
 #ifdef I2S
@@ -57,6 +74,11 @@ gpio_function i2s_gpio_func = GPIO_FUNC_PIO0;
 int32_t sound_count = 0;
 int64_t int_count = 0;
 #endif
+
+uint16_t emu_SoundSampleRate(void)
+{
+  return SAMPLE_FREQ;
+}
 
 void emu_sndInit(bool playSound, bool reset)
 {
@@ -90,6 +112,7 @@ void emu_generateSoundSamples(void)
   }
 }
 
+#ifndef SOUND_HDMI
 #ifdef I2S
 static inline void i2s_start_dma_transfer()
 {
@@ -183,6 +206,61 @@ static void __not_in_flash_func(pwmInterruptHandler)()
 }
 #endif // SOUND_DMA
 #endif // I2S
+#else  // SOUND_HDMI
+
+static bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t)
+{
+  static uint32_t call_count = 0;
+  static int cnt = 0;
+
+  // write in chunks
+  int size = get_write_size(ring, true);
+  if (size >= TICK_SAMPLES)
+  {
+    int audio_offset = get_write_offset(ring);
+    if ((size >= ((3*hdmi_buffer_size)>>2)) &&
+        (cnt <= ((NUMSAMPLES << 2)-(TICK_SAMPLES << 1))))
+    {
+      // Allow to refill buffer
+      size = (TICK_SAMPLES<<1);
+    }
+    else
+    {
+      size = TICK_SAMPLES;
+    }
+
+    for (int c = 0; c < size; c++)
+    {
+      hdmi_buffer[audio_offset].channels[0] = soundBuffer16[cnt++];
+      hdmi_buffer[audio_offset].channels[1] = soundBuffer16[cnt++];
+      audio_offset = (audio_offset + 1) & (hdmi_buffer_size-1);
+    }
+    set_write_offset(ring, audio_offset);
+
+    if (cnt >= (NUMSAMPLES << 2))
+    {
+      cnt -= (NUMSAMPLES << 2);
+    }
+  }
+
+  if (++call_count == TICKCOUNT)
+  {
+    call_count = 0;
+
+    // resync the play pointer
+    if ((!first) & (cnt!=0))
+    {
+      cnt=0;
+    }
+
+    // Swap the buffers and Signal the 50Hz semaphore
+    first = !first;
+    sem_release(&timer_sem);
+  }
+  return true;
+}
+
+#endif // SOUND_HDMI
 
 static void beginAudio(void)
 {
@@ -192,6 +270,7 @@ static void beginAudio(void)
   {
     begun = true;
     sem_init(&timer_sem, 0, 1);
+#ifndef SOUND_HDMI
 #ifdef I2S
     irq_num = (dma_irq == DMA_IRQ_1) ? 1 : 0;
 
@@ -297,6 +376,8 @@ static void beginAudio(void)
     // Want to generate samples at a ratio of the
     // system clock, wrap at 1000 to allow 32kHz samples
     // At 250 MHz, 32K samples per second with range 1000 gives 7.8125
+    // At 252 MHz, 32K samples per second with range 1000 gives 7.875
+    // At 270 MHz, 32K samples per second with range 1000 gives 8.4375
     // int_frac has 4 bit frac, so multiply int by 16 (4 bits)
     uint32_t system_clock_frequency = clock_get_hz(clk_sys);
     uint32_t divider = (((system_clock_frequency  / RANGE) << 4) / SAMPLE_FREQ);
@@ -327,6 +408,14 @@ static void beginAudio(void)
     if (audio_pin_slice_r != audio_pin_slice_l)
       pwm_set_enabled(audio_pin_slice_l, true);
 #endif // I2S
+#else // SOUND_HDMI
+    // Create the timer callback
+    emu_silenceSound();
+    getAudioRing(&ring);
+    hdmi_buffer = ring->buffer;
+    hdmi_buffer_size = ring->size;
+    add_repeating_timer_ms(-TICKMS, audio_timer_callback, NULL, &audio_timer);
+#endif // SOUND_HDMI
 
     printf("sound initialized\n");
   }

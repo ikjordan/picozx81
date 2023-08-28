@@ -3,6 +3,7 @@
 *******************************************************************/
 #include "pico.h"
 #include "emuapi.h"
+#include "emusound.h"
 #include "emuvideo.h"
 #include "display.h"
 
@@ -29,7 +30,7 @@ uint emu_VideoInit(FiveSevenSix_T fiveSevenSix)
     }
 
     uint clock = displayInitialise(five, match, 1, &disp.width,
-                                   &disp.height, &disp.stride_bit);
+                                   &disp.height, &disp.stride_bit, emu_SoundSampleRate());
 
     if (fiveSevenSix)
     {

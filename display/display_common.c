@@ -2,6 +2,7 @@
  * Common display code for VGA and DVI
  */
 #include <stdio.h>
+#include "hardware/structs/bus_ctrl.h"
 #define MAX_FREE 4
 #define MAX_PEND 2
 
@@ -38,17 +39,6 @@ static inline void newFrame(void);
 //
 // Public functions
 //
-void displayStart(void)
-{
-    // create a semaphore to be posted when video init is complete
-    sem_init(&display_initialised, 0, 1);
-
-    // launch all the video on core 1, so it isn't affected by USB handling on core 0
-    multicore_launch_core1(core1_main);
-
-    sem_acquire_blocking(&display_initialised);
-}
-
 void __not_in_flash_func(displaySetInterlace)(bool on)
 {
     mutex_enter_blocking(&next_frame_mutex);
@@ -220,6 +210,16 @@ bool displayIsBlank(bool* isBlack)
 //
 // Private functions
 //
+void displayStartCommon(void)
+{
+    // create a semaphore to be posted when video init is complete
+    sem_init(&display_initialised, 0, 1);
+
+    // launch all the video on core 1, so it isn't affected by USB handling on core 0
+    multicore_launch_core1(core1_main);
+
+    sem_acquire_blocking(&display_initialised);
+}
 
 static inline void __not_in_flash_func(newFrame)(void)
 {

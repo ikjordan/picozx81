@@ -62,7 +62,7 @@ int sound_stereo_acb=0;		/* 1 for ACB stereo, else 0 */
 
 /* 
  * For PWM max value is 999, mid point 499.5 mid for each channel is 499.5 / 4 = 124
- * For I2S max value is 32768 mid point is 0 max for 1 channel is < 32768 / 4
+ * For I2S max value is 32768 mid point is 0 max for 1 channel is < 32768 / 4 = 8192
  * For 12S further divide by 4 to avoid full volume
  */
 #define AMPL_AY_TONE 2048
@@ -354,7 +354,7 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
   if(sound_stereo && !sound_stereo_acb)
     ptr[1]=*ptr;
 
-  #ifndef I2S
+#if ((!defined (I2S)) && (!defined (SOUND_HDMI)))
   // Correct to PWM
   *ptr = (*ptr>>4) + ZEROSOUND;
   ptr[1] = (ptr[1]>>4) + ZEROSOUND;
