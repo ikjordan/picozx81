@@ -1,5 +1,6 @@
 #include "pico.h"
 #include "pico/stdlib.h"
+#include "hardware/vreg.h"
 #include "tusb.h"
 
 #include "iopins.h"
@@ -15,7 +16,7 @@ static void mainLoop(void);
 int main(void)
 {
 #ifdef OVER_VOLT
-    vreg_set_voltage(VREG_VOLTAGE_1_20)
+    vreg_set_voltage(VREG_VOLTAGE_1_20);
 #endif
 
     // Initialise sd card and read config

@@ -131,11 +131,11 @@ else()
     target_link_libraries(${PROJECT} pico_scanvideo_dpi)
 endif()
 
-if (TIME_SPARE)
+if (${TIME_SPARE})
 target_compile_definitions(${PROJECT} PRIVATE -DTIME_SPARE)
 endif()
 
-if (OVER_VOLT)
+if (${OVER_VOLT})
 target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
 endif()
 
@@ -148,8 +148,7 @@ target_link_libraries(${PROJECT}
                       fatfs
                       hardware_pwm
                       tinyusb_host
-                      tinyusb_board
-)
+                      tinyusb_board)
 
 # Cannot use serial port with Pimoroni vga card
 if (${PICO_BOARD} STREQUAL "vgaboard")

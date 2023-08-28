@@ -63,10 +63,10 @@ typedef struct
 static bool buildMenu(bool clone);
 static void endMenu(bool blank);
 static void delay(void);
-static void debounceEnter(void);
+static void debounceExit(bool selected);
 
 static void xorRow(uint row);
-static void xorChar(char c, uint col, uint row);
+static void invertChar(char c, uint col, uint row);
 static void writeChar(char c, uint col, uint row);
 static void writeString(const char* s, uint col, uint row);
 static void writeInvertString(const char* s, uint col, uint row, bool invert);
@@ -85,6 +85,7 @@ static uint8_t* currBuff = 0;
 static uint8_t* menuscreen = 0;
 
 static bool allfiles = false;
+static int border = 0;
 
 /* 
  * Public interface
@@ -101,11 +102,11 @@ bool loadMenu(void)
     uint row = 0;
     bool debounce = true;
     bool exit = false;
-    uint fullrow = (uint)((disp.height>>3)-2);
 
     if (!buildMenu(false))
         return false;
 
+    uint fullrow = (uint)((disp.height>>3)-(border<<1));
     allfiles = emu_AllFilesRequested();
 
     strcpy(working, emu_GetDirectory());
@@ -115,7 +116,7 @@ bool loadMenu(void)
     uint offset = 0;
 
     // Highlight first line
-    xorRow(row + 1);
+    xorRow(row + border);
 
     do
     {
@@ -140,8 +141,8 @@ bool loadMenu(void)
                 case HID_KEY_ARROW_RIGHT:
                     if (((row + 1) < maxrow) && (key == HID_KEY_ARROW_DOWN))
                     {
-                        xorRow(row + 1);
-                        xorRow(++row + 1);
+                        xorRow(row + border);
+                        xorRow(++row + border);
                     }
                     else
                     {
@@ -154,7 +155,7 @@ bool loadMenu(void)
                             populateFiles(working, offset);
                             row = 0;
                             maxrow = ((entries - offset) < fullrow) ? entries - offset : fullrow;
-                            xorRow(row + 1);
+                            xorRow(row + border);
                         }
                     }
                 break;
@@ -163,8 +164,8 @@ bool loadMenu(void)
                 case HID_KEY_ARROW_LEFT:
                     if (row && (key == HID_KEY_ARROW_UP))
                     {
-                        xorRow(row + 1);
-                        xorRow(--row + 1);
+                        xorRow(row + border);
+                        xorRow(--row + border);
                     }
                     else
                     {
@@ -176,7 +177,7 @@ bool loadMenu(void)
                             populateFiles(working, offset);
                             row = fullrow - 1;
                             maxrow = fullrow;
-                            xorRow(row + 1);
+                            xorRow(row + border);
                         }
                     }
                 break;
@@ -194,7 +195,7 @@ bool loadMenu(void)
                             entries = populateFiles(working, 0);
                             row = 0;
                             maxrow = (entries < fullrow) ? entries : fullrow;
-                            xorRow(row + 1);
+                            xorRow(row + border);
 
                             // Need to debounce the enter key again
                             debounce = true;
@@ -223,7 +224,7 @@ bool loadMenu(void)
                         memset(menuscreen, 0x00, disp.stride_byte * disp.height);
                         entries = populateFiles(working, 0);
                         maxrow = (entries < fullrow) ? entries : fullrow;
-                        xorRow(row + 1);
+                        xorRow(row + border);
                     }
                 break;
 
@@ -236,7 +237,7 @@ bool loadMenu(void)
                         memset(menuscreen, 0x00, disp.stride_byte * disp.height);
                         entries = populateFiles(working, 0);
                         maxrow = (entries < fullrow) ? entries : fullrow;
-                        xorRow(row + 1);
+                        xorRow(row + border);
                     }
                 break;
             }
@@ -246,8 +247,7 @@ bool loadMenu(void)
 
     bool change = (key == HID_KEY_ENTER);
 
-    if (change)
-        debounceEnter();
+    debounceExit(change);
 
     endMenu(change);
     return (change);
@@ -336,6 +336,10 @@ bool statusMenu(void)
     writeString("All Files:", lhs, lcount);
     writeString(emu_AllFilesRequested() ? "Yes" : "No", rhs, lcount++);
 
+    writeString("Menu Border:", lhs, lcount);
+    sprintf(c,"%0d\n",emu_MenuBorderRequested());
+    writeString(c, rhs, lcount++);
+
     //writeString("Fn Key Map:", lhs, ++lcount);
     //writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
 
@@ -344,8 +348,9 @@ bool statusMenu(void)
         tuh_task();
         hidNavigateMenu(&key);
         emu_WaitFor50HzTimer();
-    } while (key != HID_KEY_ESCAPE);
+    } while ((key != HID_KEY_ESCAPE) && (key != HID_KEY_ENTER));
 
+    debounceExit(key == HID_KEY_ENTER);
     endMenu(false);
 
     return true;
@@ -360,11 +365,11 @@ void pauseMenu(void)
     if (!buildMenu(true))
         return;
 
-    // XOR a P in each corner - allowing for over scan
-    xorChar('P', 1, 1);
-    xorChar('P', 1, (disp.height >> 3) - 2);
-    xorChar('P', (disp.width >> 3) - 2, 1);
-    xorChar('P', (disp.width >> 3) - 2, (disp.height >> 3) - 2);
+    // Display an inverted P in each corner - allowing for over scan
+    invertChar('P', border, border);
+    invertChar('P', border, (disp.height >> 3) - border - 1);
+    invertChar('P', (disp.width >> 3) - border - 1, border);
+    invertChar('P', (disp.width >> 3) - border - 1, (disp.height >> 3) - border - 1);
 
     // Just wait for ESC to be pressed
     do
@@ -374,7 +379,7 @@ void pauseMenu(void)
         emu_WaitFor50HzTimer();
     } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
 
-    debounceEnter();
+    debounceExit(key == HID_KEY_ENTER);
     endMenu(false);
 }
 
@@ -397,6 +402,7 @@ bool modifyMenu(void)
     if (!buildMenu(false))
         return false;
 
+    hidNavigateMenu(&debounce);
     showModify(field, &modify);
 
     do
@@ -531,10 +537,8 @@ bool modifyMenu(void)
         emu_SetWRX(modify.wrx);
         emu_SetSound(modify.sound);
         emu_SetACB(modify.stereo);
-
-        // wait for Enter to be released
-        debounceEnter();
     }
+    debounceExit(update);
     endMenu(false);
     
     return update;
@@ -571,6 +575,7 @@ bool restartMenu(void)
     if (!buildMenu(false))
         return false;
 
+    hidNavigateMenu(&debounce);
     showRestart(field, &restart);
 
     do
@@ -723,9 +728,8 @@ bool restartMenu(void)
         {
             update = false;
         }
-        // wait for Enter to be released
-        debounceEnter();
     }
+    debounceExit(key == HID_KEY_ENTER);
     endMenu(false);
 
     return update;
@@ -742,6 +746,7 @@ void rebootMenu(void)
     if (!buildMenu(false))
         return;
     
+    hidNavigateMenu(&debounce);
     showReboot(mode);
 
     do
@@ -785,6 +790,7 @@ void rebootMenu(void)
         }
     } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
     
+    debounceExit(key == HID_KEY_ENTER);
     endMenu(false);
 
     if (key == HID_KEY_ENTER)
@@ -808,6 +814,8 @@ static bool buildMenu(bool clone)
     // Store the current display
     wasBlank = displayIsBlank(&wasBlack);
 
+    border = emu_MenuBorderRequested();
+
     if (!wasBlank)
     {
         // Get the current displayed buffer
@@ -818,7 +826,7 @@ static bool buildMenu(bool clone)
     {
         if (wasBlank)
         {
-            memset(menuscreen, wasBlack, disp.stride_byte * disp.height);
+            memset(menuscreen, wasBlack ? 0xFF : 0x00, disp.stride_byte * disp.height);
         }
         else
         {
@@ -955,13 +963,13 @@ static void delay(void)
     emu_WaitFor50HzTimer();
 }
 
-static void debounceEnter(void)
+static void debounceExit(bool selected)
 {
     uint8_t key = 0;
     
     hidNavigateMenu(&key);
 
-    while (key == HID_KEY_ENTER)
+    while (key == (selected ? HID_KEY_ENTER : HID_KEY_ESCAPE))
     {    
         tuh_task();
         emu_WaitFor50HzTimer();
@@ -1017,7 +1025,7 @@ static void writeInvertString(const char* s, uint col, uint row, bool invert)
         {
             if (invert)
             {
-                xorChar(s[i], col+i, row);
+                invertChar(s[i], col+i, row);
             }
             else
             {
@@ -1047,7 +1055,7 @@ static void writeChar(char c, uint col, uint row)
     }
 }
 
-static void xorChar(char c, uint col, uint row)
+static void invertChar(char c, uint col, uint row)
 {
     uint8_t* pos = menuscreen + row * disp.stride_bit + col;
     uint16_t offset = 0x1e00;
@@ -1075,14 +1083,14 @@ static int populateFiles(const char* path, uint first)
     uint i = 0;
     uint count = 0;
     FILINFO fno;
-    uint fullrow = (uint)((disp.height>>3)-2);
+    uint fullrow = (uint)((disp.height>>3)-(border<<1));
 
     // Populate parent directory
     if (path[0])
     {
         if (!first)
         {
-            writeString("<..>", 1, 1);
+            writeString("<..>", border, border);
             ++i;
         }
         ++count;
@@ -1121,7 +1129,7 @@ static int populateFiles(const char* path, uint first)
                         name[len] = '>';
                         name[len + 1] = 0;
                     }
-                    writeString(name, 1, i+1);
+                    writeString(name, border, i+border);
                     ++i;
                 }
                 ++count;
@@ -1145,17 +1153,17 @@ static int populateFiles(const char* path, uint first)
                 if ((count >= first) && (count < (first + fullrow)))
                 {
                     // Terminate long file names with a +
-                    if (strlen(fno.fname) > (uint)((disp.width>>3) - 2))
+                    if (strlen(fno.fname) > (uint)((disp.width>>3) - (border<<1)))
                     {
                         // Copy and terminate with a +
                         strncpy(name, fno.fname, sizeof(name));
-                        name[((disp.width>>3) - 3)] = '+';
-                        name[((disp.width>>3) - 2)] = 0;
-                        writeString(name, 1, i+1);
+                        name[((disp.width>>3) - (border<<1)-1)] = '+';
+                        name[((disp.width>>3) - (border<<1))] = 0;
+                        writeString(name, border, i+border);
                     }
                     else
                     {
-                        writeString(fno.fname, 1, i+1);
+                        writeString(fno.fname, border, i+border);
                     }
                     ++i;
                 }
