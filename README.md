@@ -125,14 +125,15 @@ In addition a USB joystick can be configured to generated key presses
 
 Notes: ENTER and SPACE can be used to represent the New Line and Space keys, respectively
 ### Extra configuration options
-Five extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
+Six extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
 | Item | Description | Default Value |
 | --- | --- | --- |
 | FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz `On` , or 720x576p display @ 50.65Hz `Match`. If set to `Off` a 640x480 display @ 60Hz is produced | Off |
 | Dir | Sets the initial default directory to load and save programs | / |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
-| AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load-menu) is selected. When off only files with extensions `.p`, `.o`, `.81` and `.80` are initially displayed|Off|
+| AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81` and `.80` are initially displayed|Off|
+| MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 4| 1 |
 
 **Note:** By default the European ZX81 generates frames slightly faster than 50Hz (50.65Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.6 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50Hz frame rate
 
@@ -163,7 +164,7 @@ The original ZX80/ZX81 40 key keyboard does not have function keys. A "double sh
 This mechanism is enabled by default. To disable it set `DoubleShift` to `Off` in the configuration file
 ### F1 - Reset
 Hard resets the emulator. It is equivalent to removing and reconnecting the power
-### F2 - Load Menu
+### F2 - Load
 A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. Any sound that is playing is paused. Directory names are prepended by `<` and appended by `>` e.g. `<NAME>`
 
 If the name of a file or directory is too long to display in full it is truncated with the last characters as `+` (file) and `+>` (directory)
@@ -397,6 +398,7 @@ This will be named `picozx81_vga.uf2`
 + On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
 + The PicoMite VGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
 + The Olimex RP2040-PICO-PC has a stereo audio jack. ~~but the left channel cannot be used with HDMI, so only mono audio through the right channel is possible when using this board~~ The emulator now supports stereo sound on this board
++ The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
 + In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
 # Developer Notes

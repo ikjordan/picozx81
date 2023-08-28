@@ -162,6 +162,7 @@ typedef struct
   bool acb;
   bool doubleShift;
   bool extendFile;
+  int menuBorder;
   bool allFiles;
   FiveSevenSix_T fiveSevenSix;
   FrameSync_T frameSync;
@@ -290,6 +291,11 @@ bool emu_ExtendFileRequested(void)
 bool emu_AllFilesRequested(void)
 {
   return specific.allFiles;
+}
+
+int emu_MenuBorderRequested(void)
+{
+  return specific.menuBorder;
 }
 
 bool emu_ResetNeeded(void)
@@ -690,6 +696,21 @@ static int handler(void *user, const char *section, const char *name,
         // Defaults to off
         c->conf->allFiles = isEnabled(value);
       }
+      else if (!strcasecmp(name, "menuBorder"))
+      {
+        long res=strtol(value, NULL, 10);
+
+        if ((res == LONG_MIN || res == LONG_MAX  || res <= 0))
+        {
+          // Defaults to 1
+          res = 1;
+        }
+        if ((res > 4) || (res < 0))
+        {
+          res = 1;
+        }
+        c->conf->menuBorder = res;
+      }
       else if (!strcasecmp(name, "FiveSevenSix"))
       {
         if (!strcasecmp(value, "Match"))
@@ -766,6 +787,7 @@ void emu_ReadDefaultValues(void)
     general.doubleShift = true;
     general.extendFile = true;
     general.allFiles = false;
+    general.menuBorder = 1;
     general.fiveSevenSix = OFF;
     general.frameSync = SYNC_OFF;
 

@@ -61,6 +61,7 @@ extern int emu_SoundRequested(void);
 extern bool emu_DoubleShiftRequested(void);
 extern bool emu_ExtendFileRequested(void);
 extern bool emu_AllFilesRequested(void);
+extern int emu_MenuBorderRequested(void);
 extern uint16_t emu_VTol(void);
 extern bool emu_ACBRequested(void);
 extern bool emu_Centre(void);
