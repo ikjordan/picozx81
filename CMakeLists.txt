@@ -104,8 +104,11 @@ elseif (NOT (${PICO_BOARD} STREQUAL "olimexpcboard"))
     # Unless Olimex (which has channels on different slices) use PWM loaded by DMA sound
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
     target_link_libraries(${PROJECT} hardware_dma)
+    target_link_libraries(${PROJECT} hardware_pwm)
 elseif (${HMDI_SOUND})
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_HDMI)
+else ()
+    target_link_libraries(${PROJECT} hardware_pwm)
 endif()
 
 # Determine video system and name uf2
@@ -147,11 +150,11 @@ else()
 endif()
 
 if (${TIME_SPARE})
-target_compile_definitions(${PROJECT} PRIVATE -DTIME_SPARE)
+    target_compile_definitions(${PROJECT} PRIVATE -DTIME_SPARE)
 endif()
 
 if (${OVER_VOLT})
-target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
+    target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
 endif()
 
 target_compile_options(${PROJECT} PRIVATE -Wall)
@@ -161,7 +164,6 @@ target_link_libraries(${PROJECT}
                       pico_stdlib
                       sdcard
                       fatfs
-                      hardware_pwm
                       tinyusb_host
                       tinyusb_board)
 
@@ -174,4 +176,3 @@ endif()
 pico_enable_stdio_usb(${PROJECT} 0)
 
 pico_add_extra_outputs(${PROJECT})
-

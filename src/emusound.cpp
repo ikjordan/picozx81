@@ -15,7 +15,9 @@
 #include "hardware/dma.h"
 #include "audio_i2s.pio.h"
 #else
+#ifndef SOUND_HDMI
 #include "hardware/pwm.h"
+#endif
 #endif
 #include "hardware/clocks.h"
 #include "pico/sync.h"
