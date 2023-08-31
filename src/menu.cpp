@@ -1118,11 +1118,11 @@ static int populateFiles(const char* path, uint first)
                     strncpy(&name[1], fno.fname, sizeof(name)-1);
 
                     len = strlen(fno.fname) + 1; // Position of closing >
-                    if (len > ((disp.width>>3) - 3))
+                    if (len > ((disp.width>>3) - (border<<1) -1))
                     {
-                        name[((disp.width>>3) - 4)] = '+';
-                        name[((disp.width>>3) - 3)] = '>';
-                        name[((disp.width>>3) - 2)] = '0';
+                        name[(disp.width>>3) - (border<<1) -2] = '+';
+                        name[(disp.width>>3) - (border<<1) -1] = '>';
+                        name[(disp.width>>3) - (border<<1)] = 0;
                     }
                     else
                     {
