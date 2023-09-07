@@ -6,7 +6,7 @@ build_uf2()
   board=$1"board .."
   uf2="picozx81_"$1".uf2"
 
-  cmake -DPICO_BOARD=${board}
+  cmake -DHDMI_SOUND=OFF -DPICO_BOARD=${board}
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }

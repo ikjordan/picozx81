@@ -8,7 +8,7 @@ project(${PROJECT} C CXX)
 
 OPTION(TIME_SPARE "Set to true to measure idle time" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
-OPTION(HMDI_SOUND "Set to true to deliver sound over hdmi" OFF)
+OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
 
 # Look for board file first in local board directory
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
@@ -88,7 +88,7 @@ add_executable(${PROJECT}
 
 # Determine sound system
 if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
-    if ((${PICO_BOARD} STREQUAL "dviboard") AND (${HMDI_SOUND}))
+    if ((${PICO_BOARD} STREQUAL "dviboard") AND (${HDMI_SOUND}))
         target_compile_definitions(${PROJECT} PRIVATE -DSOUND_HDMI)
     else()
     # Use I2S loaded by DMA sound
@@ -105,7 +105,7 @@ elseif (NOT (${PICO_BOARD} STREQUAL "olimexpcboard"))
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
     target_link_libraries(${PROJECT} hardware_dma)
     target_link_libraries(${PROJECT} hardware_pwm)
-elseif (${HMDI_SOUND})
+elseif (${HDMI_SOUND})
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_HDMI)
 else ()
     target_link_libraries(${PROJECT} hardware_pwm)
@@ -121,7 +121,7 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
     target_link_libraries(${PROJECT} libdvi)
 
     if (${PICO_BOARD} STREQUAL "dviboard")
-        if (${HMDI_SOUND})
+        if (${HDMI_SOUND})
             set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_dvi_hdmi_sound")
         else()
             set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_dvi")
@@ -132,7 +132,7 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
         target_compile_definitions(${PROJECT} PUBLIC
                                    -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2040_PICO_PC_cfg
                                    -DDVI_USE_PIO_CLOCK)
-        if(${HMDI_SOUND})
+        if(${HDMI_SOUND})
             set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_olimexpc_hdmi_sound")
         else()
             set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_olimexpc")
