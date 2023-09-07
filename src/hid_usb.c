@@ -81,6 +81,7 @@ HidKey_t keys[] = {
     { HID_KEY_ARROW_RIGHT, 2, { {0, 0}, {4, 2} }}
 };
 
+
 static uint8_t const ascii2keycode[128][2] =  { HID_ASCII_TO_KEYCODE };
 
 static const unsigned int KEYS_LEN = sizeof(keys) / sizeof(HidKey_t);
@@ -159,51 +160,225 @@ bool hidNavigateMenu(uint8_t* key)
 
     for(unsigned int i = 0; i < 6; ++i)
     {
-        switch(report.keycode[i])
+        if (report.keycode[i])
         {
-            case HID_KEY_ARROW_DOWN:
-            case HID_KEY_6:
-                *key = HID_KEY_ARROW_DOWN;
-                return true;
-            case HID_KEY_ARROW_UP:
-            case HID_KEY_7:
-                *key = HID_KEY_ARROW_UP;
-                return true;
+            switch(report.keycode[i])
+            {
+                case HID_KEY_ARROW_DOWN:
+                case HID_KEY_6:
+                    *key = HID_KEY_ARROW_DOWN;
+                    return true;
+                case HID_KEY_ARROW_UP:
+                case HID_KEY_7:
+                    *key = HID_KEY_ARROW_UP;
+                    return true;
 
-            case HID_KEY_ARROW_RIGHT:
-            case HID_KEY_PAGE_DOWN:
-            case HID_KEY_8:
-                *key = HID_KEY_ARROW_RIGHT;
-                return true;
+                case HID_KEY_ARROW_RIGHT:
+                case HID_KEY_PAGE_DOWN:
+                case HID_KEY_8:
+                    *key = HID_KEY_ARROW_RIGHT;
+                    return true;
 
-            case HID_KEY_ARROW_LEFT:
-            case HID_KEY_PAGE_UP:
-            case HID_KEY_5:
-                *key = HID_KEY_ARROW_LEFT;
-                return true;
+                case HID_KEY_ARROW_LEFT:
+                case HID_KEY_PAGE_UP:
+                case HID_KEY_5:
+                    *key = HID_KEY_ARROW_LEFT;
+                    return true;
 
-            case HID_KEY_ENTER:
-                *key = HID_KEY_ENTER;
-                return true;
+                case HID_KEY_ENTER:
+                    *key = HID_KEY_ENTER;
+                    return true;
 
-            case HID_KEY_ESCAPE:
-            case HID_KEY_0:
-            case HID_KEY_SPACE:
-            case HID_KEY_Q:
-                *key = HID_KEY_ESCAPE;
-                return true;
+                case HID_KEY_ESCAPE:
+                case HID_KEY_0:
+                case HID_KEY_SPACE:
+                case HID_KEY_Q:
+                    *key = HID_KEY_ESCAPE;
+                    return true;
 
-            case HID_KEY_A:
-                *key = HID_KEY_A;
-                return true;
+                case HID_KEY_A:
+                    *key = HID_KEY_A;
+                    return true;
 
-            case HID_KEY_P:
-                *key = HID_KEY_P;
-                return true;
+                case HID_KEY_P:
+                    *key = HID_KEY_P;
+                    return true;
+            }
         }
     }
     // To DO: Read the joystick?
     return false;
+}
+
+void hidSaveMenu(uint8_t* key)
+{
+    hid_keyboard_report_t report;
+
+    hid_app_get_latest_keyboard_report(&report);
+    const unsigned char m = report.modifier;
+    *key = 0;
+
+    for(unsigned int i = 0; i < 6; ++i)
+    {
+        if (report.keycode[i])
+        {
+            switch(report.keycode[i])
+            {
+                case HID_KEY_COMMA:
+                    *key = ',';
+                    return;
+
+                case HID_KEY_SEMICOLON:
+                    *key = ';';
+                    return;
+
+                case HID_KEY_SLASH:
+                    *key = '/';
+                    return;
+
+                case HID_KEY_MINUS:
+                    *key = '-';
+                    return;
+
+                case HID_KEY_EQUAL:
+                    *key = '=';
+                    return;
+
+                case HID_KEY_SPACE:
+                    *key = ' ';
+                    return;
+            }
+
+            if (m & 0x22)
+            {
+                switch(report.keycode[i])
+                {
+                    case HID_KEY_8:
+                        *key = 2;               // Cursor right
+                        return;
+
+                    case HID_KEY_5:
+                        *key = 3;               // Cursor left
+                        return;
+
+                    case HID_KEY_1:
+                        *key = 27;              // Escape
+                        return;
+
+                    case HID_KEY_0:
+                        *key = 8;               // Backspace
+                        return;
+
+                    case HID_KEY_Y:
+                        *key = '"';
+                        return;
+
+                    case HID_KEY_U:
+                        *key = '$';
+                        return;
+
+                    case HID_KEY_I:
+                        *key = '(';
+                        return;
+
+                    case HID_KEY_O:
+                        *key = ')';
+                        return;
+
+                    case HID_KEY_P:
+                        *key = '*';
+                        return;
+
+                    case HID_KEY_J:
+                        *key = '-';
+                        return;
+
+                    case HID_KEY_K:
+                        *key = '+';
+                        return;
+
+                    case HID_KEY_L:
+                        *key = '=';
+                        return;
+
+                    case HID_KEY_Z:
+                        *key = ':';
+                        return;
+
+                    case HID_KEY_X:
+                        *key = ';';
+                        return;
+
+                    case HID_KEY_C:
+                        *key = '?';
+                        return;
+
+                    case HID_KEY_V:
+                        *key = '/';
+                        return;
+
+                    case HID_KEY_N:
+                        *key = '<';
+                        return;
+
+                    case HID_KEY_M:
+                        *key = '>';
+                        return;
+
+                    case HID_KEY_PERIOD:
+                        *key = ',';
+                        return;
+                }
+            }
+            else
+            {
+                if ((report.keycode[i] >= HID_KEY_A) && (report.keycode[i] <= HID_KEY_Z))
+                {
+                    *key = 'A' + report.keycode[i] - HID_KEY_A;
+                    return;
+                }
+                else if ((report.keycode[i] >= HID_KEY_1) && (report.keycode[i] <= HID_KEY_9))
+                {
+                    *key = '1' + report.keycode[i] - HID_KEY_1;
+                    return;
+                }
+                else
+                {
+                    switch(report.keycode[i])
+                    {
+                        case HID_KEY_ARROW_RIGHT:
+                            *key = 2;
+                            return;
+
+                        case HID_KEY_ARROW_LEFT:
+                            *key = 3;
+                            return;
+
+                        case HID_KEY_ENTER:
+                            *key = 4;           // End of transmission
+                            return;
+
+                        case HID_KEY_ESCAPE:
+                            *key = 27;
+                            return;
+
+                        case HID_KEY_BACKSPACE:
+                            *key = 8;
+                            return;
+
+                        case HID_KEY_0:
+                            *key = '0';
+                            return;
+
+                        case HID_KEY_PERIOD:
+                            *key = '.';
+                            return;
+                    }
+                }
+            }
+        }
+    }
+    return;
 }
 
 bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
@@ -226,7 +401,7 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
     // 3. Within 1 second shift is pressed again
     // 4. Shift is released, without another key being pressed
     // 5. Within 1 second a numeric key is pressed without shift being pressed
-    if (m & 0x22) 
+    if (m & 0x22)
     {
         press(0, 0); // Shift
         shift = true;

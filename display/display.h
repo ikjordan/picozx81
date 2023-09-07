@@ -18,9 +18,8 @@ extern void displaySetInterlace(bool on);
 extern void displayBlank(bool black);
 extern bool displayIsBlank(bool* isBlack);
 
-extern void displayShowKeyboard(bool zx81);
-extern void displayHideKeyboard(void);
-
+extern bool displayShowKeyboard(bool zx81);
+extern bool displayHideKeyboard(void);
 
 #ifdef __cplusplus
 }
