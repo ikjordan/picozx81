@@ -97,7 +97,7 @@ The following can be configured:
 | Memory | In kB. Starting at 0x4000 | 16 | 1, 2, 3, 4, 16, 32 and 48 allowed |
 | WRX | Selects if RAM supports Hi-res graphics | Off | Automatically set to on if Memory is 2kB or less |
 | LowRAM | Selects if RAM populated between 0x2000 and 0x3fff| Off | Typically used in conjunction with WRX to create a hires display file in low memory, can also be used for UDG graphics emulation if WRX off|
-| M1NOT | Allows machine code to be executed between 0x8000 and 0xbfff| Off |Memory must be set to 32 or 48   |
+| M1NOT | Allows machine code to be executed between 0x8000 and 0xbfff| Off |Memory must be set to 32 or 48|
 | ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXpand+ syntax|On| See [Loading and Saving Memory Blocks](#loading-and-saving-memory-blocks)|
 | Centre | When enabled the usual 32 by 24 character display is centred on screen| On | When in 640 by 480 mode, set to Off for some programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
 | FrameSync | Synchronises screen updates to the start of the display frame. Option to synchronise frame pairs for programs that display interlaced images| Off |On reduces "tearing" in programs with horizontal scrolling, at the expense of a possible small lag. Interlaced reduces flickering in programs that display interlaced images|
@@ -198,13 +198,13 @@ The changes are *not* written back to the config files, so will be lost when the
 ### F8 - Reboot
 Allows the impact of changes to display resolution and frequency to be seen without editing config files. If change are made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots
 ## Loading and saving options
-The emulator supports the loading  `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
+The emulator supports the loading `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
 Files to be loaded should only contain characters that are in the ZX81 or ZX80 character set
 ### Load
 There are 3 ways to load files:
 #### 1. Via the F2 menu
 The user can navigate the SD card directory and select a file to load. The emulator is configured to the settings specified for the file in the `config.ini` files, reset and the new file loaded
-#### 2. Via `LOAD ""` (ZX81) or  `LOAD` (ZX80)
+#### 2. Via `LOAD ""` (ZX81) or `LOAD` (ZX80)
 If the user enters the `LOAD` command without specifying a file name the SD Card directory menu is displayed and a file to load can be selected. The emulator is configured to the settings specified for the file in the `config.ini` files. Unlike for option 1, the emulator is only reset if the configuration differs. This, for example, allows for RAMTOP to be manually set before loading a program
 #### 3. Via `LOAD "program-name"` (ZX81 only)
 If a file name is specified, then `.p` is appended and an attempt is made to load the file from the current directory. The configuration for the file is read. A reset is performed only if required by a configuration change. This allows for multiple parts of an application to be loaded e.g. [HiRes Chess](https://spectrumcomputing.co.uk/entry/32021/ZX81/Hi-res_Chess) or [QS games](#qs-udg-graphics) that include character definitions.
@@ -223,7 +223,7 @@ If such a `REM` is found the file is saved with the name `filename` with `.o` ap
 
 **Note:** The `SAVE` in the `REM` is the keyword. Enter it first then use the cursor keys to insert the REM in front of it
 
-If no `REM` statement of the required format is found, then a save screen will be  displayed to allow a filename to be entered.
+If no `REM` statement of the required format is found, then a save screen will be displayed to allow a filename to be entered.
 The ZX80 keyboard image is automatically displayed to make it easier to enter non alphanumeric characters. The cursor keys (`SHIFT 5` and `SHIFT 8`) and `Rubout` (`SHIFT 0`) can be used. 
 Press `ENTER` to exit the screen and use the filename, `.o` is appended if not supplied. Press `Esc` or `SHIFT 1` to leave the screen without setting a filename
 
