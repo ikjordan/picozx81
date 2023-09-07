@@ -210,16 +210,27 @@ If the user enters the `LOAD` command without specifying a file name the SD Card
 If a file name is specified, then `.p` is appended and an attempt is made to load the file from the current directory. The configuration for the file is read. A reset is performed only if required by a configuration change. This allows for multiple parts of an application to be loaded e.g. [HiRes Chess](https://spectrumcomputing.co.uk/entry/32021/ZX81/Hi-res_Chess) or [QS games](#qs-udg-graphics) that include character definitions.
 
 If the supplied filename, with `.p` appended, does not exist, then the `LOAD` fails with error `D`. This is similar to a "real" ZX81, where if a named file is not on a tape, the computer will attempt to load until the user aborts by pressing `BREAK`, generating error `D`
-
 ### Save
 #### ZX81
 To save a program the `SAVE "Filename"` command is used. If `"Filename"` has no extension then `.p` is appended to the supplied file name. The file is saved in the current directory. If a file of the specified name already exists, it is overwritten
 
 #### ZX80
-To save a program the `SAVE` command is used. It does not take a file name, so the program is saved in the current directory with the name `"zx80prog.o"`. If a file with that name already exists it is overwritten
+To save a program the `SAVE` command is used. `SAVE` does not take a file name, so mechanisms are provided to supply a file name. When `SAVE` is executed the emulator scans the program for a `REM` statement of the form:
+
+`REM SAVE "filename"`
+
+If such a `REM` is found the file is saved with the name `filename` with `.o` appended if not supplied
+
+**Note:** The `SAVE` in the `REM` is the keyword. Enter it first then use the cursor keys to insert the REM in front of it
+
+If no `REM` statement of the required format is found, then a save screen will be  displayed to allow a filename to be entered.
+The ZX80 keyboard image is automatically displayed to make it easier to enter non alphanumeric characters. The cursor keys (`SHIFT 5` and `SHIFT 8`) and `Rubout` (`SHIFT 0`) can be used. 
+Press `ENTER` to exit the screen and use the filename, `.o` is appended if not supplied. Press `Esc` or `SHIFT 1` to leave the screen without setting a filename
+
+The program is saved to the current directory. If no valid file name is supplied a default filename of `"zx80prog.o"` is used. Any existing file with the same name is overwritten
 
 ### Loading and Saving Memory Blocks
-The emulator supports extensions to `LOAD` and `SAVE` to support the loading and saving of memory blocks. The syntax is similar to that used by [ZXpand](https://github-wiki-see.page/m/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual).
+When emulating a ZX81, extensions are provided to `LOAD` and `SAVE` to support the loading and saving of memory blocks. The syntax is similar to that used by [ZXpand](https://github-wiki-see.page/m/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual)
 
 **Note:** There are differences in failure modes and error reporting compared to the ZXpand. Also `.p` is *not* appended when loading and saving memory blocks
 

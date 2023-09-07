@@ -25,7 +25,6 @@ static uint16_t HEIGHT = 0;
 
 static const uint16_t MIN_RUN = 3;
 
-static bool showKeyboard = false;
 static const KEYBOARD_PIC* keyboard = &ZX81KYBD;
 static uint16_t keyboard_x = 0;
 static uint16_t keyboard_y = 0;
@@ -184,17 +183,18 @@ void displayStart(void)
     displayStartCommon();
 }
 
-void displayShowKeyboard(bool zx81)
+bool displayShowKeyboard(bool zx81)
 {
-    keyboard = zx81 ? &ZX81KYBD : &ZX80KYBD;
-    keyboard_x = (video_mode->width - keyboard->width) >> 2;    // Centre (>>1), then 2 pixels per byte (>>1)
-    keyboard_y = (HEIGHT - keyboard->height) >> 1;
-    showKeyboard = true;
-}
+    bool previous = showKeyboard;
 
-void displayHideKeyboard(void)
-{
-    showKeyboard = false;
+    if (!showKeyboard)
+    {
+        keyboard = zx81 ? &ZX81KYBD : &ZX80KYBD;
+        keyboard_x = (video_mode->width - keyboard->width) >> 2;    // Centre (>>1), then 2 pixels per byte (>>1)
+        keyboard_y = (HEIGHT - keyboard->height) >> 1;
+        showKeyboard = true;
+    }
+    return previous;
 }
 
 //

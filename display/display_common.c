@@ -27,6 +27,8 @@ static uint16_t stride = 0;
 static bool interlace = false;
 static bool no_skip = false;
 
+static bool showKeyboard = false;
+
 //
 // Private interface
 //
@@ -205,6 +207,13 @@ bool displayIsBlank(bool* isBlack)
 {
     *isBlack = (blank_colour == BLACK);
     return blank;
+}
+
+bool displayHideKeyboard(void)
+{
+    bool ret = showKeyboard;
+    showKeyboard = false;
+    return ret;
 }
 
 //

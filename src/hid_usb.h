@@ -14,6 +14,7 @@ int16_t hidReadUsbJoystick(int instance);
 void hidJoystickToKeyboard(int instance, byte up, byte down, byte left, byte right, byte button);
 
 bool hidNavigateMenu(uint8_t* key);
+void hidSaveMenu(uint8_t* key);
 
 #ifdef __cplusplus
 }

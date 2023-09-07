@@ -5,6 +5,7 @@
 
 #include "emuapi.h"
 #include "emuvideo.h"
+#include "zx80rom.h"
 #include "zx81rom.h"
 
 #include "hid_usb.h"
@@ -77,6 +78,8 @@ static bool getFile(char* inout, uint index, bool* direct);
 static void showModify(PositionF6_T pos, ModifyF6_T* modify);
 static void showRestart(PositionF7_T pos, RestartF7_T* restart);
 static void showReboot(FiveSevenSix_T mode);
+static void showSave(const uint8_t* name, uint len, uint cursor, uint col, uint row);
+static void setConvert(bool zx80);
 
 static bool wasBlank = false;
 static bool wasBlack = false;
@@ -86,6 +89,7 @@ static uint8_t* menuscreen = 0;
 
 static bool allfiles = false;
 static int border = 0;
+static bool zx80font = false;
 
 /* 
  * Public interface
@@ -253,6 +257,116 @@ bool loadMenu(void)
     return (change);
 }
 
+#define MAX_SAVE 30
+#define ROW_SPACING 12
+
+bool saveMenu(uint8_t* save, uint length)
+{
+    uint8_t key = 0;
+    uint8_t detected = 0;
+    uint8_t lastKey = 4;
+    bool exit = false;
+
+    int col = disp.width >> 4;
+    uint row = disp.height >> 4;
+
+    length = (length > MAX_SAVE) ? MAX_SAVE : length;
+    save[0] = 0;
+    uint len = 0;
+    uint cursor = 0;
+
+
+    if (!buildMenu(false))
+        return false;
+
+    writeString("Save", col - 2, row - ROW_SPACING - 1);
+    writeString("====", col - 2, row - ROW_SPACING);
+
+    showSave(save, len, cursor, col - (MAX_SAVE >> 1), row + ROW_SPACING);
+
+    do
+    {
+        tuh_task();
+        hidSaveMenu(&key);
+
+        detected = (key != 0);
+
+        // Debounce keys
+        if (detected && (key == lastKey))
+        {
+            detected = false;
+
+        }
+        else if (!detected)
+        {
+            lastKey = 0;
+        }
+        else
+        {
+            lastKey = key;
+        }
+
+        if (detected)
+        {
+            switch (key)
+            {
+                case 2:     // Cursor right
+                    if (cursor < len) cursor++;
+                break;
+
+                case 3:     // Cursor left
+                    if (cursor > 0) cursor--;
+                break;
+
+                case 8:     // Backspace
+                    if (cursor > 0)
+                    {
+                        // Make sure terminator is moved too
+                        for (uint i=cursor; i<=len; ++i)
+                        {
+                            save[i-1] = save[i];
+                        }
+                        --cursor;
+                        --len;
+                    }
+                break;
+
+                case 4:     // Enter
+                case 27:    // Escape
+                    exit = true;
+                break;
+
+                default:
+                    if (len < length)
+                    {
+                        // Move data up
+                        for (int i=(int)len; i>=(int)cursor; --i)
+                        {
+                            save[i+1] = save[i];
+                        }
+                        save[cursor] = key;
+                        len++;
+                        cursor++;
+                    }
+                break;
+            }
+            showSave(save, len, cursor, col - (MAX_SAVE >> 1), row + ROW_SPACING);
+        }
+        emu_WaitFor50HzTimer();
+    } while (!exit);
+
+    bool change = (key == 4);
+
+    debounceExit(change);
+    endMenu(change);
+
+    if (!change)
+    {
+        save[0] = 0;
+    }
+    return (change);
+}
+
 // Displays the status of the emulator, pausing execution
 // ESC to exit (f3)
 bool statusMenu(void)
@@ -267,8 +381,8 @@ bool statusMenu(void)
     if (!buildMenu(false))
         return false;
 
-    writeString("Status", lhs + 6, lcount++);
-    writeString("======", lhs + 6, lcount++);
+    writeString("Status", lhs + 7, lcount++);
+    writeString("======", lhs + 7, lcount++);
 
     writeString("Computer:", lhs, ++lcount);
     writeString((emu_ComputerRequested() == ZX80) ? "ZX80" : (emu_ComputerRequested() == ZX81X2) ? "ZX81X2" : "ZX81", rhs, lcount++);
@@ -816,6 +930,9 @@ static bool buildMenu(bool clone)
 
     border = emu_MenuBorderRequested();
 
+    zx80font = (emu_ComputerRequested() == ZX80);
+    setConvert(zx80font);
+
     if (!wasBlank)
     {
         // Get the current displayed buffer
@@ -953,6 +1070,21 @@ static void showReboot(FiveSevenSix_T mode)
     writeString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
 }
 
+static void showSave(const uint8_t* name, uint len, uint cursor, uint col, uint row)
+{
+
+    for (uint i=0; i<cursor; ++i)
+    {
+        writeChar(name[i], col++, row);
+    }
+    invertChar('L', col++, row);
+
+    for (uint i=cursor; i<len; ++i)
+    {
+        writeChar(name[i], col++, row);
+    }
+    writeChar(' ', col, row);
+}
 
 // Waits for 12th of a second
 static void delay(void)
@@ -998,6 +1130,31 @@ static char ascii2zx[96]=
   53,54,55,56,57,58,59,60,61,62,63,16,24,17,11, 0
   };
 
+static void setConvert(bool zx80)
+{
+    if (zx80)
+    {
+        ascii2zx['"' - 32] = 0x01;
+        ascii2zx['-' - 32] = 0x12;
+        ascii2zx['+' - 32] = 0x13;
+        ascii2zx['*' - 32] = 0x14;
+        ascii2zx['/' - 32] = 0x15;
+        ascii2zx['=' - 32] = 0x16;
+        ascii2zx['>' - 32] = 0x17;
+        ascii2zx['<' - 32] = 0x18;
+    }
+    else
+    {
+        ascii2zx['"' - 32] = 0x0B;
+        ascii2zx['-' - 32] = 0x16;
+        ascii2zx['+' - 32] = 0x15;
+        ascii2zx['*' - 32] = 0x17;
+        ascii2zx['/' - 32] = 0x18;
+        ascii2zx['=' - 32] = 0x14;
+        ascii2zx['>' - 32] = 0x12;
+        ascii2zx['<' - 32] = 0x13;
+    }
+}
 // Write string to screen, terminate string at screen edge
 static void writeString(const char* s, uint col, uint row)
 {
@@ -1039,7 +1196,8 @@ static void writeInvertString(const char* s, uint col, uint row, bool invert)
 static void writeChar(char c, uint col, uint row)
 {
     uint8_t* pos = menuscreen + row * disp.stride_bit + col;
-    uint16_t offset = 0x1e00;   // Start of characters in ZX81 ROM
+    const unsigned char* rom = (zx80font ? zx80rom : zx81rom);
+    uint16_t offset = zx80font ? 0x0e00 : 0x1e00;   // Start of characters in ROM
 
     // Convert from ascii to ZX
     if ((c >= 32) && (c < 128))
@@ -1050,7 +1208,7 @@ static void writeChar(char c, uint col, uint row)
     // Find the offset in the ROM
     for (uint i=0; i<8; ++i)
     {
-        *pos = zx81rom[offset+i];
+        *pos = rom[offset+i];
         pos += disp.stride_byte;
     }
 }
