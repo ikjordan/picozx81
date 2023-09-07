@@ -42,7 +42,6 @@ static const struct dvi_timing* video_mode = 0;
 static uint16_t PIXEL_WIDTH = 0;
 static uint16_t HEIGHT = 0;
 
-static bool showKeyboard = false;
 static const KEYBOARD_PIC* keyboard = &ZX81KYBD;
 static uint16_t keyboard_x = 0;
 static uint16_t keyboard_y = 0;
@@ -104,20 +103,20 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     return video_mode->bit_clk_khz;
 }
 
-void displayShowKeyboard(bool zx81)
+bool displayShowKeyboard(bool zx81)
 {
-    keyboard = zx81 ? &ZX81KYBD : &ZX80KYBD;
-    keyboard_x = (PIXEL_WIDTH - keyboard->width)>>1;
-    keyboard_y = (HEIGHT - keyboard->height)>>1;
-    keyboard_right = (keyboard_x & 0xffe0) + keyboard->width;
-    keyboard_to_fill = keyboard_x + (keyboard_x & 0x1f);
+    bool previous = showKeyboard;
 
-    showKeyboard = true;
-}
-
-void displayHideKeyboard(void)
-{
-    showKeyboard = false;
+    if (!showKeyboard)
+    {
+        keyboard = zx81 ? &ZX81KYBD : &ZX80KYBD;
+        keyboard_x = (PIXEL_WIDTH - keyboard->width)>>1;
+        keyboard_y = (HEIGHT - keyboard->height)>>1;
+        keyboard_right = (keyboard_x & 0xffe0) + keyboard->width;
+        keyboard_to_fill = keyboard_x + (keyboard_x & 0x1f);
+        showKeyboard = true;
+    }
+    return previous;
 }
 
 //

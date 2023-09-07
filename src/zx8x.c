@@ -12,7 +12,9 @@
 #include "hid_app.h"
 #include "hid_usb.h"
 #include "menu.h"
+#include "display.h"
 
+char *strzx80_to_ascii(int memaddr);
 bool parseNumber(const char* input,
                  unsigned int min,
                  unsigned int max,
@@ -245,6 +247,9 @@ void load_p(int a)
     }
     else
     {
+      emu_silenceSound();
+      displayHideKeyboard();
+
       if (loadMenu())
       {
           strcpy(fname, emu_GetDirectory());
@@ -261,7 +266,10 @@ void load_p(int a)
   {
     // Report error D
     printf("File does not exist, or zero length. Generating error D\n");
-    ERROR_D();
+    if (!zx80)
+    {
+      ERROR_D();
+    }
     return;
   }
   else if (size <= offset)
@@ -347,7 +355,10 @@ void load_p(int a)
   {
     // Report error D
     printf("File open failed, generating error D\n");
-    ERROR_D();
+    if (!zx80)
+    {
+      ERROR_D();
+    }
     return;
   }
 }
@@ -366,7 +377,56 @@ void save_p(int a)
 
   if(zx80)
   {
-      strcat(fname,"zx80prog.o");
+    int index = 0x4028;	/* Start of user program area */
+    int vars = mem[0x4009] << 8 | mem[0x4008];	/* VARS */
+    int idxend;
+
+    while (index < vars)
+    {
+      /* Look for REM SAVE " */
+      if (mem[index] == 0xfe && mem[index + 1] == 0xea &&
+          mem[index + 2] == 0x01)
+      {
+        idxend = index = index + 3; /* Position on first char */
+
+        while (mem[idxend] != 0x01 &&
+               mem[idxend] < 0x80 &&
+               mem[idxend] != 0x76 &&
+               idxend < vars)
+        {
+          idxend++;
+        }
+
+        if (index < idxend)
+        {
+          mem[--idxend] |= 0x80;  /* +80h marks last char */
+          strcat(fname, strzx80_to_ascii(index));
+          mem[idxend] &= ~0x80;   /* Remove +80h */
+          index = vars;           /* Exit loop */
+        }
+      }
+      index++;
+		}
+
+    if (index == vars)
+    {
+      // Stop any sound
+      emu_silenceSound();
+      bool displayed = displayShowKeyboard(false);
+
+      // Display the ZX80 save screen
+      uint length = strlen(fname);
+      if (!saveMenu((uint8_t*)(&fname[length]), sizeof(fname) - length - 1))
+      {
+        // A default name
+        strcat(fname,"zx80prog.o");
+      }
+
+      if (!displayed)
+      {
+        displayHideKeyboard();
+      }
+    }
   }
   else
   {
@@ -428,14 +488,13 @@ void save_p(int a)
     // Saving a memory block, fix the file name
     --extend;
     *extend = 0;
-    printf("Filename: %s, start address %i, length %i\n", fname, start, length);
   }
   else
   {
     // Saving a program, append suffix if needed
     if(!strrchr(fname, '.'))
     {
-      strcat(fname,".p");
+      strcat(fname, zx80 ? ".o" : ".p");
     }
 
     // Set start and length
@@ -450,7 +509,14 @@ void save_p(int a)
       length = fetch2(16404)-0x4009;
     }
   }
-  emu_SaveFile(fname, &mem[start], length);
+
+  if (!emu_SaveFile(fname, &mem[start], length))
+  {
+    if (!zx80)
+    {
+      ERROR_D();
+    }
+  }
 }
 
 void zx81hacks()
@@ -732,3 +798,52 @@ bool parseNumber(const char* input,
   }
   return ((*input == term) && (*out >= min) && (*out <= max));
 }
+
+/***************************************************************************
+ * Sinclair ZX80 String to ASCII String                                    *
+ ***************************************************************************/
+/* This will translate a ZX80 string of characters into an ASCII equivalent.
+ * All alphabetical characters are converted to lowercase.
+ * Those characters that won't translate are replaced with underscores.
+ *
+ * On entry: int memaddr = the string's address within mem[]
+ *  On exit: returns a pointer to the translated string */
+
+char *strzx80_to_ascii(int memaddr)
+{
+  static unsigned char zx81table[16] = {'_', '$', ':', '?', '(', ')',
+    '-', '+', '*', '/', '=', '>', '<', ';', ',', '.'};
+  static char translated[256];
+  unsigned char sinchar;
+  char asciichar;
+  int index = 0;
+
+  do
+  {
+    sinchar = mem[memaddr] & 0x7f;
+    if (sinchar == 0x00)
+    {
+      asciichar = ' ';
+    } else if (sinchar == 0x01)
+    {
+      asciichar = '\"';
+    } else if (sinchar >= 0x0c && sinchar <= 0x1b)
+    {
+      asciichar = zx81table[sinchar - 0x0c];
+    } else if (sinchar >= 0x1c && sinchar <= 0x25)
+    {
+      asciichar = '0' + sinchar - 0x1c;
+    } else if (sinchar >= 0x26 && sinchar <= 0x3f)
+    {
+      asciichar = 'a' + sinchar - 0x26;
+    } else
+    {
+      asciichar = '_';
+    }
+    translated[index] = asciichar;
+    translated[index++ + 1] = 0;
+  } while (mem[memaddr++] < 0x80);
+
+  return translated;
+}
+

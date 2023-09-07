@@ -51,7 +51,6 @@ int main(void)
 
 static void mainLoop(void)
 {
-    bool kdisp = false;
     while (1)
     {
         uint8_t s;
@@ -61,11 +60,7 @@ static void mainLoop(void)
         {
             if (s==HID_KEY_F5)
             {
-                if (!kdisp)
-                {
-                    displayShowKeyboard(!emu_ZX80Requested());
-                    kdisp = true;
-                }
+                displayShowKeyboard(!emu_ZX80Requested());
             }
             else
             {
@@ -73,11 +68,7 @@ static void mainLoop(void)
                 {
                     emu_silenceSound();
                 }
-                if (kdisp)
-                {
-                    displayHideKeyboard();
-                    kdisp = false;
-                }
+                displayHideKeyboard();
 
                 // Handle menus and reset
                 switch (s)
@@ -131,7 +122,7 @@ static void mainLoop(void)
         // Following can fail if user attempts load which requires different hardware
         if (!z8x_Step())
         {
-            if (kdisp) displayHideKeyboard();
+            displayHideKeyboard();
             return;
         }
         emu_WaitFor50HzTimer();
