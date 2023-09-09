@@ -152,7 +152,7 @@ The emulated machine is always reset if any of the following options are changed
 ## File Storage
 Program and configuration files are stored on a micro SD-Card. Directories are supported. File and directory names should only contain characters that exist in the ZX81 character set. File and directory names can be a mixture of upper and lower case, but are used case insensitive. Therefore, all file and child directory names in a given directory must differ by more than just case
 ## Function key menu
-The emulator has several menus that can be selected through function key presses. To keep the look and feel of the ZX8x computers the menus are in black and white and use the ZX81 font.
+The emulator has several menus that can be selected through function key presses. To keep the look and feel of the ZX8x computers the menus are in black and white and, dependent on the computer type being emulated, use either the ZX81 or ZX80 font
 
 The original ZX80/ZX81 40 key keyboard does not have function keys. A "double shift" mechanism can be used instead. The mechanism is as follows:
 1. Shift is pressed without another key
