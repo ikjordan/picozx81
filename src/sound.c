@@ -361,7 +361,7 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
   *ptr = (*ptr>>4) + ZEROSOUND;
   if (sound_stereo)
     ptr[1] = (ptr[1]>>4) + ZEROSOUND;
-  #endif
+#endif
   /* update noise RNG/filter */
   ay_noise_tick+=ay_tick_incr;
   if(ay_noise_tick>=ay_noise_period)
