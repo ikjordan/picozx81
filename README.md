@@ -302,7 +302,8 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [zedit](https://forum.tlienhard.com/phpBB3/download/file.php?id=6795)
 ### QS UDG Graphics
 + [QS Invaders](http://www.zx81stuff.org.uk/zx81/tape/QSInvaders)
-+ [QS Asteroids](http://www.zx81stuff.org.uk/zx81/tape/QSAsteroids) + [QS Scramble](http://www.zx81stuff.org.uk/zx81/tape/QSScramble)
++ [QS Asteroids](http://www.zx81stuff.org.uk/zx81/tape/QSAsteroids)
++ [QS Scramble](http://www.zx81stuff.org.uk/zx81/tape/QSScramble)
 ### Other UDG graphics
 + [HiRes Galaxian](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip)
 + [Airport HR](http://zx81.eu5.org/files/soft/toddy/AEROP-HR.zip)
@@ -311,7 +312,6 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [Panic HR](http://zx81.eu5.org/files/soft/toddy/panicohr.zip)
 ### Sound
 + [Pink Panther Demo](http://zx81.eu5.org/files/soft/toddy/pinkpthr.zip)
-  + When configured for mono, channels A and B destructively interfere at around 2 mins 15 seconds, causing silence for 1 to 2 seconds. Selecting ACB stereo avoids this
 + [Bigg Oil](https://github.com/charlierobson/biggoil)
 + QS Programs
 + [Galaxians](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388)

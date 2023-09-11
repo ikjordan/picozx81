@@ -60,7 +60,7 @@ int sound_stereo_acb=0;		/* 1 for ACB stereo, else 0 */
 /* Bi-Pak Zon X-81, clock rate straight from the manual */
 #define AY_CLOCK_ZONX		(3250000>>1)
 
-/* 
+/*
  * For PWM max value is 999, mid point 499.5 mid for each channel is 499.5 / 4 = 124
  * For I2S max value is 32768 mid point is 0 max for 1 channel is < 32768 / 4
  * For 12S further divide by 4 to avoid full volume
@@ -281,7 +281,7 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
         break;
       }
     }
-  
+
   /* the tone level if no enveloping is being used */
   for(g=0;g<3;g++)
     tone_level[g]=ay_tone_levels[sound_ay_registers[8+g]&15];
@@ -300,7 +300,7 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
       env_level=ay_tone_levels[v];
       }
     }
-  
+
   for(g=0;g<3;g++)
     if(sound_ay_registers[8+g]&16)
       tone_level[g]=env_level;
@@ -312,7 +312,7 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
     if(ay_env_subcycles>=(256<<16))
       {
       ay_env_subcycles-=(256<<16);
-      
+
       ay_env_tick++;
       if(ay_env_tick>=ay_env_period)
         {
@@ -337,9 +337,11 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
     {
     level=(noise_toggle || (mixer&0x20))?tone_level[2]:0;
     AY_OVERLAY_TONE(ptr,2,level);
-    if(sound_stereo && sound_stereo_acb)
-      ptr[1]=*ptr;
     }
+
+  if(sound_stereo && sound_stereo_acb)
+    ptr[1]=*ptr;
+
   if((mixer&1)==0 || (mixer&0x08)==0)
     {
     level=(noise_toggle || (mixer&0x08))?tone_level[0]:0;
@@ -348,16 +350,17 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
   if((mixer&2)==0 || (mixer&0x10)==0)
     {
     level=(noise_toggle || (mixer&0x10))?tone_level[1]:0;
-    AY_OVERLAY_TONE(ptr+sound_stereo_acb,1,level);
+    AY_OVERLAY_TONE(&ptr[sound_stereo_acb],1,level);
     }
-  
+
   if(sound_stereo && !sound_stereo_acb)
     ptr[1]=*ptr;
 
   #ifndef I2S
   // Correct to PWM
   *ptr = (*ptr>>4) + ZEROSOUND;
-  ptr[1] = (ptr[1]>>4) + ZEROSOUND;
+  if (sound_stereo)
+    ptr[1] = (ptr[1]>>4) + ZEROSOUND;
   #endif
   /* update noise RNG/filter */
   ay_noise_tick+=ay_tick_incr;
@@ -365,13 +368,13 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
     {
     if((rng&1)^((rng&2)?1:0))
       noise_toggle=!noise_toggle;
-    
+
     /* rng is 17-bit shift reg, bit 0 is output.
      * input is bit 0 xor bit 2.
      */
     rng|=((rng&1)^((rng&4)?1:0))?0x20000:0;
     rng>>=1;
-    
+
     ay_noise_tick-=ay_noise_period;
     }
   }
