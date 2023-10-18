@@ -31,6 +31,12 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
 + Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME)
 
+## Example using a reproduction case
+The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
+
+<img src="images/open_case.jpg" width="400" />
+<img src="images/in_use.jpg" width="400" />
+
 # Quick Start
 The fastest way to get started is to:
 1. Write data onto a Micro SD Card
@@ -38,7 +44,7 @@ The fastest way to get started is to:
 3. Connect your board to a keyboard and start exploring
 
 ## Populate the SD Card
-1. Click [here](https://github.com/ikjordan/picozx81/releases/latest/download/sdcard.zip) to download a zip file containing files and directories to copy to an empty micro SD card
+1. Click [here](https://github.com/ikjordan/picozx81/releases/download/V1.0.0/sdcard.zip) to download a zip file containing files and directories to copy to an empty micro SD card
 2. unzip the file into the root directory of an empty micro SD Card
 3. Insert the micro SD Card into your boards micro SD card slot
 
