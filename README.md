@@ -34,8 +34,10 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 ## Example using a reproduction case
 The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
 
-<img src="images/open_case.jpg" width="400" />
-<img src="images/in_use.jpg" width="400" />
+<p align="middle">
+<img src="images/open_case.jpg" width="48%" />
+<img src="images/in_use.jpg" width="48%" />
+</p>
 
 # Quick Start
 The fastest way to get started is to:
