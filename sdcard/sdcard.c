@@ -62,7 +62,7 @@ BYTE CardType;			/* Card type flags */
 #ifdef SDCARD_PIO
 pio_spi_inst_t pio_spi = {
 		.pio = SDCARD_PIO,
-		.sm = SDCARD_PIO_SM
+		.sm = 0 // Will claim unused state machine
 };
 #endif
 

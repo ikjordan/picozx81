@@ -66,10 +66,13 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
         display/display_dvi.c
         display/tmds_double.S
         display/tmds_double.h)
-else()
+elseif ((${PICO_BOARD} STREQUAL "lcdws28board"))
+    set(DISPLAY_SOURCES
+        display/display_lcd.c)
+else ()
     set(DISPLAY_SOURCES
         display/display_vga.c)
-endif()
+endif ()
 
 set(USB_SOURCES
     usb/hid_app.c
@@ -120,6 +123,9 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
                                    -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2040_PICO_PC_cfg
                                    -DDVI_USE_PIO_CLOCK)
     endif()
+elseif ((${PICO_BOARD} STREQUAL "lcdws28board"))
+    pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/st7789_lcd.pio)
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_lcdws28")
 else()
     if (${PICO_BOARD} STREQUAL "vgaboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga")

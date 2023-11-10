@@ -32,6 +32,9 @@ typedef enum {
 
 extern void emu_init(void);
 
+extern void emu_lockSDCard(void);
+extern void emu_unlockSDCard(void);
+
 extern bool emu_UpdateKeyboard(uint8_t* special);
 
 extern bool emu_FileOpen(const char * filepath, const char * mode);

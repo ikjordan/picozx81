@@ -9,6 +9,10 @@
 #include "hid_usb.h"
 #include "display.h"
 
+#ifdef PICO_LCD_CS_PIN
+#include "hardware/pio.h"
+#endif
+
 #include "emuapi.h"
 #include "emuvideo.h"
 #include "emupriv.h"
@@ -114,6 +118,19 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
  ********************************/
 void emu_init(void)
 {
+    // Initialise sd card and read config
+#ifdef PICO_LCD_CS_PIN
+    gpio_init(PICO_LCD_CS_PIN);
+    gpio_set_dir(PICO_LCD_CS_PIN, GPIO_OUT);
+    gpio_put(PICO_LCD_CS_PIN, 1);
+#endif
+
+#ifdef PICO_TS_CS_PIN
+    gpio_init(PICO_TS_CS_PIN);
+    gpio_set_dir(PICO_TS_CS_PIN, GPIO_OUT);
+    gpio_put(PICO_TS_CS_PIN, 1);
+#endif
+
   FRESULT fr = f_mount(&fatfs, "0:", 1);
 
   if (fr != FR_OK)
@@ -132,6 +149,41 @@ void emu_init(void)
   {
     emu_ReadDefaultValues();
   }
+}
+
+/********************************
+ * Control SD Card Access
+ ********************************/
+#ifdef PICO_LCD_CS_PIN
+volatile bool sdAccess = false;
+PIO lcdPio;
+uint lcdSm;
+
+extern "C" {
+void emu_setLCDPIOSM(PIO pio, uint sm)
+{
+  lcdPio = pio;
+  lcdSm = sm;
+}
+}
+#endif
+
+void emu_lockSDCard(void)
+{
+#ifdef PICO_LCD_CS_PIN
+  sdAccess = true;
+  while (!gpio_get_out_level(PICO_LCD_CS_PIN));
+  pio_sm_set_enabled(lcdPio, lcdSm, false);
+#endif
+}
+
+void emu_unlockSDCard(void)
+{
+#ifdef PICO_LCD_CS_PIN
+  gpio_put(PICO_SD_CS_PIN, 1);
+  pio_sm_set_enabled(lcdPio, lcdSm, true);
+  sdAccess = false;
+#endif
 }
 
 /********************************
@@ -192,7 +244,11 @@ static int ini_parse_fatfs(const char *filename, ini_handler handler, void *user
 
 int emu_SoundRequested(void)
 {
+#ifndef PICO_NO_SOUND
   return specific.sound;
+#else
+  return AY_TYPE_NONE;
+#endif
 }
 
 bool emu_ACBRequested(void)
@@ -310,6 +366,9 @@ FrameSync_T emu_FrameSyncRequested(void)
 
 FiveSevenSix_T emu_576Requested(void)
 {
+#ifdef PICO_LCD_CS_PIN
+  specific.fiveSevenSix = OFF;
+#endif
   return specific.fiveSevenSix;
 }
 
@@ -430,8 +489,13 @@ void emu_SetCentre(bool centre)
 
 void emu_SetSound(int soundType)
 {
+#ifndef PICO_NO_SOUND
   general.sound = soundType;
   specific.sound = soundType;
+#else
+  general.sound = AY_TYPE_NONE;
+  specific.sound = AY_TYPE_NONE;
+#endif
 }
 
 void emu_SetACB(bool stereo)

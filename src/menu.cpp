@@ -22,9 +22,13 @@ typedef enum
     PCENTRE = PNTSC + PINCF6,
     PVTOL = PCENTRE + PINCF6,
     PWRX = PVTOL + PINCF6,
+#ifndef PICO_NO_SOUND
     PSOUNDTYPE = PWRX + PINCF6,
     PSTEREOACB = PSOUNDTYPE + PINCF6,
     PBOTTOMF6 = PSTEREOACB
+#else
+    PBOTTOMF6 = PWRX
+#endif
 } PositionF6_T;
 
 typedef enum
@@ -91,7 +95,7 @@ static bool allfiles = false;
 static int border = 0;
 static bool zx80font = false;
 
-/* 
+/*
  * Public interface
  */
 
@@ -207,8 +211,10 @@ bool loadMenu(void)
                         else
                         {
                             // Load the name file and (possibly) new directory
+                            emu_lockSDCard();
                             emu_SetDirectory(newdir);
                             emu_SetLoadName(working);
+                            emu_unlockSDCard();
                             exit = true;
                         }
                     }
@@ -585,14 +591,16 @@ bool modifyMenu(void)
                     {
                         modify.wrx = !modify.wrx;
                     }
+#ifndef PICO_NO_SOUND
                     else if (field == PSOUNDTYPE)
-                        {
+                    {
                         modify.sound = (modify.sound + 1) % 3;
-                        }
+                    }
                     else if (field == PSTEREOACB)
-                        {
+                    {
                         modify.stereo = ! modify.stereo;
                     }
+#endif
                     showModify(field, &modify);
                 break;
 
@@ -623,14 +631,16 @@ bool modifyMenu(void)
                             modify.vTol -=5;
                         }
                     }
+#ifndef PICO_NO_SOUND
                     else if (field == PSOUNDTYPE)
                     {
                         modify.sound = (modify.sound + 2) % 3;
-                        }
+                    }
                     else if (field == PSTEREOACB)
-                        {
+                    {
                         modify.stereo = ! modify.stereo;
                     }
+#endif
                     showModify(field, &modify);
                 break;
             }
@@ -654,7 +664,7 @@ bool modifyMenu(void)
     }
     debounceExit(update);
     endMenu(false);
-    
+
     return update;
 }
 
@@ -859,7 +869,7 @@ void rebootMenu(void)
 
     if (!buildMenu(false))
         return;
-    
+
     hidNavigateMenu(&debounce);
     showReboot(mode);
 
@@ -903,7 +913,7 @@ void rebootMenu(void)
 
         }
     } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
-    
+
     debounceExit(key == HID_KEY_ENTER);
     endMenu(false);
 
@@ -961,7 +971,7 @@ static bool buildMenu(bool clone)
     {
         memset(menuscreen, 0x00, disp.stride_byte * disp.height);
     }
-    // Display 
+    // Display
     displayBuffer(menuscreen, false, false);
     return true;
 }
@@ -984,7 +994,7 @@ static void endMenu(bool blank)
 }
 
 static void showModify(PositionF6_T pos, ModifyF6_T* modify)
-{ 
+{
     uint lcount = (disp.height >> 4) - 13;
 
     int lhs = (disp.width >> 4) - 10;
@@ -1010,11 +1020,13 @@ static void showModify(PositionF6_T pos, ModifyF6_T* modify)
     writeInvertString("WRX RAM:", lhs, lcount + PositionF6_T::PWRX, pos == PositionF6_T::PWRX);
     writeString(modify->wrx ? "YES" : "NO ", rhs , lcount + PositionF6_T::PWRX);
 
+#ifndef PICO_NO_SOUND
     writeInvertString("Sound:", lhs, lcount + PositionF6_T::PSOUNDTYPE, pos == PositionF6_T::PSOUNDTYPE);
     writeString((modify->sound == AY_TYPE_QUICKSILVA) ? "QUICKSILVA" : (modify->sound == AY_TYPE_ZONX) ? "ZonX      " : "None      ", rhs , lcount + PositionF6_T::PSOUNDTYPE);
 
     writeInvertString("Stereo:", lhs, lcount + PositionF6_T::PSTEREOACB, pos == PositionF6_T::PSTEREOACB);
     writeString(modify->stereo ? "ON-ACB" : "OFF   ", rhs , lcount + PositionF6_T::PSTEREOACB);
+#endif
 }
 
 static void showRestart(PositionF7_T pos, RestartF7_T* restart)
@@ -1053,14 +1065,16 @@ static void showRestart(PositionF7_T pos, RestartF7_T* restart)
 }
 
 static void showReboot(FiveSevenSix_T mode)
-{ 
+{
     uint lcount = (disp.height >> 4) - 13;
 
     int lhs = (disp.width >> 4) - 10;
-    int rhs = lhs + 13;
 
+#ifndef PICO_LCD_CS_PIN
     writeString("Reboot", lhs + 6, lcount);
     writeString("======", lhs + 6, lcount+1);
+
+    int rhs = lhs + 13;
 
     writeString("Note: RESOLUTION", lhs - 1, lcount + 4);
     writeString("      CHANGE WILL", lhs - 1, lcount + 5);
@@ -1068,6 +1082,11 @@ static void showReboot(FiveSevenSix_T mode)
 
     writeInvertString("Resolution:", lhs, lcount + 12, true);
     writeString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
+#else
+    writeString("Resolution", lhs + 4, lcount);
+    writeString("==========", lhs + 4, lcount+1);
+    writeString("640x480 50Hz", lhs + 3, lcount + 4);
+#endif
 }
 
 static void showSave(const uint8_t* name, uint len, uint cursor, uint col, uint row)
@@ -1098,11 +1117,11 @@ static void delay(void)
 static void debounceExit(bool selected)
 {
     uint8_t key = 0;
-    
+
     hidNavigateMenu(&key);
 
     while (key == (selected ? HID_KEY_ENTER : HID_KEY_ESCAPE))
-    {    
+    {
         tuh_task();
         emu_WaitFor50HzTimer();
         hidNavigateMenu(&key);
@@ -1254,6 +1273,8 @@ static int populateFiles(const char* path, uint first)
         ++count;
     }
 
+    emu_lockSDCard();
+
     res = f_opendir(&dir, path);                            /* Open the directory */
     if (res == FR_OK)
     {
@@ -1330,6 +1351,8 @@ static int populateFiles(const char* path, uint first)
         }
         f_closedir(&dir);
     }
+    emu_unlockSDCard();
+
     return count;
 }
 
@@ -1362,6 +1385,8 @@ static bool getFile(char* inout, uint index, bool* direct)
         }
         ++count;
     }
+
+    emu_lockSDCard();
 
     res = f_opendir(&dir, inout);                            /* Open the directory */
     if (res == FR_OK)
@@ -1418,6 +1443,8 @@ static bool getFile(char* inout, uint index, bool* direct)
         ret = true;
     }
     f_closedir(&dir);
+    emu_unlockSDCard();
+
     return ret;
 }
 

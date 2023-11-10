@@ -261,6 +261,7 @@ void load_p(int a)
   // Have checked file exists and loaded specific values for
   // autoload, now do similar for non autoload and check if
   // a reset is required
+  emu_lockSDCard();
   int size = emu_FileSize(fname);
   if (!size)
   {
@@ -270,6 +271,7 @@ void load_p(int a)
     {
       ERROR_D();
     }
+    emu_unlockSDCard();
     return;
   }
   else if (size <= offset)
@@ -277,6 +279,7 @@ void load_p(int a)
     // All of the load would either be in ROM or non existent RAM, so report error 3
     printf("No data to write to RAM, generating error 3\n");
     ERROR_INV3();
+    emu_unlockSDCard();
     return;
   }
 
@@ -291,6 +294,7 @@ void load_p(int a)
       emu_SetLoadName(&fname[nameSrt]);
       z8x_Start(emu_GetLoadName());
       resetRequired = true;
+      emu_unlockSDCard();
       return;
     }
   }
@@ -329,6 +333,7 @@ void load_p(int a)
         printf("No data can be written to RAM: %i out of range, generating error 3\n", max_read);
         ERROR_INV3();
         emu_FileClose();
+        emu_unlockSDCard();
         return;
       }
     }
@@ -359,8 +364,10 @@ void load_p(int a)
     {
       ERROR_D();
     }
+    emu_unlockSDCard();
     return;
   }
+  emu_unlockSDCard();
 }
 
 void save_p(int a)
@@ -510,6 +517,8 @@ void save_p(int a)
     }
   }
 
+  emu_lockSDCard();
+
   if (!emu_SaveFile(fname, &mem[start], length))
   {
     if (!zx80)
@@ -517,6 +526,7 @@ void save_p(int a)
       ERROR_D();
     }
   }
+  emu_unlockSDCard();
 }
 
 void zx81hacks()
@@ -756,6 +766,8 @@ void z8x_Start(const char * filename)
     strcpy(fname, emu_GetDirectory());
     strcat(fname, tapename);
 
+    emu_lockSDCard();
+
     if (emu_FileOpen(fname, "r+b"))
     {
       int fsize = emu_FileRead(&c, 1, 0);
@@ -774,6 +786,7 @@ void z8x_Start(const char * filename)
         emu_SetZX80(emu_EndsWith(fname, ".o") || emu_EndsWith(fname, ".80"));
       }
       emu_FileClose();
+      emu_unlockSDCard();
     }
   }
 }
