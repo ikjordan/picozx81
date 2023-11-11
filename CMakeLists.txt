@@ -23,6 +23,8 @@ endif()
 # e.g. cmake -DPICO_BOARD=picomitevgaboard
 # Set to "olimexpcboard" for Olimex RP2040-PICO-PC board
 # e.g. cmake -DPICO_BOARD=olimexpcboard
+# Set to "lcdws28board" for Waveshare Pico-ResTouch-LCD-2.8
+# e.g. cmake -DPICO_BOARD=lcdws28board
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
