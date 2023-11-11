@@ -2,21 +2,15 @@
 #include "pico/stdlib.h"
 #include "hardware/clocks.h"
 #include "hardware/irq.h"
-#include "hardware/vreg.h"
 #include "pico/multicore.h"
 #include "hardware/pio.h"
 #include "hardware/gpio.h"
 #include "st7789_lcd.pio.h"
+#include "sdcard.h"
 
 #include "display.h"
 #include "zx80bmp.h"
 #include "zx81bmp.h"
-
-#define __dvi_const(x) __not_in_flash_func(x)
-
-// To avoid cluttering emuapi.h
-extern volatile bool sdAccess;
-extern void emu_setLCDPIOSM(PIO pio, uint sm);
 
 #define PIXEL_WIDTH 320
 #define HEIGHT      240
@@ -27,9 +21,15 @@ static uint16_t keyboard_y = 0;
 static uint16_t keyboard_right = 0;
 static uint16_t keyboard_to_fill = 0;
 
-PIO pio = pio1;
-uint sm;
+static semaphore_t frame_sync;
+static repeating_timer_t timer;
+
+static PIO pio = SDCARD_PIO;
+static uint sm;
+static volatile bool allowedSPI = true;
+
 #define SERIAL_CLK_DIV 2.0f
+#define CLOCK_SPEED_KHZ 270000
 
 // Format: cmd length (including cmd byte), post delay in units of 5 ms, then cmd payload
 // Note the delays have been shortened a little
@@ -53,6 +53,7 @@ static const uint8_t st7789_init_seq[] = {
 //
 
 static void render_loop();
+static bool timer_callback(repeating_timer_t *rt);
 
 //
 // Public functions
@@ -61,26 +62,19 @@ static void render_loop();
 uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit)
 {
+    // fiveSevenSix value ignored as always use 640 by 480
+    (void)fiveSevenSix;
+    
     mutex_init(&next_frame_mutex);
 
-    uint16_t byte_width = PIXEL_WIDTH >> 3;
+    // Is padding requested? For LCD can pad a single byte
+    stride = minBuffByte + (PIXEL_WIDTH >> 3);
 
-    // Is padding requested? For DVI need to pad to 4 bytes
-    uint16_t startPad = ((minBuffByte + 3) >> 2) << 2;
-    uint16_t linePad = (4 - (byte_width % 4)) % 4;
-
-    if (linePad < minBuffByte)
-    {
-        linePad += (((minBuffByte - linePad) >> 2) + 1) << 2;
-    }
-
-    stride = linePad + byte_width;
-
-    // Allocate the buffers
+        // Allocate the buffers
     for (int i=0; i<MAX_FREE; ++i)
     {
-        free_buff[i] = (uint8_t*)malloc(startPad + stride * HEIGHT)
-                         + startPad;
+        free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
+                         + minBuffByte;
     }
 
     free_count = MAX_FREE;
@@ -93,7 +87,7 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     // Default to blank screen and return clock speed
     blank = true;
 
-    return 252000;
+    return CLOCK_SPEED_KHZ;
 }
 
 bool displayShowKeyboard(bool zx81)
@@ -112,6 +106,21 @@ bool displayShowKeyboard(bool zx81)
     return previous;
 }
 
+// Request SPI bus from the display and wait until available
+void displayRequestSPIBus(void)
+{
+    allowedSPI = false;
+    while (!gpio_get_out_level(PICO_LCD_CS_PIN));
+    pio_sm_set_enabled(pio, sm, false);
+}
+
+// Return the SPI bus to the display
+void displayGrantSPIBus(void)
+{
+    pio_sm_set_enabled(pio, sm, true);
+    allowedSPI = true;
+}
+
 //
 // Private functions
 //
@@ -123,7 +132,7 @@ static inline void lcd_set_dc_cs(bool dc, bool cs)
     sleep_us(1);
 }
 
-static inline void lcd_write_cmd(PIO pio, uint sm, const uint8_t *cmd, size_t count)
+static inline void lcd_write_cmd(const uint8_t *cmd, size_t count)
 {
     st7789_lcd_wait_idle(pio, sm);
     lcd_set_dc_cs(0, 0);
@@ -141,12 +150,12 @@ static inline void lcd_write_cmd(PIO pio, uint sm, const uint8_t *cmd, size_t co
     lcd_set_dc_cs(1, 1);
 }
 
-static inline void lcd_init(PIO pio, uint sm, const uint8_t *init_seq)
+static inline void lcd_init(const uint8_t *init_seq)
 {
     const uint8_t *cmd = init_seq;
     while (*cmd)
     {
-        lcd_write_cmd(pio, sm, cmd + 2, *cmd);
+        lcd_write_cmd(cmd + 2, *cmd);
         sleep_ms(*(cmd + 1) * 5);
         cmd += *cmd + 2;
     }
@@ -155,140 +164,137 @@ static inline void lcd_init(PIO pio, uint sm, const uint8_t *init_seq)
 static inline void st7789_start_pixels(PIO pio, uint sm)
 {
     uint8_t cmd = 0x2c; // RAMWR
-    lcd_write_cmd(pio, sm, &cmd, 1);
+    lcd_write_cmd(&cmd, 1);
     lcd_set_dc_cs(1, 0);
 }
 
 static void __not_in_flash_func(render_loop)()
 {
+    st7789_start_pixels(pio, sm);
+
     while (true)
     {
-        st7789_lcd_wait_idle(pio, sm);
-        lcd_set_dc_cs(1, 1);
-
-        // Wait for new frame semaphore here
+        sem_acquire_blocking(&frame_sync);
         newFrame();
 
-        if (!sdAccess)
+        // Check to see if allowed to access SPI bus
+        if (allowedSPI)
         {
-            st7789_start_pixels(pio, sm);
+            // Ensure LCD has bus
+            gpio_put(PICO_LCD_CS_PIN, 0);
 
             // 1 pixel generates a 16 bit word
             for (uint y = 0; y < HEIGHT; ++y)
             {
-                // Check to see if allowed to write
-                if (!sdAccess)
+                uint8_t* buff = curr_buff;    // As curr_buff can change at any time
+                const uint8_t *linebuf = &buff[stride * y];
+
+                if (showKeyboard && (y >= keyboard_y) && (y <(keyboard_y + keyboard->height)))
                 {
-                    uint8_t* buff = curr_buff;    // As curr_buff can change at any time
-                    const uint8_t *linebuf = &buff[stride * y];
-
-                    if (showKeyboard && (y >= keyboard_y) && (y <(keyboard_y + keyboard->height)))
+                    if (blank)
                     {
-                        if (blank)
+                        // 32 pixels of blank
+                        for (int i=0; i<keyboard_x; ++i)
                         {
-                            // 32 pixels of blank
-                            for (int i=0; i<keyboard_x; ++i)
-                            {
-                                st7789_lcd_put(pio, sm, blank_colour >> 8);
-                                st7789_lcd_put(pio, sm, blank_colour & 0xff);
-                            }
+                            st7789_lcd_put(pio, sm, blank_colour >> 8);
+                            st7789_lcd_put(pio, sm, blank_colour & 0xff);
+                        }
 
-                            // 256 pixels of keyboard, 2 bits per pixel
-                            for (int i=0; i<(keyboard->width >> 2); ++i)
+                        // 256 pixels of keyboard, 2 bits per pixel
+                        for (int i=0; i<(keyboard->width >> 2); ++i)
+                        {
+                            uint8_t byte = keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2) + i];
+                            for (int x=6; x>=0; x-=2)
                             {
-                                uint8_t byte = keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2) + i];
-                                for (int x=6; x>=0; x-=2)
-                                {
-                                    uint16_t colour = keyboard->palette[(byte >> x) & 0x03];
+                                uint16_t colour = keyboard->palette[(byte >> x) & 0x03];
 
-                                    st7789_lcd_put(pio, sm, colour >> 8);
-                                    st7789_lcd_put(pio, sm, colour & 0xff);
-                                }
-                            }
-
-                            // 32 more pixels of blank
-                            for (int i=(PIXEL_WIDTH - keyboard_x); i<PIXEL_WIDTH; ++i)
-                            {
-                                st7789_lcd_put(pio, sm, blank_colour >> 8);
-                                st7789_lcd_put(pio, sm, blank_colour & 0xff);
+                                st7789_lcd_put(pio, sm, colour >> 8);
+                                st7789_lcd_put(pio, sm, colour & 0xff);
                             }
                         }
-                        else
+
+                        // 32 more pixels of blank
+                        for (int i=(PIXEL_WIDTH - keyboard_x); i<PIXEL_WIDTH; ++i)
                         {
-                            // 32 pixels of screen
-                            for (int x = 0; x < (keyboard_x >> 3); ++x)
-                            {
-                                uint8_t byte = linebuf[x];
-
-                                for (int i = 7; i >= 0; --i)
-                                {
-                                    uint16_t colour = (byte & (0x1 << i)) ? BLACK : WHITE;
-                                    st7789_lcd_put(pio, sm, colour >> 8);
-                                    st7789_lcd_put(pio, sm, colour & 0xff);
-                                }
-                            }
-
-                            // 256 pixels of keyboard, 2 bits per pixel
-                            for (int i=0; i<(keyboard->width >> 2); ++i)
-                            {
-                                uint8_t byte = keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2) + i];
-
-                                for (int x=6; x>=0; x-=2)
-                                {
-                                    uint16_t colour = keyboard->palette[(byte >> x) & 0x03];
-
-                                    st7789_lcd_put(pio, sm, colour >> 8);
-                                    st7789_lcd_put(pio, sm, colour & 0xff);
-                                }
-                            }
-
-                            // 32 more pixels of screen
-                            for (int x=((PIXEL_WIDTH - keyboard_x) >> 3); x<(PIXEL_WIDTH >> 3); ++x)
-                            {
-                                uint8_t byte = linebuf[x];
-
-                                for (int i = 7; i >= 0; --i)
-                                {
-                                    uint16_t colour = (byte & (0x1 << i)) ? BLACK : WHITE;
-                                    st7789_lcd_put(pio, sm, colour >> 8);
-                                    st7789_lcd_put(pio, sm, colour & 0xff);
-                                }
-                            }
+                            st7789_lcd_put(pio, sm, blank_colour >> 8);
+                            st7789_lcd_put(pio, sm, blank_colour & 0xff);
                         }
                     }
                     else
                     {
-                        if (blank)
+                        // 32 pixels of screen
+                        for (int x = 0; x < (keyboard_x >> 3); ++x)
                         {
-                            for (int x=0; x<PIXEL_WIDTH; x++)
+                            uint8_t byte = linebuf[x];
+
+                            for (int i = 7; i >= 0; --i)
                             {
-                                st7789_lcd_put(pio, sm, blank_colour >> 8);
-                                st7789_lcd_put(pio, sm, blank_colour & 0xff);
+                                uint16_t colour = (byte & (0x1 << i)) ? BLACK : WHITE;
+                                st7789_lcd_put(pio, sm, colour >> 8);
+                                st7789_lcd_put(pio, sm, colour & 0xff);
                             }
                         }
-                        else
-                        {
-                            for (int x = 0; x < (PIXEL_WIDTH >> 3); ++x)
-                            {
-                                uint8_t byte = linebuf[x];
 
-                                for (int i = 7; i >= 0; --i)
-                                {
-                                    uint16_t colour = (byte & (0x1 << i)) ? BLACK : WHITE;
-                                    st7789_lcd_put(pio, sm, colour >> 8);
-                                    st7789_lcd_put(pio, sm, colour & 0xff);
-                                }
+                        // 256 pixels of keyboard, 2 bits per pixel
+                        for (int i=0; i<(keyboard->width >> 2); ++i)
+                        {
+                            uint8_t byte = keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2) + i];
+
+                            for (int x=6; x>=0; x-=2)
+                            {
+                                uint16_t colour = keyboard->palette[(byte >> x) & 0x03];
+
+                                st7789_lcd_put(pio, sm, colour >> 8);
+                                st7789_lcd_put(pio, sm, colour & 0xff);
+                            }
+                        }
+
+                        // 32 more pixels of screen
+                        for (int x=((PIXEL_WIDTH - keyboard_x) >> 3); x<(PIXEL_WIDTH >> 3); ++x)
+                        {
+                            uint8_t byte = linebuf[x];
+
+                            for (int i = 7; i >= 0; --i)
+                            {
+                                uint16_t colour = (byte & (0x1 << i)) ? BLACK : WHITE;
+                                st7789_lcd_put(pio, sm, colour >> 8);
+                                st7789_lcd_put(pio, sm, colour & 0xff);
                             }
                         }
                     }
                 }
                 else
                 {
-                    // Release chip
-                    st7789_lcd_wait_idle(pio, sm);
-                    lcd_set_dc_cs(1, 1);
+                    if (blank)
+                    {
+                        for (int x=0; x<PIXEL_WIDTH; x++)
+                        {
+                            st7789_lcd_put(pio, sm, blank_colour >> 8);
+                            st7789_lcd_put(pio, sm, blank_colour & 0xff);
+                        }
+                    }
+                    else
+                    {
+                        for (int x = 0; x < (PIXEL_WIDTH >> 3); ++x)
+                        {
+                            uint8_t byte = linebuf[x];
+
+                            for (int i = 7; i >= 0; --i)
+                            {
+                                uint16_t colour = (byte & (0x1 << i)) ? BLACK : WHITE;
+                                st7789_lcd_put(pio, sm, colour >> 8);
+                                st7789_lcd_put(pio, sm, colour & 0xff);
+                            }
+                        }
+                    }
                 }
             }
+        }
+        else
+        {
+            // Release SPI bus
+            st7789_lcd_wait_idle(pio, sm);
+            lcd_set_dc_cs(1, 1);
         }
     }
 }
@@ -296,7 +302,16 @@ static void __not_in_flash_func(render_loop)()
 static void core1_main()
 {
     sm = pio_claim_unused_sm(pio, true);    // Will panic if no sm available
-    emu_setLCDPIOSM(pio, sm);
+
+    sem_init(&frame_sync, 0 , 1);
+
+    // Set a timer to drive a 50.646 Hz frame rate (1000000 / 50.646 = 19744.6)
+    // 3250000 / (310*207) = 50.646
+    if (!add_repeating_timer_us(-19745, timer_callback, NULL, &timer))
+    {
+        printf("Failed to add timer\n");
+        exit(-1);
+    }
 
     uint offset = pio_add_program(pio, &st7789_lcd_program);
     st7789_lcd_program_init(pio, sm, offset, PICO_SD_CMD_PIN, PICO_SD_CLK_PIN, SERIAL_CLK_DIV);
@@ -309,10 +324,17 @@ static void core1_main()
     gpio_set_dir(PICO_LCD_BL_PIN, GPIO_OUT);
 
     gpio_put(PICO_LCD_RS_PIN, 1);
-    lcd_init(pio, sm, st7789_init_seq);
+    lcd_init(st7789_init_seq);
     gpio_put(PICO_LCD_BL_PIN, 1);
 
     sem_release(&display_initialised);
 
     render_loop();
+}
+
+static bool timer_callback(repeating_timer_t *rt)
+{
+    // Trigger new frame
+    sem_release(&frame_sync);
+    return true;
 }

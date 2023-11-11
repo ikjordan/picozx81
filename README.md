@@ -9,8 +9,10 @@
 + [Developer Notes](#developer-notes)
 
 # Features
++ Supports VGA, HDMI, DVI and LCD displays
 + Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base),
-the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base), the [PicoMite VGA board](https://geoffg.net/picomitevga.html) and the [Olimex RP2040-PICO-PC](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware)
+the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base), the [PicoMite VGA board](https://geoffg.net/picomitevga.html) the [Olimex RP2040-PICO-PC](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware) and the
+[Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
 + Supports sound over onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
@@ -58,6 +60,7 @@ Click on the uf2 name corresponding to your board in the table below to download
 | Pimoroni VGA | [`picozx81_vga.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vga.uf2)|
 | Olimex PICO DVI | [`picozx81_olimexpc.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc.uf2)|
 | PicoMite VGA | [`picozx81_picomitevga.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga.uf2)|
+| Waveshare 2.8 LCD | [`picozx81_lcdws28.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28.uf2)|
 
 
 1. Connect your Board to your display using a VGA or HDMI cable, as appropriate for your board
@@ -120,6 +123,8 @@ The following can be configured:
 3. If `NTSC` is set to `On` and `Centre` is set to `Off` then a black vsync bar will be seen at the bottom of the display for programs that generate a typical 192 line display
 4. A higher tolerance value set for `VTOL` results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). The default value of 100 emulates a TV that very quickly regains vertical lock. Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
 5. The "Big Bang" ROM can double the speed of BASIC programs
+6. The Waveshare LCD 2.8 board has no sound capabilities
+
 ### Joystick
 In addition a USB joystick can be configured to generated key presses
 
@@ -143,7 +148,10 @@ Six extra options apply across all programs and can only be set in the `[default
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81` and `.80` are initially displayed|Off|
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 4| 1 |
 
-**Note:** By default the European ZX81 generates frames slightly faster than 50Hz (50.65Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.6 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50Hz frame rate
+**Notes:** 
+1. By default the European ZX81 generates frames slightly faster than 50Hz (50.65Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.6 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50Hz frame rate
+2. The Waveshare LCD 2.8 board runs at a fixed 320 by 240 resolution at 50.65 Hz
+
 
 ### Examples
 Examples of the `config.ini` files used to test the programs listed in this [section](#applications-tested) can be found [here](examples)
@@ -202,7 +210,7 @@ Allows some values to be modified to see the impact of the changes without havin
 
 The changes are *not* written back to the config files, so will be lost when the emulator is rebooted. Exit by pressing `Enter` to action the changes. Press `Escape` to exit without changes
 ### F8 - Reboot
-Allows the impact of changes to display resolution and frequency to be seen without editing config files. If change are made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots
+Allows the impact of changes to display resolution and frequency to be seen without editing config files. If change are made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots. There are no configurable options for the Waveshare 2.8 LCD board
 ## Loading and saving options
 The emulator supports the loading `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
 Files to be loaded should only contain characters that are in the ZX81 or ZX80 character set
@@ -400,6 +408,7 @@ This will be named `picozx81_vga.uf2`
 | Olimex PICO DVI |`cmake -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc.uf2`|
 | Pimoroni VGA |`cmake -DPICO_BOARD=vgaboard ..` | `picozx81_vga.uf2`|
 | Custom 332 VGA|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
+| Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28.uf2`|
 
 **Note:** The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
 
@@ -416,6 +425,7 @@ This will be named `picozx81_vga.uf2`
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
 + On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
 + The PicoMite VGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
++ The Waveshare Pico-ResTouch-LCD-2.8 board has touch controller, but the emulator does not support its use
 + The Olimex RP2040-PICO-PC has a stereo audio jack. ~~but the left channel cannot be used with HDMI, so only mono audio through the right channel is possible when using this board~~ The emulator now supports stereo sound on this board
 + The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
 + In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
@@ -442,6 +452,7 @@ The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real
 
 Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n; set n,(hl); res n,(hl);`
 ## Possible Future Developments
++ Add support for more LCD displays
 + Add vsync (TV) based sound
 + There are some interesting developments to extend PicoDVI to include audio over the HDMI signal
 + Use the contents of a string variable to supply a file name to the ZX80 load and save commands

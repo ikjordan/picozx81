@@ -211,10 +211,10 @@ bool loadMenu(void)
                         else
                         {
                             // Load the name file and (possibly) new directory
-                            emu_lockSDCard();
+                            EMU_LOCK_SDCARD
                             emu_SetDirectory(newdir);
                             emu_SetLoadName(working);
-                            emu_unlockSDCard();
+                            EMU_UNLOCK_SDCARD
                             exit = true;
                         }
                     }
@@ -1273,7 +1273,7 @@ static int populateFiles(const char* path, uint first)
         ++count;
     }
 
-    emu_lockSDCard();
+    EMU_LOCK_SDCARD
 
     res = f_opendir(&dir, path);                            /* Open the directory */
     if (res == FR_OK)
@@ -1351,7 +1351,7 @@ static int populateFiles(const char* path, uint first)
         }
         f_closedir(&dir);
     }
-    emu_unlockSDCard();
+    EMU_UNLOCK_SDCARD
 
     return count;
 }
@@ -1386,7 +1386,7 @@ static bool getFile(char* inout, uint index, bool* direct)
         ++count;
     }
 
-    emu_lockSDCard();
+    EMU_LOCK_SDCARD
 
     res = f_opendir(&dir, inout);                            /* Open the directory */
     if (res == FR_OK)
@@ -1443,7 +1443,7 @@ static bool getFile(char* inout, uint index, bool* direct)
         ret = true;
     }
     f_closedir(&dir);
-    emu_unlockSDCard();
+    EMU_UNLOCK_SDCARD
 
     return ret;
 }

@@ -2,7 +2,6 @@
 #include "pico/stdlib.h"
 #include "hardware/clocks.h"
 #include "hardware/irq.h"
-#include "hardware/vreg.h"
 #include "pico/multicore.h"
 #include "dvi.h"
 #include "dvi_serialiser.h"
@@ -15,8 +14,8 @@
 #define DVI_TIMING dvi_timing_720x576p_51hz
 #define __dvi_const(x) __not_in_flash_func(x)
 
-// Define a slightly higher frame rate, as the ZX81 also produces a display
-// approx 0.6% faster than 50%
+// Define a slightly higher frame rate, as in normal operation the 
+// ZX81 also produces a display approximately 1.3% faster than 50 Hz
 // The increase in frame rate is achieved by reducing the back porch
 // Adjusting the timing to 50 * 625 / (625 - 39 + 31) = 50.65 Hz
 const struct dvi_timing __dvi_const(dvi_timing_720x576p_51hz) =

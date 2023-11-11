@@ -154,37 +154,21 @@ void emu_init(void)
 /********************************
  * Control SD Card Access
  ********************************/
-#ifdef PICO_LCD_CS_PIN
-volatile bool sdAccess = false;
-PIO lcdPio;
-uint lcdSm;
+#ifdef PICO_SPI_LCD_SD_SHARE
 
-extern "C" {
-void emu_setLCDPIOSM(PIO pio, uint sm)
-{
-  lcdPio = pio;
-  lcdSm = sm;
-}
-}
-#endif
-
+// Obtain the SPI bus for the SD Card
 void emu_lockSDCard(void)
 {
-#ifdef PICO_LCD_CS_PIN
-  sdAccess = true;
-  while (!gpio_get_out_level(PICO_LCD_CS_PIN));
-  pio_sm_set_enabled(lcdPio, lcdSm, false);
-#endif
+  displayRequestSPIBus();
 }
 
+// Return the SPI Bus to the display
 void emu_unlockSDCard(void)
 {
-#ifdef PICO_LCD_CS_PIN
-  gpio_put(PICO_SD_CS_PIN, 1);
-  pio_sm_set_enabled(lcdPio, lcdSm, true);
-  sdAccess = false;
-#endif
+  displayGrantSPIBus();
 }
+
+#endif
 
 /********************************
  * Configuration File

@@ -61,6 +61,9 @@
 // No sound output
 #define PICO_NO_SOUND
 
+// Share SPI bus
+#define PICO_SPI_LCD_SD_SHARE
+
 #define PICO_LCDWS28_BOARD
 
 // lcdws28board has a Pico on it, so default anything we haven't set above

@@ -32,9 +32,6 @@ typedef enum {
 
 extern void emu_init(void);
 
-extern void emu_lockSDCard(void);
-extern void emu_unlockSDCard(void);
-
 extern bool emu_UpdateKeyboard(uint8_t* special);
 
 extern bool emu_FileOpen(const char * filepath, const char * mode);
@@ -93,6 +90,17 @@ extern void emu_SetCHR128(bool chr128);
 extern void emu_SetRebootMode(FiveSevenSix_T mode);
 
 extern void emu_WaitFor50HzTimer(void);
+
+#ifdef PICO_SPI_LCD_SD_SHARE
+extern void emu_lockSDCard(void);
+extern void emu_unlockSDCard(void);
+
+#define EMU_LOCK_SDCARD emu_lockSDCard();
+#define EMU_UNLOCK_SDCARD emu_lockSDCard();
+#else
+#define EMU_LOCK_SDCARD
+#define EMU_UNLOCK_SDCARD
+#endif
 
 #ifdef __cplusplus
 }

@@ -21,6 +21,11 @@ extern bool displayIsBlank(bool* isBlack);
 extern bool displayShowKeyboard(bool zx81);
 extern bool displayHideKeyboard(void);
 
+#ifdef PICO_SPI_LCD_SD_SHARE
+extern void displayRequestSPIBus(void);
+extern void displayGrantSPIBus(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
