@@ -271,7 +271,7 @@ void load_p(int a)
     {
       ERROR_D();
     }
-    EMU_LOCK_SDCARD
+    EMU_UNLOCK_SDCARD
     return;
   }
   else if (size <= offset)
@@ -279,7 +279,7 @@ void load_p(int a)
     // All of the load would either be in ROM or non existent RAM, so report error 3
     printf("No data to write to RAM, generating error 3\n");
     ERROR_INV3();
-    EMU_LOCK_SDCARD
+    EMU_UNLOCK_SDCARD
     return;
   }
 
@@ -294,7 +294,7 @@ void load_p(int a)
       emu_SetLoadName(&fname[nameSrt]);
       z8x_Start(emu_GetLoadName());
       resetRequired = true;
-      EMU_LOCK_SDCARD
+      EMU_UNLOCK_SDCARD
       return;
     }
   }
@@ -333,7 +333,7 @@ void load_p(int a)
         printf("No data can be written to RAM: %i out of range, generating error 3\n", max_read);
         ERROR_INV3();
         emu_FileClose();
-        EMU_LOCK_SDCARD
+        EMU_UNLOCK_SDCARD
         return;
       }
     }
@@ -364,10 +364,10 @@ void load_p(int a)
     {
       ERROR_D();
     }
-    EMU_LOCK_SDCARD
+    EMU_UNLOCK_SDCARD
     return;
   }
-  EMU_LOCK_SDCARD
+  EMU_UNLOCK_SDCARD
 }
 
 void save_p(int a)
@@ -526,7 +526,7 @@ void save_p(int a)
       ERROR_D();
     }
   }
-  EMU_LOCK_SDCARD
+  EMU_UNLOCK_SDCARD
 }
 
 void zx81hacks()
@@ -786,7 +786,7 @@ void z8x_Start(const char * filename)
         emu_SetZX80(emu_EndsWith(fname, ".o") || emu_EndsWith(fname, ".80"));
       }
       emu_FileClose();
-      EMU_LOCK_SDCARD
+      EMU_UNLOCK_SDCARD
     }
   }
 }

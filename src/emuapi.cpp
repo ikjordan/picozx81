@@ -9,10 +9,6 @@
 #include "hid_usb.h"
 #include "display.h"
 
-#ifdef PICO_LCD_CS_PIN
-#include "hardware/pio.h"
-#endif
-
 #include "emuapi.h"
 #include "emuvideo.h"
 #include "emupriv.h"
@@ -350,9 +346,6 @@ FrameSync_T emu_FrameSyncRequested(void)
 
 FiveSevenSix_T emu_576Requested(void)
 {
-#ifdef PICO_LCD_CS_PIN
-  specific.fiveSevenSix = OFF;
-#endif
   return specific.fiveSevenSix;
 }
 
@@ -526,6 +519,7 @@ void emu_SetRebootMode(FiveSevenSix_T mode)
   strcat(filepath, REBOOT_FILE);
 
   // Open the file
+  EMU_LOCK_SDCARD
   FRESULT res = f_open(&file, filepath, FA_CREATE_ALWAYS|FA_WRITE);
   if (res == FR_OK)
   {
@@ -539,6 +533,7 @@ void emu_SetRebootMode(FiveSevenSix_T mode)
     // Set the watchdog to trigger a reboot
     watchdog_enable(10, true);
   }
+  EMU_UNLOCK_SDCARD
 }
 
 static char convert(const char *val)

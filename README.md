@@ -149,9 +149,8 @@ Six extra options apply across all programs and can only be set in the `[default
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 4| 1 |
 
 **Notes:** 
-1. By default the European ZX81 generates frames slightly faster than 50Hz (50.65Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.6 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50Hz frame rate
-2. The Waveshare LCD 2.8 board runs at a fixed 320 by 240 resolution at 50.65 Hz
-
+1. By default the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
+2. The Waveshare LCD 2.8 board has a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for this board (50 Hz, 50.65 Hz or 60 Hz)
 
 ### Examples
 Examples of the `config.ini` files used to test the programs listed in this [section](#applications-tested) can be found [here](examples)
@@ -210,7 +209,9 @@ Allows some values to be modified to see the impact of the changes without havin
 
 The changes are *not* written back to the config files, so will be lost when the emulator is rebooted. Exit by pressing `Enter` to action the changes. Press `Escape` to exit without changes
 ### F8 - Reboot
-Allows the impact of changes to display resolution and frequency to be seen without editing config files. If change are made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots. There are no configurable options for the Waveshare 2.8 LCD board
+Allows the impact of changes to display resolution and frequency to be seen without editing config files. If change are made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots.
+
+On the Waveshare 2.8 LCD board only the frequency can be changed
 ## Loading and saving options
 The emulator supports the loading `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
 Files to be loaded should only contain characters that are in the ZX81 or ZX80 character set

@@ -20,11 +20,11 @@ typedef struct
 #define BLUE PICO_SCANVIDEO_PIXEL_FROM_RGB8(0, 0, 255)
 #define YELLOW PICO_SCANVIDEO_PIXEL_FROM_RGB8(255, 255, 0)
 #elif (defined (PICO_LCDWS28_BOARD))
-#define WHITE  0xffff
-#define BLUE   0x001f
-#define YELLOW 0xffe0
-#define RED    0xf800
-#define BLACK  0
+#define WHITE  0xfff
+#define BLUE   0x00f
+#define YELLOW 0xff0
+#define RED    0xf00
+#define BLACK  0x000
 #else
 #define WHITE 0
 #define RED 1

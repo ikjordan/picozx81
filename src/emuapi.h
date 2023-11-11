@@ -96,7 +96,7 @@ extern void emu_lockSDCard(void);
 extern void emu_unlockSDCard(void);
 
 #define EMU_LOCK_SDCARD emu_lockSDCard();
-#define EMU_UNLOCK_SDCARD emu_lockSDCard();
+#define EMU_UNLOCK_SDCARD emu_unlockSDCard();
 #else
 #define EMU_LOCK_SDCARD
 #define EMU_UNLOCK_SDCARD

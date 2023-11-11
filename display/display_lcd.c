@@ -23,20 +23,21 @@ static uint16_t keyboard_to_fill = 0;
 
 static semaphore_t frame_sync;
 static repeating_timer_t timer;
+static int32_t period;
 
 static PIO pio = SDCARD_PIO;
 static uint sm;
 static volatile bool allowedSPI = true;
 
 #define SERIAL_CLK_DIV 2.0f
-#define CLOCK_SPEED_KHZ 270000
+#define CLOCK_SPEED_KHZ 250000
 
 // Format: cmd length (including cmd byte), post delay in units of 5 ms, then cmd payload
 // Note the delays have been shortened a little
 static const uint8_t st7789_init_seq[] = {
         1, 20, 0x01,                        // Software reset
         1, 10, 0x11,                        // Exit sleep mode
-        2, 2, 0x3a, 0x55,                   // Set colour mode to 16 bit
+        2, 2, 0x3a, 0x53,                   // Set colour mode to 12 bit
         2, 0, 0x36, 0x60,                   // Set MADCTR: row then column, refresh is bottom to top ????
         5, 0, 0x2a, 0x00, 0x00, PIXEL_WIDTH >> 8, PIXEL_WIDTH & 0xff,   // CASET: column addresses
         5, 0, 0x2b, 0x00, 0x00, HEIGHT >> 8, HEIGHT & 0xff,             // RASET: row addresses
@@ -62,9 +63,19 @@ static bool timer_callback(repeating_timer_t *rt);
 uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit)
 {
-    // fiveSevenSix value ignored as always use 640 by 480
-    (void)fiveSevenSix;
-    
+    // fiveSevenSix value used to set refresh rate, but not the resolution
+    // fiveSevenSix false = 60 Hz
+    // fiveSevenSix true & match true = 50.65 Hz
+    // fiveSevenSix true & match false = 50 Hz
+    if (fiveSevenSix)
+    {
+        period = match ? 19745 : 20000; //50.65 or 50 Hz
+    }
+    else
+    {
+        period = 16667; // 60 Hz
+    }
+
     mutex_init(&next_frame_mutex);
 
     // Is padding requested? For LCD can pad a single byte
@@ -183,7 +194,7 @@ static void __not_in_flash_func(render_loop)()
             // Ensure LCD has bus
             gpio_put(PICO_LCD_CS_PIN, 0);
 
-            // 1 pixel generates a 16 bit word
+            // 1 pixel generates a 12 bit word - so 2 pixels are 3 bytes
             for (uint y = 0; y < HEIGHT; ++y)
             {
                 uint8_t* buff = curr_buff;    // As curr_buff can change at any time
@@ -194,30 +205,36 @@ static void __not_in_flash_func(render_loop)()
                     if (blank)
                     {
                         // 32 pixels of blank
-                        for (int i=0; i<keyboard_x; ++i)
+                        uint32_t twoblank = (blank_colour << 12) | blank_colour;
+
+                        for (int i=0; i<(keyboard_x>>1); ++i)
                         {
-                            st7789_lcd_put(pio, sm, blank_colour >> 8);
-                            st7789_lcd_put(pio, sm, blank_colour & 0xff);
+                            st7789_lcd_put(pio, sm, (twoblank >> 16) & 0xff);
+                            st7789_lcd_put(pio, sm, (twoblank >> 8) & 0xff);
+                            st7789_lcd_put(pio, sm, twoblank & 0xff);
                         }
 
                         // 256 pixels of keyboard, 2 bits per pixel
                         for (int i=0; i<(keyboard->width >> 2); ++i)
                         {
                             uint8_t byte = keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2) + i];
-                            for (int x=6; x>=0; x-=2)
+                            for (int x=6; x>=2; x-=4)
                             {
-                                uint16_t colour = keyboard->palette[(byte >> x) & 0x03];
+                                uint32_t colour = (keyboard->palette[(byte >> x) & 0x03] << 12) +
+                                                   keyboard->palette[(byte >> (x-2)) & 0x03];
 
-                                st7789_lcd_put(pio, sm, colour >> 8);
+                                st7789_lcd_put(pio, sm, (colour >> 16) & 0xff);
+                                st7789_lcd_put(pio, sm, (colour >> 8) & 0xff);
                                 st7789_lcd_put(pio, sm, colour & 0xff);
                             }
                         }
 
                         // 32 more pixels of blank
-                        for (int i=(PIXEL_WIDTH - keyboard_x); i<PIXEL_WIDTH; ++i)
+                        for (int i=((PIXEL_WIDTH - keyboard_x)>>1); i<(PIXEL_WIDTH>>1); ++i)
                         {
-                            st7789_lcd_put(pio, sm, blank_colour >> 8);
-                            st7789_lcd_put(pio, sm, blank_colour & 0xff);
+                            st7789_lcd_put(pio, sm, (twoblank >> 16) & 0xff);
+                            st7789_lcd_put(pio, sm, (twoblank >> 8) & 0xff);
+                            st7789_lcd_put(pio, sm, twoblank & 0xff);
                         }
                     }
                     else
@@ -227,11 +244,17 @@ static void __not_in_flash_func(render_loop)()
                         {
                             uint8_t byte = linebuf[x];
 
-                            for (int i = 7; i >= 0; --i)
+                            int count = 7;
+
+                            for (int j=0; j<4; j++)
                             {
-                                uint16_t colour = (byte & (0x1 << i)) ? BLACK : WHITE;
-                                st7789_lcd_put(pio, sm, colour >> 8);
-                                st7789_lcd_put(pio, sm, colour & 0xff);
+                                uint32_t twobits = (byte & (0x1 << count--)) ? BLACK : WHITE;
+                                twobits = twobits << 12;
+                                twobits |= (byte & (0x1 << count--)) ? BLACK : WHITE;
+
+                                st7789_lcd_put(pio, sm, (twobits >> 16) & 0xff);
+                                st7789_lcd_put(pio, sm, (twobits >> 8) & 0xff);
+                                st7789_lcd_put(pio, sm, twobits & 0xff);
                             }
                         }
 
@@ -239,12 +262,13 @@ static void __not_in_flash_func(render_loop)()
                         for (int i=0; i<(keyboard->width >> 2); ++i)
                         {
                             uint8_t byte = keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2) + i];
-
-                            for (int x=6; x>=0; x-=2)
+                            for (int x=6; x>=2; x-=4)
                             {
-                                uint16_t colour = keyboard->palette[(byte >> x) & 0x03];
+                                uint32_t colour = (keyboard->palette[(byte >> x) & 0x03] << 12) +
+                                                   keyboard->palette[(byte >> (x-2)) & 0x03];
 
-                                st7789_lcd_put(pio, sm, colour >> 8);
+                                st7789_lcd_put(pio, sm, (colour >> 16) & 0xff);
+                                st7789_lcd_put(pio, sm, (colour >> 8) & 0xff);
                                 st7789_lcd_put(pio, sm, colour & 0xff);
                             }
                         }
@@ -254,11 +278,17 @@ static void __not_in_flash_func(render_loop)()
                         {
                             uint8_t byte = linebuf[x];
 
-                            for (int i = 7; i >= 0; --i)
+                            int count = 7;
+
+                            for (int j=0; j<4; j++)
                             {
-                                uint16_t colour = (byte & (0x1 << i)) ? BLACK : WHITE;
-                                st7789_lcd_put(pio, sm, colour >> 8);
-                                st7789_lcd_put(pio, sm, colour & 0xff);
+                                uint32_t twobits = (byte & (0x1 << count--)) ? BLACK : WHITE;
+                                twobits = twobits << 12;
+                                twobits |= (byte & (0x1 << count--)) ? BLACK : WHITE;
+
+                                st7789_lcd_put(pio, sm, (twobits >> 16) & 0xff);
+                                st7789_lcd_put(pio, sm, (twobits >> 8) & 0xff);
+                                st7789_lcd_put(pio, sm, twobits & 0xff);
                             }
                         }
                     }
@@ -267,10 +297,13 @@ static void __not_in_flash_func(render_loop)()
                 {
                     if (blank)
                     {
-                        for (int x=0; x<PIXEL_WIDTH; x++)
+                        uint32_t twobits = (blank_colour << 12) | blank_colour;
+
+                        for (int x=0; (x<PIXEL_WIDTH>>1); x++)
                         {
-                            st7789_lcd_put(pio, sm, blank_colour >> 8);
-                            st7789_lcd_put(pio, sm, blank_colour & 0xff);
+                            st7789_lcd_put(pio, sm, (twobits >> 16) & 0xff);
+                            st7789_lcd_put(pio, sm, (twobits >> 8) & 0xff);
+                            st7789_lcd_put(pio, sm, twobits & 0xff);
                         }
                     }
                     else
@@ -279,11 +312,17 @@ static void __not_in_flash_func(render_loop)()
                         {
                             uint8_t byte = linebuf[x];
 
-                            for (int i = 7; i >= 0; --i)
+                            int count = 7;
+
+                            for (int j=0; j<4; j++)
                             {
-                                uint16_t colour = (byte & (0x1 << i)) ? BLACK : WHITE;
-                                st7789_lcd_put(pio, sm, colour >> 8);
-                                st7789_lcd_put(pio, sm, colour & 0xff);
+                                uint32_t twobits = (byte & (0x1 << count--)) ? BLACK : WHITE;
+                                twobits = twobits << 12;
+                                twobits |= (byte & (0x1 << count--)) ? BLACK : WHITE;
+
+                                st7789_lcd_put(pio, sm, (twobits >> 16) & 0xff);
+                                st7789_lcd_put(pio, sm, (twobits >> 8) & 0xff);
+                                st7789_lcd_put(pio, sm, twobits & 0xff);
                             }
                         }
                     }
@@ -305,9 +344,8 @@ static void core1_main()
 
     sem_init(&frame_sync, 0 , 1);
 
-    // Set a timer to drive a 50.646 Hz frame rate (1000000 / 50.646 = 19744.6)
-    // 3250000 / (310*207) = 50.646
-    if (!add_repeating_timer_us(-19745, timer_callback, NULL, &timer))
+    // Set a timer to drive frame rate
+    if (!add_repeating_timer_us((-period), timer_callback, NULL, &timer))
     {
         printf("Failed to add timer\n");
         exit(-1);

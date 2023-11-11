@@ -405,7 +405,11 @@ bool statusMenu(void)
     writeString(emu_ExtendFileRequested() ? "Yes" : "No", rhs, lcount++);
 
     writeString("Resolution:", lhs, ++lcount);
+#ifndef PICO_LCD_CS_PIN
     writeString((emu_576Requested() == OFF) ? "640x480x60" : (emu_576Requested() == MATCH) ? "720x568x50.6" : "720x568x50", rhs, lcount++);
+#else
+    writeString((emu_576Requested() == OFF) ? "320x240x60" : (emu_576Requested() == MATCH) ? "320x240x50.6" : "320x240x50", rhs, lcount++);
+#endif
     writeString("Frame Sync:", lhs, lcount);
     writeString((emu_FrameSyncRequested() == SYNC_OFF) ? "Off" : (emu_FrameSyncRequested() == SYNC_ON) ? "On" : "On Int", rhs, lcount++);
 
@@ -1070,7 +1074,6 @@ static void showReboot(FiveSevenSix_T mode)
 
     int lhs = (disp.width >> 4) - 10;
 
-#ifndef PICO_LCD_CS_PIN
     writeString("Reboot", lhs + 6, lcount);
     writeString("======", lhs + 6, lcount+1);
 
@@ -1081,11 +1084,10 @@ static void showReboot(FiveSevenSix_T mode)
     writeString("      REBOOT THE PICO", lhs - 1, lcount + 6);
 
     writeInvertString("Resolution:", lhs, lcount + 12, true);
+#ifndef PICO_LCD_CS_PIN
     writeString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
 #else
-    writeString("Resolution", lhs + 4, lcount);
-    writeString("==========", lhs + 4, lcount+1);
-    writeString("640x480 50Hz", lhs + 3, lcount + 4);
+    writeString((mode == OFF) ? "320x240x60  " : (mode == MATCH) ? "320x240x50.6" : "320x240x50  ", rhs, lcount + 12);
 #endif
 }
 
