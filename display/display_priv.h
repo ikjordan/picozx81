@@ -1,6 +1,6 @@
 #ifndef _DISPLAY_PRIV_H_
 #define _DISPLAY_PRIV_H_
-#if !(defined (PICO_DVI_BOARD) || defined (PICO_OLIMEXPC_BOARD))
+#if !(defined (PICO_DVI_BOARD) || defined (PICO_OLIMEXPC_BOARD) || defined (PICO_LCDWS28_BOARD))
 #include "pico/scanvideo.h"
 #endif
 
@@ -13,12 +13,18 @@ typedef struct
   uint8_t  __attribute__((aligned(4)))  pixel_data[];
 } KEYBOARD_PIC;
 
-#if !(defined (PICO_DVI_BOARD) || defined (PICO_OLIMEXPC_BOARD))
+#if !(defined (PICO_DVI_BOARD) || defined (PICO_OLIMEXPC_BOARD) || defined (PICO_LCDWS28_BOARD))
 #define BLACK PICO_SCANVIDEO_PIXEL_FROM_RGB8(0, 0, 0)
 #define WHITE PICO_SCANVIDEO_PIXEL_FROM_RGB8(255, 255, 255)
 #define RED PICO_SCANVIDEO_PIXEL_FROM_RGB8(255, 0, 0)
 #define BLUE PICO_SCANVIDEO_PIXEL_FROM_RGB8(0, 0, 255)
 #define YELLOW PICO_SCANVIDEO_PIXEL_FROM_RGB8(255, 255, 0)
+#elif (defined (PICO_LCDWS28_BOARD))
+#define WHITE  0xfff
+#define BLUE   0x00f
+#define YELLOW 0xff0
+#define RED    0xf00
+#define BLACK  0x000
 #else
 #define WHITE 0
 #define RED 1

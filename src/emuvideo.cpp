@@ -3,13 +3,14 @@
 *******************************************************************/
 #include "pico.h"
 #include "emuapi.h"
+#include "emusound.h"
 #include "emuvideo.h"
 #include "display.h"
 
 // Sizes for 640 by 480
 #define DISPLAY_START_PIXEL_640 46  // X Offset to first pixel with no centring
 #define DISPLAY_START_Y_640     24  // Y Offset to first pixel with no centring
-#define DISPLAY_ADJUST_X_640    4   // The number of pixels to adjust in X dimension to centre the display
+#define DISPLAY_ADJUST_X_640     4  // The number of pixels to adjust in X dimension to centre the display
 
 // Sizes for 720 by 576
 #define DISPLAY_START_PIXEL_720 24  // X Offset to first pixel with no centring
@@ -18,7 +19,7 @@
 
 Display_T disp;                     // Dimension information for the display
 
-uint emu_VideoInit(FiveSevenSix_T fiveSevenSix)
+uint emu_VideoInit(void)
 {
     bool match = false;
     bool five = (emu_576Requested() != OFF);
@@ -29,9 +30,9 @@ uint emu_VideoInit(FiveSevenSix_T fiveSevenSix)
     }
 
     uint clock = displayInitialise(five, match, 1, &disp.width,
-                                   &disp.height, &disp.stride_bit);
+                                   &disp.height, &disp.stride_bit, emu_SoundSampleRate());
 
-    if (fiveSevenSix)
+    if (disp.width >= 360)      // As use double pixels
     {
         disp.start_x = DISPLAY_START_PIXEL_720;
         disp.start_y = DISPLAY_START_Y_720;

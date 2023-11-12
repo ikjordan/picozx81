@@ -22,6 +22,7 @@
 #include "ff.h"
 static FATFS fatfs;
 static FIL file;
+static bool fsinit = false;
 
 /********************************
  * File IO
@@ -114,6 +115,19 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
  ********************************/
 void emu_init(void)
 {
+    // Initialise sd card and read config
+#ifdef PICO_LCD_CS_PIN
+    gpio_init(PICO_LCD_CS_PIN);
+    gpio_set_dir(PICO_LCD_CS_PIN, GPIO_OUT);
+    gpio_put(PICO_LCD_CS_PIN, 1);
+#endif
+
+#ifdef PICO_TS_CS_PIN
+    gpio_init(PICO_TS_CS_PIN);
+    gpio_set_dir(PICO_TS_CS_PIN, GPIO_OUT);
+    gpio_put(PICO_TS_CS_PIN, 1);
+#endif
+
   FRESULT fr = f_mount(&fatfs, "0:", 1);
 
   if (fr != FR_OK)
@@ -122,7 +136,7 @@ void emu_init(void)
   }
   else
   {
-    printf("SDCard mounted\n");
+    fsinit = true;
   }
   emu_ReadDefaultValues();
 
@@ -133,6 +147,31 @@ void emu_init(void)
     emu_ReadDefaultValues();
   }
 }
+
+// Return if file system initialised
+bool emu_fsInitialised(void)
+{
+  return fsinit;
+}
+
+/********************************
+ * Control SD Card Access
+ ********************************/
+#ifdef PICO_SPI_LCD_SD_SHARE
+
+// Obtain the SPI bus for the SD Card
+void emu_lockSDCard(void)
+{
+  displayRequestSPIBus();
+}
+
+// Return the SPI Bus to the display
+void emu_unlockSDCard(void)
+{
+  displayGrantSPIBus();
+}
+
+#endif
 
 /********************************
  * Configuration File
@@ -192,13 +231,17 @@ static int ini_parse_fatfs(const char *filename, ini_handler handler, void *user
 
 int emu_SoundRequested(void)
 {
+#ifndef PICO_NO_SOUND
   return specific.sound;
+#else
+  return AY_TYPE_NONE;
+#endif
 }
 
 bool emu_ACBRequested(void)
 {
   // Do not allow stereo on a mono board
-#ifdef I2S
+#if defined(I2S) || defined(SOUND_HDMI)
   return specific.acb;
 #else
   return specific.acb && (AUDIO_PIN_L != AUDIO_PIN_R);
@@ -430,8 +473,13 @@ void emu_SetCentre(bool centre)
 
 void emu_SetSound(int soundType)
 {
+#ifndef PICO_NO_SOUND
   general.sound = soundType;
   specific.sound = soundType;
+#else
+  general.sound = AY_TYPE_NONE;
+  specific.sound = AY_TYPE_NONE;
+#endif
 }
 
 void emu_SetACB(bool stereo)
@@ -478,6 +526,7 @@ void emu_SetRebootMode(FiveSevenSix_T mode)
   strcat(filepath, REBOOT_FILE);
 
   // Open the file
+  EMU_LOCK_SDCARD
   FRESULT res = f_open(&file, filepath, FA_CREATE_ALWAYS|FA_WRITE);
   if (res == FR_OK)
   {
@@ -491,6 +540,7 @@ void emu_SetRebootMode(FiveSevenSix_T mode)
     // Set the watchdog to trigger a reboot
     watchdog_enable(10, true);
   }
+  EMU_UNLOCK_SDCARD
 }
 
 static char convert(const char *val)

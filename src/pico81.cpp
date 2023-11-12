@@ -23,7 +23,7 @@ int main(void)
     emu_init();
 
     // Initialise display to get clock, using config
-    uint clock = emu_VideoInit(emu_576Requested());
+    uint clock = emu_VideoInit();
 
     // Set the clock, driven by the video rate
     set_sys_clock_khz(clock, true);

@@ -140,8 +140,10 @@ static void core1_main();
 
     // Determine the video mode
 uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
-                       uint16_t* pixelHeight, uint16_t* strideBit)
+                       uint16_t* pixelHeight, uint16_t* strideBit, uint16_t audio_rate)
 {
+    (void)audio_rate;
+
     mutex_init(&next_frame_mutex);
 
     // Determine the video mode
@@ -174,6 +176,11 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     blank = true;
 
     return video_mode->default_timing->clock_freq / 100;
+}
+
+void displayStart(void)
+{
+    displayStartCommon();
 }
 
 bool displayShowKeyboard(bool zx81)

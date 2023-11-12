@@ -62,7 +62,7 @@ BYTE CardType;			/* Card type flags */
 #ifdef SDCARD_PIO
 pio_spi_inst_t pio_spi = {
 		.pio = SDCARD_PIO,
-		.sm = SDCARD_PIO_SM
+		.sm = 0 // Will claim unused state machine
 };
 #endif
 
@@ -115,6 +115,13 @@ static void CS_LOW(void)
 static
 void init_spi(void)
 {
+	// Avoid repeated initialisation when SD Card not present
+	static bool first = true;
+	if (!first)
+		return;
+
+	first = false;
+
 	/* GPIO pin configuration */
 	/* pull up of MISO is MUST (10Kohm external pull up is recommended) */
 	/* Set drive strength and slew rate if needed to meet wire condition */
