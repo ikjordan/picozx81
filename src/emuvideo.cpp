@@ -32,7 +32,7 @@ uint emu_VideoInit(void)
     uint clock = displayInitialise(five, match, 1, &disp.width,
                                    &disp.height, &disp.stride_bit, emu_SoundSampleRate());
 
-    if (disp.width >= 720)
+    if (disp.width >= 360)      // As use double pixels
     {
         disp.start_x = DISPLAY_START_PIXEL_720;
         disp.start_y = DISPLAY_START_Y_720;
