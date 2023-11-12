@@ -41,6 +41,16 @@ The following images are taken with permission from a thread on [SinclairZXWorld
 <img src="images/in_use.jpg" width="48%" />
 </p>
 
+## Example using 3d printed ZX81 USB keyboard, USB joystick and  Waveshare 2.8 inch LCD
+The left image shows a system with a 3d printed ZX81 case being used as a [USB keyboard](https://github.com/ikjordan/ZX81_USB_KBD). A usb hub allows control via the keyboard and a joystick. The high resolution version of [Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip) is displayed on screen
+
+The right image shows the emulator running [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html), which generates a 320 by 240 display, exactly filling the 2.8 inch LCD
+
+<p align="middle">
+<img src="images/lcd_system.jpg" width="46%" />
+<img src="images/lcd.jpg" width="49%" />
+</p>
+
 # Quick Start
 The fastest way to get started is to:
 1. Write data onto a Micro SD Card
