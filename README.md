@@ -219,9 +219,9 @@ Allows some values to be modified to see the impact of the changes without havin
 
 The changes are *not* written back to the config files, so will be lost when the emulator is rebooted. Exit by pressing `Enter` to action the changes. Press `Escape` to exit without changes
 ### F8 - Reboot
-Allows the impact of changes to display resolution and frequency to be seen without editing config files. If change are made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots.
+Allows the impact of changes to display resolution and frequency to be seen without editing config files. If a change is made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots.
 
-On the Waveshare 2.8 LCD board only the frequency can be changed
+On the Waveshare 2.8 LCD board the display resolution is fixed and only the frequency can be changed
 ## Loading and saving options
 The emulator supports the loading `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
 Files to be loaded should only contain characters that are in the ZX81 or ZX80 character set
