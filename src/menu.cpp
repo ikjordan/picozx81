@@ -110,154 +110,177 @@ bool loadMenu(void)
     uint row = 0;
     bool debounce = true;
     bool exit = false;
+    bool change = false;
 
     if (!buildMenu(false))
         return false;
 
-    uint fullrow = (uint)((disp.height>>3)-(border<<1));
-    allfiles = emu_AllFilesRequested();
-
-    strcpy(working, emu_GetDirectory());
-    strcpy(newdir,working);
-    uint entries = populateFiles(working, 0);
-    uint maxrow = (entries < fullrow) ? entries : fullrow;
-    uint offset = 0;
-
-    // Highlight first line
-    xorRow(row + border);
-
-    do
+    if (!emu_fsInitialised())
     {
-        tuh_task();
-        detected = hidNavigateMenu(&key);
+        writeString("SD Card not detected", (disp.width >> 4) - 10, disp.height >> 4);
+        writeString("Press New Line to continue", (disp.width >> 4) - 13, (disp.height >> 4) + 1);
+        do
+        {
+            tuh_task();
+            bool detected = hidNavigateMenu(&key);
 
-        // Debounce the enter key, for case when called through LOAD
-        if (detected && (key == HID_KEY_ENTER))
-        {
-            if (debounce) detected = false;
-        }
-        else
-        {
-            debounce = false;
-        }
-
-        if (detected)
-        {
-            switch (key)
+            // Debounce the enter key, as may have been pressed to get to the menu
+            if (!(detected && (key == HID_KEY_ENTER) && debounce))
             {
-                case HID_KEY_ARROW_DOWN:
-                case HID_KEY_ARROW_RIGHT:
-                    if (((row + 1) < maxrow) && (key == HID_KEY_ARROW_DOWN))
-                    {
-                        xorRow(row + border);
-                        xorRow(++row + border);
-                    }
-                    else
-                    {
-                        if ((((row + 1 + offset) < entries) && (key == HID_KEY_ARROW_DOWN)) ||
-                            (((offset + fullrow) < entries) && (key == HID_KEY_ARROW_RIGHT)))
-                        {
-                            // Move to next page
-                            offset += fullrow;
-                            memset(menuscreen, 0x00, disp.stride_byte * disp.height);
-                            populateFiles(working, offset);
-                            row = 0;
-                            maxrow = ((entries - offset) < fullrow) ? entries - offset : fullrow;
-                            xorRow(row + border);
-                        }
-                    }
-                break;
+                debounce = false;
+            }
 
-                case HID_KEY_ARROW_UP:
-                case HID_KEY_ARROW_LEFT:
-                    if (row && (key == HID_KEY_ARROW_UP))
-                    {
-                        xorRow(row + border);
-                        xorRow(--row + border);
-                    }
-                    else
-                    {
-                        if (offset)
-                        {
-                            // Move to previous page
-                            offset -= fullrow;
-                            memset(menuscreen, 0x00, disp.stride_byte * disp.height);
-                            populateFiles(working, offset);
-                            row = fullrow - 1;
-                            maxrow = fullrow;
-                            xorRow(row + border);
-                        }
-                    }
-                break;
+            emu_WaitFor50HzTimer();
+        } while (((key != HID_KEY_ESCAPE) && (key != HID_KEY_ENTER)) || debounce);
 
-                case HID_KEY_ENTER:
-                    bool direct;
-                    if (getFile(working, row + offset, &direct))
-                    {
-                        if (direct)
-                        {
-                            // Move to the new directory
-                            offset = 0;
-                            strcpy(newdir,working);
-                            memset(menuscreen, 0x00, disp.stride_byte * disp.height);
-                            entries = populateFiles(working, 0);
-                            row = 0;
-                            maxrow = (entries < fullrow) ? entries : fullrow;
-                            xorRow(row + border);
+        debounceExit(key == HID_KEY_ENTER);
+    }
+    else
+    {
+        uint fullrow = ((disp.height>>3)-(border<<1));
+        allfiles = emu_AllFilesRequested();
 
-                            // Need to debounce the enter key again
-                            debounce = true;
+        strcpy(working, emu_GetDirectory());
+        strcpy(newdir,working);
+        uint entries = populateFiles(working, 0);
+        uint maxrow = (entries < fullrow) ? entries : fullrow;
+        uint offset = 0;
+
+        // Highlight first line
+        xorRow(row + border);
+
+        do
+        {
+            tuh_task();
+            detected = hidNavigateMenu(&key);
+
+            // Debounce the enter key, for case when called through LOAD
+            if (detected && (key == HID_KEY_ENTER))
+            {
+                if (debounce) detected = false;
+            }
+            else
+            {
+                debounce = false;
+            }
+
+            if (detected)
+            {
+                switch (key)
+                {
+                    case HID_KEY_ARROW_DOWN:
+                    case HID_KEY_ARROW_RIGHT:
+                        if (((row + 1) < maxrow) && (key == HID_KEY_ARROW_DOWN))
+                        {
+                            xorRow(row + border);
+                            xorRow(++row + border);
                         }
                         else
                         {
-                            // Load the name file and (possibly) new directory
-                            EMU_LOCK_SDCARD
-                            emu_SetDirectory(newdir);
-                            emu_SetLoadName(working);
-                            EMU_UNLOCK_SDCARD
-                            exit = true;
+                            if ((((row + 1 + offset) < entries) && (key == HID_KEY_ARROW_DOWN)) ||
+                                (((offset + fullrow) < entries) && (key == HID_KEY_ARROW_RIGHT)))
+                            {
+                                // Move to next page
+                                offset += fullrow;
+                                memset(menuscreen, 0x00, disp.stride_byte * disp.height);
+                                populateFiles(working, offset);
+                                row = 0;
+                                maxrow = ((entries - offset) < fullrow) ? entries - offset : fullrow;
+                                xorRow(row + border);
+                            }
                         }
-                    }
-                    else
-                    {
-                        // If getFile failed menu will exit with previous settings
-                        key = HID_KEY_ESCAPE;
-                    }
-                break;
+                    break;
 
-                case HID_KEY_A:
-                    if (!allfiles)
-                    {
-                        allfiles = true;
-                        offset = 0;
-                        row = 0;
-                        memset(menuscreen, 0x00, disp.stride_byte * disp.height);
-                        entries = populateFiles(working, 0);
-                        maxrow = (entries < fullrow) ? entries : fullrow;
-                        xorRow(row + border);
-                    }
-                break;
+                    case HID_KEY_ARROW_UP:
+                    case HID_KEY_ARROW_LEFT:
+                        if (row && (key == HID_KEY_ARROW_UP))
+                        {
+                            xorRow(row + border);
+                            xorRow(--row + border);
+                        }
+                        else
+                        {
+                            if (offset)
+                            {
+                                // Move to previous page
+                                offset -= fullrow;
+                                memset(menuscreen, 0x00, disp.stride_byte * disp.height);
+                                populateFiles(working, offset);
+                                row = fullrow - 1;
+                                maxrow = fullrow;
+                                xorRow(row + border);
+                            }
+                        }
+                    break;
 
-                case HID_KEY_P:
-                    if (allfiles)
-                    {
-                        allfiles = false;
-                        offset = 0;
-                        row = 0;
-                        memset(menuscreen, 0x00, disp.stride_byte * disp.height);
-                        entries = populateFiles(working, 0);
-                        maxrow = (entries < fullrow) ? entries : fullrow;
-                        xorRow(row + border);
-                    }
-                break;
+                    case HID_KEY_ENTER:
+                        bool direct;
+                        if (getFile(working, row + offset, &direct))
+                        {
+                            if (direct)
+                            {
+                                // Move to the new directory
+                                offset = 0;
+                                strcpy(newdir,working);
+                                memset(menuscreen, 0x00, disp.stride_byte * disp.height);
+                                entries = populateFiles(working, 0);
+                                row = 0;
+                                maxrow = (entries < fullrow) ? entries : fullrow;
+                                xorRow(row + border);
+
+                                // Need to debounce the enter key again
+                                debounce = true;
+                            }
+                            else
+                            {
+                                // Load the name file and (possibly) new directory
+                                EMU_LOCK_SDCARD
+                                emu_SetDirectory(newdir);
+                                emu_SetLoadName(working);
+                                EMU_UNLOCK_SDCARD
+                                exit = true;
+                            }
+                        }
+                        else
+                        {
+                            // If getFile failed menu will exit with previous settings
+                            key = HID_KEY_ESCAPE;
+                        }
+                    break;
+
+                    case HID_KEY_A:
+                        if (!allfiles)
+                        {
+                            allfiles = true;
+                            offset = 0;
+                            row = 0;
+                            memset(menuscreen, 0x00, disp.stride_byte * disp.height);
+                            entries = populateFiles(working, 0);
+                            maxrow = (entries < fullrow) ? entries : fullrow;
+                            xorRow(row + border);
+                        }
+                    break;
+
+                    case HID_KEY_P:
+                        if (allfiles)
+                        {
+                            allfiles = false;
+                            offset = 0;
+                            row = 0;
+                            memset(menuscreen, 0x00, disp.stride_byte * disp.height);
+                            entries = populateFiles(working, 0);
+                            maxrow = (entries < fullrow) ? entries : fullrow;
+                            xorRow(row + border);
+                        }
+                    break;
+                }
             }
-        }
-        delay();
-    } while (!exit && (key != HID_KEY_ESCAPE));
+            delay();
+        } while (!exit && (key != HID_KEY_ESCAPE));
 
-    bool change = (key == HID_KEY_ENTER);
-
-    debounceExit(change);
+        change = (key == HID_KEY_ENTER);
+        debounceExit(change);
+    }
 
     endMenu(change);
     return (change);
@@ -272,6 +295,7 @@ bool saveMenu(uint8_t* save, uint length)
     uint8_t detected = 0;
     uint8_t lastKey = 4;
     bool exit = false;
+    bool change = false;
 
     int col = disp.width >> 4;
     uint row = disp.height >> 4;
@@ -285,85 +309,111 @@ bool saveMenu(uint8_t* save, uint length)
     if (!buildMenu(false))
         return false;
 
-    writeString("Save", col - 2, row - ROW_SPACING - 1);
-    writeString("====", col - 2, row - ROW_SPACING);
-
-    showSave(save, len, cursor, col - (MAX_SAVE >> 1), row + ROW_SPACING);
-
-    do
+    if (!emu_fsInitialised())
     {
-        tuh_task();
-        hidSaveMenu(&key);
+        bool debounce = true;
 
-        detected = (key != 0);
+        writeString("SD Card not detected", col - 10, row - ROW_SPACING - 1);
+        writeString("Press New Line to continue", col - 13, row - ROW_SPACING);
 
-        // Debounce keys
-        if (detected && (key == lastKey))
+        do
         {
-            detected = false;
+            tuh_task();
+            bool detected = hidNavigateMenu(&key);
 
-        }
-        else if (!detected)
-        {
-            lastKey = 0;
-        }
-        else
-        {
-            lastKey = key;
-        }
-
-        if (detected)
-        {
-            switch (key)
+            // Debounce the enter key, as will have been pressed to get to the menu
+            if (!(detected && (key == HID_KEY_ENTER) && debounce))
             {
-                case 2:     // Cursor right
-                    if (cursor < len) cursor++;
-                break;
-
-                case 3:     // Cursor left
-                    if (cursor > 0) cursor--;
-                break;
-
-                case 8:     // Backspace
-                    if (cursor > 0)
-                    {
-                        // Make sure terminator is moved too
-                        for (uint i=cursor; i<=len; ++i)
-                        {
-                            save[i-1] = save[i];
-                        }
-                        --cursor;
-                        --len;
-                    }
-                break;
-
-                case 4:     // Enter
-                case 27:    // Escape
-                    exit = true;
-                break;
-
-                default:
-                    if (len < length)
-                    {
-                        // Move data up
-                        for (int i=(int)len; i>=(int)cursor; --i)
-                        {
-                            save[i+1] = save[i];
-                        }
-                        save[cursor] = key;
-                        len++;
-                        cursor++;
-                    }
-                break;
+                debounce = false;
             }
-            showSave(save, len, cursor, col - (MAX_SAVE >> 1), row + ROW_SPACING);
-        }
-        emu_WaitFor50HzTimer();
-    } while (!exit);
 
-    bool change = (key == 4);
+            emu_WaitFor50HzTimer();
+        } while (((key != HID_KEY_ESCAPE) && (key != HID_KEY_ENTER)) || debounce);
 
-    debounceExit(change);
+        debounceExit(key == HID_KEY_ENTER);
+    }
+    else
+    {
+        writeString("Save", col - 2, row - ROW_SPACING - 1);
+        writeString("====", col - 2, row - ROW_SPACING);
+
+        showSave(save, len, cursor, col - (MAX_SAVE >> 1), row + ROW_SPACING);
+
+        do
+        {
+            tuh_task();
+            hidSaveMenu(&key);
+
+            detected = (key != 0);
+
+            // Debounce keys
+            if (detected && (key == lastKey))
+            {
+                detected = false;
+
+            }
+            else if (!detected)
+            {
+                lastKey = 0;
+            }
+            else
+            {
+                lastKey = key;
+            }
+
+            if (detected)
+            {
+                switch (key)
+                {
+                    case 2:     // Cursor right
+                        if (cursor < len) cursor++;
+                    break;
+
+                    case 3:     // Cursor left
+                        if (cursor > 0) cursor--;
+                    break;
+
+                    case 8:     // Backspace
+                        if (cursor > 0)
+                        {
+                            // Make sure terminator is moved too
+                            for (uint i=cursor; i<=len; ++i)
+                            {
+                                save[i-1] = save[i];
+                            }
+                            --cursor;
+                            --len;
+                        }
+                    break;
+
+                    case 4:     // Enter
+                    case 27:    // Escape
+                        exit = true;
+                    break;
+
+                    default:
+                        if (len < length)
+                        {
+                            // Move data up
+                            for (int i=(int)len; i>=(int)cursor; --i)
+                            {
+                                save[i+1] = save[i];
+                            }
+                            save[cursor] = key;
+                            len++;
+                            cursor++;
+                        }
+                    break;
+                }
+                showSave(save, len, cursor, col - (MAX_SAVE >> 1), row + ROW_SPACING);
+            }
+            emu_WaitFor50HzTimer();
+        } while (!exit);
+
+        change = (key == 4);
+
+        debounceExit(change);
+    }
     endMenu(change);
 
     if (!change)
@@ -1352,6 +1402,11 @@ static int populateFiles(const char* path, uint first)
             }
         }
         f_closedir(&dir);
+    }
+    else
+    {
+        // Cannot open directory - return error
+        count = -1;
     }
     EMU_UNLOCK_SDCARD
 

@@ -31,6 +31,7 @@ typedef enum {
 } FiveSevenSix_T;
 
 extern void emu_init(void);
+extern bool emu_fsInitialised(void);
 
 extern bool emu_UpdateKeyboard(uint8_t* special);
 

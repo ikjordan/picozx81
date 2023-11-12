@@ -22,6 +22,7 @@
 #include "ff.h"
 static FATFS fatfs;
 static FIL file;
+static bool fsinit = false;
 
 /********************************
  * File IO
@@ -135,7 +136,7 @@ void emu_init(void)
   }
   else
   {
-    printf("SDCard mounted\n");
+    fsinit = true;
   }
   emu_ReadDefaultValues();
 
@@ -145,6 +146,12 @@ void emu_init(void)
   {
     emu_ReadDefaultValues();
   }
+}
+
+// Return if file system initialised
+bool emu_fsInitialised(void)
+{
+  return fsinit;
 }
 
 /********************************
