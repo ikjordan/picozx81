@@ -61,7 +61,6 @@ int sound_stereo_acb=0;		/* 1 for ACB stereo, else 0 */
 #define AY_CLOCK_ZONX		(3250000>>1)
 
 /*
-/*
  * For PWM max value is 999, mid point 499.5 mid for each channel is 499.5 / 4 = 124
  * For I2S max value is 32768 mid point is 0 max for 1 channel is < 32768 / 4 = 8192
  * For 12S further divide by 4 to avoid full volume

@@ -61,8 +61,10 @@ static bool timer_callback(repeating_timer_t *rt);
 //
 
 uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
-                       uint16_t* pixelHeight, uint16_t* strideBit)
+                       uint16_t* pixelHeight, uint16_t* strideBit, uint16_t audio_rate)
 {
+    (void)audio_rate;
+
     // fiveSevenSix value used to set refresh rate, but not the resolution
     // fiveSevenSix false = 60 Hz
     // fiveSevenSix true & match true = 50.65 Hz
@@ -99,6 +101,11 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     blank = true;
 
     return CLOCK_SPEED_KHZ;
+}
+
+void displayStart(void)
+{
+    displayStartCommon();
 }
 
 bool displayShowKeyboard(bool zx81)
