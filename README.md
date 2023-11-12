@@ -34,7 +34,8 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME)
 + Supports sound over HDMI (experimental)
 
-## Example using a reproduction case
+## Examples
+### Installed in a reproduction case
 The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
 
 <p align="middle">
@@ -42,14 +43,24 @@ The following images are taken with permission from a thread on [SinclairZXWorld
 <img src="images/in_use.jpg" width="48%" />
 </p>
 
-## Example using 3d printed ZX81 USB keyboard, USB joystick and  Waveshare 2.8 inch LCD
+### 3d printed ZX81 USB keyboard, USB joystick and LCD
 The left image shows a system with a 3d printed ZX81 case being used as a [USB keyboard](https://github.com/ikjordan/ZX81_USB_KBD). A usb hub allows control via the keyboard and a joystick. The high resolution version of [Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip) is displayed on screen
 
-The right image shows the emulator running [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html), which generates a 320 by 240 display, exactly filling the 2.8 inch LCD
+The right image shows the emulator running [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html), which generates a 320 by 240 display, exactly filling the 2.8 inch Waveshare LCD
 
 <p align="middle">
 <img src="images/lcd_system.jpg" width="46%" />
-<img src="images/lcd.jpg" width="49%" />
+<img src="images/lcd.jpg" width="49.2%" />
+</p>
+
+### HDMI/DVI Output
+To the left [ZX81 Hires Invaders](https://www.perfectlynormalsite.com/hiresinvaders.html) can be seen on a TV connected over HDMI. Sound can also be played over HDMI
+
+To the right can be seen a status page, illustrating some of the configurable options for the emulator
+
+<p align="middle">
+<img src="images/invaders.jpg" width="51.0%" />
+<img src="images/status.jpg" width="45.15%" />
 </p>
 
 # Quick Start
@@ -59,7 +70,7 @@ The fastest way to get started is to:
 3. Connect your board to a keyboard and start exploring
 
 ## Populate the SD Card
-1. Click [here](https://github.com/ikjordan/picozx81/releases/download/V1.0.0/sdcard.zip) to download a zip file containing files and directories to copy to an empty micro SD card
+1. Click [here](https://github.com/ikjordan/picozx81/releases/latest/download/sdcard.zip) to download a zip file containing files and directories to copy to an empty micro SD card
 2. unzip the file into the root directory of an empty micro SD Card
 3. Insert the micro SD Card into your boards micro SD card slot
 
