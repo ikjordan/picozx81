@@ -8,6 +8,7 @@ project(${PROJECT} C CXX)
 
 OPTION(TIME_SPARE "Set to true to measure idle time" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
+OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
 
 # Look for board file first in local board directory
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
@@ -92,6 +93,9 @@ add_executable(${PROJECT}
 
 # Determine sound system
 if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
+    if ((${PICO_BOARD} STREQUAL "dviboard") AND (${HDMI_SOUND}))
+        target_compile_definitions(${PROJECT} PRIVATE -DSOUND_HDMI)
+    else()
     # Use I2S loaded by DMA sound
     target_compile_definitions(${PROJECT} PRIVATE -DI2S)
     # Default to I2S sound. Note that Pimoroni VGA board can also use PWM
@@ -100,10 +104,16 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
                           hardware_pio
                           hardware_dma)
     pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/audio_i2s.pio)
+    endif()
 elseif (NOT (${PICO_BOARD} STREQUAL "olimexpcboard"))
     # Unless Olimex (which has channels on different slices) use PWM loaded by DMA sound
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
     target_link_libraries(${PROJECT} hardware_dma)
+    target_link_libraries(${PROJECT} hardware_pwm)
+elseif (${HDMI_SOUND})
+    target_compile_definitions(${PROJECT} PRIVATE -DSOUND_HDMI)
+else ()
+    target_link_libraries(${PROJECT} hardware_pwm)
 endif()
 
 # Determine video system and name uf2
@@ -116,14 +126,22 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
     target_link_libraries(${PROJECT} libdvi)
 
     if (${PICO_BOARD} STREQUAL "dviboard")
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_dvi")
+        if (${HDMI_SOUND})
+            set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_dvi_hdmi_sound")
+        else()
+            set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_dvi")
+        endif()
         target_compile_definitions(${PROJECT} PUBLIC
                                    -DDVI_DEFAULT_SERIAL_CONFIG=pimoroni_demo_hdmi_cfg)
     else()
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_olimexpc")
         target_compile_definitions(${PROJECT} PUBLIC
                                    -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2040_PICO_PC_cfg
                                    -DDVI_USE_PIO_CLOCK)
+        if(${HDMI_SOUND})
+            set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_olimexpc_hdmi_sound")
+        else()
+            set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_olimexpc")
+        endif()
     endif()
 elseif ((${PICO_BOARD} STREQUAL "lcdws28board"))
     pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/st7789_lcd.pio)
@@ -140,11 +158,11 @@ else()
 endif()
 
 if (${TIME_SPARE})
-target_compile_definitions(${PROJECT} PRIVATE -DTIME_SPARE)
+    target_compile_definitions(${PROJECT} PRIVATE -DTIME_SPARE)
 endif()
 
 if (${OVER_VOLT})
-target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
+    target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
 endif()
 
 target_compile_options(${PROJECT} PRIVATE -Wall)
@@ -154,7 +172,6 @@ target_link_libraries(${PROJECT}
                       pico_stdlib
                       sdcard
                       fatfs
-                      hardware_pwm
                       tinyusb_host
                       tinyusb_board)
 
@@ -167,4 +184,3 @@ endif()
 pico_enable_stdio_usb(${PROJECT} 0)
 
 pico_add_extra_outputs(${PROJECT})
-
