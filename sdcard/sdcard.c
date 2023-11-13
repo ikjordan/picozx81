@@ -170,7 +170,7 @@ void init_spi(void)
 	// Find a free state machine and claim it, rather than take default
 	pio_spi.sm = pio_claim_unused_sm(pio_spi.pio, true);
 
-	float clkdiv = 3.0f;
+	float clkdiv = 4.0f;	// Increased from 3, due to issues with Maker board
 	int cpol = 0;
 	int cpha = 0;
 	uint cpha0_prog_offs = pio_add_program(pio_spi.pio, &spi_cpha0_program);

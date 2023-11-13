@@ -27,7 +27,9 @@ static int32_t period;
 
 static PIO pio = SDCARD_PIO;
 static uint sm;
+#ifdef PICO_SPI_LCD_SD_SHARE
 static volatile bool allowedSPI = true;
+#endif
 
 #define SERIAL_CLK_DIV 2.0f
 #define CLOCK_SPEED_KHZ 250000
@@ -38,12 +40,18 @@ static const uint8_t st7789_init_seq[] = {
         1, 20, 0x01,                        // Software reset
         1, 10, 0x11,                        // Exit sleep mode
         2, 2, 0x3a, 0x53,                   // Set colour mode to 12 bit
-        2, 0, 0x36, 0x60,                   // Set MADCTR: row then column, refresh is bottom to top ????
+#ifdef PICO_LDC_CONTROLLER_ST7789
+        2, 0, 0x36, 0x60,                   // Set MADCTL
+#else // ILI9341
+        2, 0, 0x36, 0x28,                   // Set MADCTL
+#endif
         5, 0, 0x2a, 0x00, 0x00, PIXEL_WIDTH >> 8, PIXEL_WIDTH & 0xff,   // CASET: column addresses
         5, 0, 0x2b, 0x00, 0x00, HEIGHT >> 8, HEIGHT & 0xff,             // RASET: row addresses
-        1, 2, 0x21,                         // Inversion on, then 10 ms delay (supposedly a hack?)
+#ifdef PICO_LDC_CONTROLLER_ST7789
+        1, 2, 0x21,                         // Inversion on, then 10 ms delay
+#endif
         1, 2, 0x13,                         // Normal display on, then 10 ms delay
-        1, 2, 0x29,                         // Main screen turn on, then wait 500 ms
+        1, 2, 0x29,                         // Main screen turn on, then wait 10 ms
         0                                   // Terminate list
 };
 
@@ -124,6 +132,7 @@ bool displayShowKeyboard(bool zx81)
     return previous;
 }
 
+#ifdef PICO_SPI_LCD_SD_SHARE
 // Request SPI bus from the display and wait until available
 void displayRequestSPIBus(void)
 {
@@ -138,7 +147,7 @@ void displayGrantSPIBus(void)
     pio_sm_set_enabled(pio, sm, true);
     allowedSPI = true;
 }
-
+#endif
 //
 // Private functions
 //
@@ -195,12 +204,13 @@ static void __not_in_flash_func(render_loop)()
         sem_acquire_blocking(&frame_sync);
         newFrame();
 
+#ifdef PICO_SPI_LCD_SD_SHARE
         // Check to see if allowed to access SPI bus
         if (allowedSPI)
         {
             // Ensure LCD has bus
             gpio_put(PICO_LCD_CS_PIN, 0);
-
+#endif
             // 1 pixel generates a 12 bit word - so 2 pixels are 3 bytes
             for (uint y = 0; y < HEIGHT; ++y)
             {
@@ -335,6 +345,7 @@ static void __not_in_flash_func(render_loop)()
                     }
                 }
             }
+#ifdef PICO_SPI_LCD_SD_SHARE
         }
         else
         {
@@ -342,6 +353,7 @@ static void __not_in_flash_func(render_loop)()
             st7789_lcd_wait_idle(pio, sm);
             lcd_set_dc_cs(1, 1);
         }
+#endif
     }
 }
 
@@ -359,8 +371,15 @@ static void core1_main()
     }
 
     uint offset = pio_add_program(pio, &st7789_lcd_program);
+#ifndef PICO_LCD_CLK_PIN
     st7789_lcd_program_init(pio, sm, offset, PICO_SD_CMD_PIN, PICO_SD_CLK_PIN, SERIAL_CLK_DIV);
-
+#else
+    gpio_init(PICO_LCD_CMD_PIN);
+    gpio_init(PICO_LCD_CLK_PIN);
+    gpio_set_dir(PICO_LCD_CMD_PIN, GPIO_OUT);
+    gpio_set_dir(PICO_LCD_CLK_PIN, GPIO_OUT);
+    st7789_lcd_program_init(pio, sm, offset, PICO_LCD_CMD_PIN, PICO_LCD_CLK_PIN, SERIAL_CLK_DIV);
+#endif
     gpio_init(PICO_LCD_DC_PIN);
     gpio_init(PICO_LCD_RS_PIN);
     gpio_init(PICO_LCD_BL_PIN);

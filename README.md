@@ -11,8 +11,8 @@
 # Features
 + Supports VGA, HDMI, DVI and LCD displays
 + Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base),
-the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base), the [PicoMite VGA board](https://geoffg.net/picomitevga.html) the [Olimex RP2040-PICO-PC](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware) and the
-[Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
+the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base), the [PicoMite VGA board](https://geoffg.net/picomitevga.html) the [Olimex RP2040-PICO-PC](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware) the
+[Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8) and a combination of [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) and [Waveshare 2.4 LCD Display](https://www.waveshare.com/wiki/2.4inch_LCD_Module)
 + Supports sound over onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
@@ -85,6 +85,7 @@ Click on the uf2 name corresponding to your board in the table below to download
 | Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound.uf2)|
 | Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound.uf2)|
 | Waveshare 2.8 LCD | [`picozx81_lcdws28.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28.uf2)|
+| Cytron Maker + 2.4 LCD | [`picozx81_lcdmaker.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdmaker.uf2)|
 
 
 1. Connect your Board to your display using a VGA or HDMI cable, as appropriate for your board
@@ -174,7 +175,7 @@ Six extra options apply across all programs and can only be set in the `[default
 
 **Notes:** 
 1. By default the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
-2. The Waveshare LCD 2.8 board has a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for this board (50 Hz, 50.65 Hz or 60 Hz)
+2. The LCD supported displays all have a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for these displays (50 Hz, 50.65 Hz or 60 Hz)
 
 ### Examples
 Examples of the `config.ini` files used to test the programs listed in this [section](#applications-tested) can be found [here](examples)
@@ -235,7 +236,7 @@ The changes are *not* written back to the config files, so will be lost when the
 ### F8 - Reboot
 Allows the impact of changes to display resolution and frequency to be seen without editing config files. If a change is made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots.
 
-On the Waveshare 2.8 LCD board the display resolution is fixed and only the frequency can be changed
+On the LCD builds the display resolution is fixed and only the frequency can be changed
 ## Loading and saving options
 The emulator supports loading `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
 Files to be loaded should only contain characters that are in the ZX81 or ZX80 character set
@@ -436,6 +437,7 @@ This will be named `picozx81_vga.uf2`
 | Pimoroni DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=dviboard ..` | `picozx81_dvi_hdmi_sound.uf2`|
 | Olimex PICO DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_hdmi_sound.uf2`|
 | Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28.uf2`|
+| Cytron Maker + WS LCD 2.4|`cmake -DPICO_BOARD=lcdmakerboard ..`| `picozx81_lcdmaker.uf2`|
 
 **Notes:** 
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types

@@ -69,7 +69,7 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
         display/display_dvi.c
         display/tmds_double.S
         display/tmds_double.h)
-elseif ((${PICO_BOARD} STREQUAL "lcdws28board"))
+elseif ((${PICO_BOARD} STREQUAL "lcdws28board") OR (${PICO_BOARD} STREQUAL "lcdmakerboard"))
     set(DISPLAY_SOURCES
         display/display_lcd.c)
 else ()
@@ -146,6 +146,9 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
 elseif ((${PICO_BOARD} STREQUAL "lcdws28board"))
     pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/st7789_lcd.pio)
     set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_lcdws28")
+elseif ((${PICO_BOARD} STREQUAL "lcdmakerboard"))
+    pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/st7789_lcd.pio)
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_lcdmaker")
 else()
     if (${PICO_BOARD} STREQUAL "vgaboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga")
