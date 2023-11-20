@@ -67,9 +67,6 @@
 #define PICO_LCD_CLK_PIN LCDMAKERBOARD_LCD_CLK_PIN
 #endif
 
-// Initially attach a WS 2.4 LCD with ILI9341 controller
-#define PICO_LDC_CONTROLLER_ILI9341
-
 #define PICO_LCDMAKER_BOARD
 
 // Cytron maker board has a Pico on it, so default anything we haven't set above

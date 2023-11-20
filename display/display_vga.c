@@ -140,9 +140,9 @@ static void core1_main();
 
     // Determine the video mode
 uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
-                       uint16_t* pixelHeight, uint16_t* strideBit, uint16_t audio_rate)
+                       uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
 {
-    (void)audio_rate;
+    (void)info;
 
     mutex_init(&next_frame_mutex);
 
@@ -289,7 +289,7 @@ static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, i
     for (int i = 0; i < (keyboard_x & 0x3); ++i)
     {
         // Add 1 to account for interlaced messages at start
-        buff[(keyboard->width>>1)+keyboard_x+1+i] = 
+        buff[(keyboard->width>>1)+keyboard_x+1+i] =
          lookup[display_line[(keyboard->width>>3)+(keyboard_x>>2)]].i32[4-(keyboard_x&0x3)+i];
     }
 

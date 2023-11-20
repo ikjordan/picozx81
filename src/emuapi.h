@@ -70,6 +70,12 @@ extern int emu_CentreX(void);
 extern int emu_CentreY(void);
 extern bool emu_ResetNeeded(void);
 
+extern bool emu_lcdInvertColourRequested(void);
+extern bool emu_lcdSkipFrameRequested(void);
+extern bool emu_lcdRotateRequested(void);
+extern bool emu_lcdReflectRequested(void);
+extern bool emu_lcdBGRRequested(void);
+
 extern FrameSync_T emu_FrameSyncRequested(void);
 extern FiveSevenSix_T emu_576Requested(void);
 

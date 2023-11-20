@@ -12,7 +12,7 @@
 + Supports VGA, HDMI, DVI and LCD displays
 + Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base),
 the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base), the [PicoMite VGA board](https://geoffg.net/picomitevga.html) the [Olimex RP2040-PICO-PC](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware) the
-[Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8) and a combination of [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) and [Waveshare 2.4 LCD Display](https://www.waveshare.com/wiki/2.4inch_LCD_Module)
+[Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8) and the [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with ST7789 or ILI9341 controller 320 by 240 LCD displays
 + Supports sound over onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
@@ -437,7 +437,7 @@ This will be named `picozx81_vga.uf2`
 | Pimoroni DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=dviboard ..` | `picozx81_dvi_hdmi_sound.uf2`|
 | Olimex PICO DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_hdmi_sound.uf2`|
 | Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28.uf2`|
-| Cytron Maker + WS LCD 2.4|`cmake -DPICO_BOARD=lcdmakerboard ..`| `picozx81_lcdmaker.uf2`|
+| Cytron Maker|`cmake -DPICO_BOARD=lcdmakerboard ..`| `picozx81_lcdmaker.uf2`|
 
 **Notes:** 
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
@@ -446,6 +446,43 @@ This will be named `picozx81_vga.uf2`
 6. Upload the `uf2` file to the pico
 7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
 
+## Using the Cytron Maker with a LCD
+The Maker board can be used with a range of 320 by 240 LCDs, controlled over the SPI bus, with controllers from either the ILI9341 or ST7789 families. The boards are configured using entries in the `default` section of the config file
+### Wiring
+The LCD should be connected to the Maker board as follows:
+| Function | Name |Pico GPIO Pin|
+| --- | --- | --- |
+| Backlight| BL| 4 |
+| Chip Select | CS | 5 |
+| Clock | CLK | 6 |
+| Data In | DIN or MOSI | 7 |
+| Reset | RST | 8 |
+| Data / Command Selection | DC | 9 |
+| VCC | 3.3V | 3V3 (OUT) |
+| GND | Ground | Any Ground Pin |
+
+### LCD Configuration Options
+All options are set in the `[default]` section of the `config.ini` file in the root directory of the SD Card.
+| Item | Description | Default Value |
+| --- | --- | --- |
+| LCDInvertColour | Inverts the colour of the display. i.e. changes white to black and black to white | False |
+| LCDReflect | Defines the horizontal scan direction. Use if default `K` is displayed on right hand side of display | False |
+| LCDBGR | Set to true if blue and red are transposed | False |
+| LCDRotate | Rotates the display through 180 degrees | False |
+
+ e.g. to set `LCDInvert` to true, add the following to the `[default]` section of the configuration file: `LCDInvert = True`
+
+### Configuration of Tested LCDs
+
+| Display | Controller | Invert Colour | Reflect | Frame Skip | BGR |
+| --- | --- | --- | --- | --- | --- |
+| [Waveshare 2" LCD](https://www.waveshare.com/wiki/2inch_LCD_Module) | ST7789V |True | False | True | False |
+| [Waveshare 2.4" LCD](https://www.waveshare.com/2.4inch-lcd-module.htm) | ILI9341 |False | False | False | True |
+| [Waveshare 2.8" LCD](https://www.waveshare.com/2.8inch-resistive-touch-lcd.htm) | ST7789 |True | True | False | False |
+| [Generic 3.2" LCD](http://www.lcdwiki.com/3.2inch_SPI_Module_ILI9341_SKU:MSP3218) | ILI9341 |False | False | False | True |
+
+## Rotating the display on the Waveshare Pico-ResTouch-LCD-2.8
+By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured so that the usb connection and SD Card is at the bottom of the display. To rotate the display, so that usb connection and SD Card is at the top, set `LCDRotate = False` in the default section of the config file
 # Extra Information
 + The intention of the emulator is to provide an authentic '80s feel. There have been amazing ZX81 developments in recent years, such as ([Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm), [ZXpand+](https://www.rwapsoftware.co.uk/zx812.html) etc). These are not supported. Instead it emulates the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. However, basic support to load and save memory blocks, using a syntax similar to ZXpand is implemented
 + The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware

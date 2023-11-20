@@ -617,13 +617,20 @@ bool modifyMenu(void)
                 case HID_KEY_ARROW_RIGHT:
                     if (field == PSYNC)
                     {
-                        if (modify.fsync == SYNC_ON_INTERLACED)
+                        if (!emu_lcdSkipFrameRequested())
                         {
-                            modify.fsync = SYNC_OFF;
+                            if (modify.fsync == SYNC_ON_INTERLACED)
+                            {
+                                modify.fsync = SYNC_OFF;
+                            }
+                            else
+                            {
+                                modify.fsync = (FrameSync_T)(((int)modify.fsync) + 1);
+                            }
                         }
                         else
                         {
-                            modify.fsync = (FrameSync_T)(((int)modify.fsync) + 1);
+                            modify.fsync = (modify.fsync == SYNC_OFF) ? SYNC_ON : SYNC_OFF;
                         }
                     }
                     else if (field == PNTSC)

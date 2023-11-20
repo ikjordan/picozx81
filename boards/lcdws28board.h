@@ -64,9 +64,6 @@
 // Share SPI bus with SD Card
 #define PICO_SPI_LCD_SD_SHARE
 
-// Has a ST7789 controller
-#define PICO_LDC_CONTROLLER_ST7789
-
 #define PICO_LCDWS28_BOARD
 
 // Waveshare LCD 2.8 board has a Pico on it, so default anything we haven't set above

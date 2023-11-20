@@ -9,8 +9,31 @@
 extern "C" {
 #endif
 
+typedef struct
+{
+    uint16_t audioRate;
+} DisplayExtraInfoHDMI_T;
+
+typedef struct
+{
+    bool invertColour;  // Invert colours on display
+    bool skipFrame;     // Skip every other frame
+    bool rotate;        // Rotate display by 180 degrees
+    bool reflect;       // Change horizontal scan direction
+    bool bgr;           // use bgr instead of rgb pixel order
+} DisplayExtraInfoLCD_T;
+
+typedef struct
+{
+    union
+    {
+        DisplayExtraInfoHDMI_T hdmi;
+        DisplayExtraInfoLCD_T lcd;
+    } info;
+} DisplayExtraInfo_T;
+
 extern uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
-                              uint16_t* pixelHeight, uint16_t* strideBit, uint16_t audio_rate);
+                              uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
 extern void displayStart(void);
 
 extern void displayGetFreeBuffer(uint8_t** buff);
