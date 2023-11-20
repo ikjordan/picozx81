@@ -173,7 +173,7 @@ Six extra options apply across all programs and can only be set in the `[default
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81` and `.80` are initially displayed|Off|
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 4| 1 |
 
-**Notes:** 
+**Notes:**
 1. By default the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
 2. The LCD supported displays all have a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for these displays (50 Hz, 50.65 Hz or 60 Hz)
 
@@ -439,7 +439,7 @@ This will be named `picozx81_vga.uf2`
 | Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28.uf2`|
 | Cytron Maker|`cmake -DPICO_BOARD=lcdmakerboard ..`| `picozx81_lcdmaker.uf2`|
 
-**Notes:** 
+**Notes:**
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
 + The HDMI sound builds are experimental
 
@@ -461,16 +461,23 @@ The LCD should be connected to the Maker board as follows:
 | VCC | 3.3V | 3V3 (OUT) |
 | GND | Ground | Any Ground Pin |
 
+Touchscreen functionality is not supported. Any pins used for the touchscreen do not need to be connected
+
 ### LCD Configuration Options
 All options are set in the `[default]` section of the `config.ini` file in the root directory of the SD Card.
 | Item | Description | Default Value |
 | --- | --- | --- |
 | LCDInvertColour | Inverts the colour of the display. i.e. changes white to black and black to white | False |
-| LCDReflect | Defines the horizontal scan direction. Use if default `K` is displayed on right hand side of display | False |
-| LCDBGR | Set to true if blue and red are transposed | False |
+| LCDReflect | Defines the horizontal scan direction. Use if the `K` prompt is displayed on right hand side of display | False |
+| LCDBGR | Set to true if blue displays as red and red displays as blue | False |
 | LCDRotate | Rotates the display through 180 degrees | False |
+| LCDSkipFrame | Displays every other frame, to reduce bandwidth | False |
 
- e.g. to set `LCDInvert` to true, add the following to the `[default]` section of the configuration file: `LCDInvert = True`
+ e.g. to set `LCDReflect` to true, add the following to the `[default]` section of the configuration file: `LCDReflect = True`
+
+ **Notes:**
+ 1. If the configuration appears correct for a display, but no image appears, it could be that the display cannot support the SPI bus speed required to display every frame. In this case set `LCDFrameSkip = True`
+ 2. If `LCDFrameSkip` equals `True`, then if `FrameSync` is set to `Interlaced` it will be interpreted as `On`
 
 ### Configuration of Tested LCDs
 
@@ -482,7 +489,8 @@ All options are set in the `[default]` section of the `config.ini` file in the r
 | [Generic 3.2" LCD](http://www.lcdwiki.com/3.2inch_SPI_Module_ILI9341_SKU:MSP3218) | ILI9341 |False | False | False | True |
 
 ## Rotating the display on the Waveshare Pico-ResTouch-LCD-2.8
-By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured so that the usb connection and SD Card is at the bottom of the display. To rotate the display, so that usb connection and SD Card is at the top, set `LCDRotate = False` in the default section of the config file
+By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rotated, so that the usb connection and SD Card is at the bottom of the display. To undo the rotation, so that usb connection and SD Card is at the top, set `LCDRotate = False` in the default section of the config file
+
 # Extra Information
 + The intention of the emulator is to provide an authentic '80s feel. There have been amazing ZX81 developments in recent years, such as ([Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm), [ZXpand+](https://www.rwapsoftware.co.uk/zx812.html) etc). These are not supported. Instead it emulates the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. However, basic support to load and save memory blocks, using a syntax similar to ZXpand is implemented
 + The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
