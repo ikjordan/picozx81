@@ -542,12 +542,9 @@ The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real
 
 Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n; set n,(hl); res n,(hl);`
 ## Possible Future Developments
-+ Add support for more LCD displays
-+ Add vsync (TV) based sound
-+ Experimental configurations supporting sound over the HDMI signal are available
-+ Use the contents of a string variable to supply a file name to the ZX80 load and save commands
 + Support for USB gamepads as well as joysticks
 + Extend the VGA322 board type to support original DB9 joysticks
++ Add vsync (TV) based sound
 + Support for composite video output
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 ## Comparison to MCUME
