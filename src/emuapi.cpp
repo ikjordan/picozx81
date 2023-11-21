@@ -598,7 +598,7 @@ static char convert(const char *val)
 
 static bool isEnabled(const char* val)
 {
-  return ((strcasecmp(val, "OFF") != 0) && (strcasecmp(val, "0") != 0) && (strcasecmp(val, "FALSE")));
+  return (strcasecmp(val, "OFF") && strcasecmp(val, "0") && strcasecmp(val, "FALSE"));
 }
 
 static int handler(void *user, const char *section, const char *name,
@@ -787,12 +787,12 @@ static int handler(void *user, const char *section, const char *name,
       {
         long res=strtol(value, NULL, 10);
 
-        if ((res == LONG_MIN || res == LONG_MAX  || res <= 0))
+        if ((res == LONG_MIN) || (res == LONG_MAX)  || (res < 0))
         {
           // Defaults to 1
           res = 1;
         }
-        if ((res > 4) || (res < 0))
+        if (res > 4)
         {
           res = 1;
         }
