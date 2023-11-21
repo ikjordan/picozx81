@@ -31,8 +31,6 @@ uint emu_VideoInit(void)
         match = (emu_576Requested() != ON);
     }
 
-    extra.info.hdmi.audioRate = emu_SoundSampleRate();
-
 #ifdef PICO_LCD_CS_PIN
     extra.info.lcd.invertColour = emu_lcdInvertColourRequested();
     extra.info.lcd.skipFrame = emu_lcdSkipFrameRequested();
