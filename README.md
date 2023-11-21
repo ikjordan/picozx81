@@ -10,9 +10,6 @@
 
 # Features
 + Supports VGA, HDMI, DVI and LCD displays
-+ Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base),
-the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base), the [PicoMite VGA board](https://geoffg.net/picomitevga.html) the [Olimex RP2040-PICO-PC](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware) the
-[Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8) and the [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with ST7789 or ILI9341 controller 320 by 240 LCD displays
 + Supports sound over onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
@@ -33,7 +30,13 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
 + Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME)
 + Supports sound over HDMI (experimental)
-
+## Supported Hardware
++ [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base)
++ [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base)
++ [PicoMite VGA board](https://geoffg.net/picomitevga.html)
++ [Olimex RP2040-PICO-PC (HDMI)](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware)
++ [Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
++ [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with 320 by 240 LCD displays
 ## Examples
 ### Installed in a reproduction case
 The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
@@ -63,6 +66,17 @@ To the right can be seen a status page, illustrating some of the configurable op
 <img src="images/status.jpg" width="45.15%" />
 </p>
 
+### LCD Displays with Cytron Maker Board
+[Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with [Waveshare 2.0" LCD](https://www.waveshare.com/wiki/2inch_LCD_Module) (ST7789V controller) displaying the [25thanni](https://bodo4all.fortunecity.ws/zx/25thanni.html) full screen demo
+<p align="middle">
+<img src="images/lcd_2_0.jpg" width="95%" />
+</p>
+
+[Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with [Generic 3.2" LCD](http://www.lcdwiki.com/3.2inch_SPI_Module_ILI9341_SKU:MSP3218) (ILI9341 controller) displaying the [25thanni](https://bodo4all.fortunecity.ws/zx/25thanni.html) full screen demo
+<p align="middle">
+<img src="images/lcd_3_2.jpg" width="95%" />
+</p>
+
 # Quick Start
 The fastest way to get started is to:
 1. Write data onto a Micro SD Card
@@ -85,7 +99,7 @@ Click on the uf2 name corresponding to your board in the table below to download
 | Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound.uf2)|
 | Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound.uf2)|
 | Waveshare 2.8 LCD | [`picozx81_lcdws28.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28.uf2)|
-| Cytron Maker + 2.4 LCD | [`picozx81_lcdmaker.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdmaker.uf2)|
+| Cytron Maker + 320x240 LCD | [`picozx81_lcdmaker.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdmaker.uf2)|
 
 
 1. Connect your Board to your display using a VGA or HDMI cable, as appropriate for your board
@@ -264,7 +278,7 @@ If such a `REM` is found the file is saved with the name `filename` with `.o` ap
 **Note:** The `SAVE` in the `REM` is the keyword. Enter it first then use the cursor keys to insert the REM in front of it
 
 If no `REM` statement of the required format is found, then a save screen will be displayed to allow a filename to be entered.
-The ZX80 keyboard image is automatically displayed to make it easier to enter non alphanumeric characters. The cursor keys (`SHIFT 5` and `SHIFT 8`) and `Rubout` (`SHIFT 0`) can be used. 
+The ZX80 keyboard image is automatically displayed to make it easier to enter non alphanumeric characters. The cursor keys (`SHIFT 5` and `SHIFT 8`) and `Rubout` (`SHIFT 0`) can be used.
 Press `ENTER` to exit the screen and use the filename, `.o` is appended if not supplied. Press `Esc` or `SHIFT 1` to leave the screen without setting a filename
 
 The program is saved to the current directory. If no valid file name is supplied a default filename of `"zx80prog.o"` is used. Any existing file with the same name is overwritten
