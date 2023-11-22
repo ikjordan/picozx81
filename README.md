@@ -418,7 +418,7 @@ Both generate a display more than 320 pixels wide, so some information is not di
   A frame rate adjusted version of the final Rezurrection screen exists in the [Demos](examples/ZX81/Demos) example directory: [head.p](examples/ZX81/Demos/heap.p) and [config.ini](examples/ZX81/Demos/config.ini). When run with `FiveSevenSix` and `FrameSync`  set to `on` or `interlaced` a stable interlaced image can be seen after the scrolling is complete
 # Building
 **Notes:**
-+ Prebuilt executable files for the 5 supported board types can be found [here](uf2/)
++ Prebuilt executable files for the 7 supported board types can be found [here](uf2/)
 + If a **zip** of the source files is downloaded from GitHub, it will be **incomplete**, as the zip will not contain the submodules. Zip files of the submodules would have to be downloaded separately from GitHub. It is easier to clone recursive the repository, as described in the following section
 ### To build:
 1. Install the Raspberry Pi Pico toolchain and SDK
@@ -482,7 +482,7 @@ All options are set in the `[default]` section of the `config.ini` file in the r
 | Item | Description | Default Value |
 | --- | --- | --- |
 | LCDInvertColour | Inverts the colour of the display. i.e. changes white to black and black to white | False |
-| LCDReflect | Defines the horizontal scan direction. Use if the `K` prompt is displayed on right hand side of display | False |
+| LCDReflect | Defines the horizontal scan direction. Use if the `K` prompt is displayed on the right hand side of the display | False |
 | LCDBGR | Set to true if blue displays as red and red displays as blue | False |
 | LCDRotate | Rotates the display through 180 degrees | False |
 | LCDSkipFrame | Displays every other frame, to reduce bandwidth | False |
@@ -502,6 +502,7 @@ All options are set in the `[default]` section of the `config.ini` file in the r
 | [Waveshare 2.8" LCD](https://www.waveshare.com/2.8inch-resistive-touch-lcd.htm) | ST7789 |True | True | False | False |
 | [Generic 3.2" LCD](http://www.lcdwiki.com/3.2inch_SPI_Module_ILI9341_SKU:MSP3218) | ILI9341 |False | False | False | True |
 
+Example `config.ini` settings for these LCDs can be seen [here](examples/config.ini). Uncomment the lines in the section matching the LCD you wish to use
 ## Rotating the display on the Waveshare Pico-ResTouch-LCD-2.8
 By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rotated, so that the usb connection and SD Card is at the bottom of the display. To undo the rotation, so that usb connection and SD Card is at the top, set `LCDRotate = False` in the default section of the config file
 
