@@ -517,7 +517,6 @@ By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rot
 + On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
 + The PicoMite VGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
 + The Waveshare Pico-ResTouch-LCD-2.8 board has touch controller, but the emulator does not support its use
-+ The Olimex RP2040-PICO-PC has a stereo audio jack. ~~but the left channel cannot be used with HDMI, so only mono audio through the right channel is possible when using this board~~ The emulator now supports stereo sound on this board
 + The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
 + In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
