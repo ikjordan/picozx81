@@ -518,6 +518,7 @@ By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rot
 + The PicoMite VGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
 + The Waveshare Pico-ResTouch-LCD-2.8 board has touch controller, but the emulator does not support its use
 + The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
++ The Cytron Maker Pi Pico has an onboard piezo buzzer. The audio quality is poor, but it can be used instead of speakers. If the buzzer is enabled (using the switch on the maker board) ensure that ACB Stereo is disabled 
 + In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
 # Developer Notes
