@@ -429,12 +429,9 @@ static void beginAudio(void)
 
 void emu_silenceSound(void)
 {
-  if (soundBuffer16)
+  // Set buffers to silence
+  for (int i = 0; i < (NUMSAMPLES<<2); ++i)
   {
-    // Set buffers to silence
-    for (int i = 0; i < (NUMSAMPLES<<2); ++i)
-    {
-      soundBuffer16[i] = ZEROSOUND;
-    }
+    soundBuffer16[i] = ZEROSOUND;
   }
 }

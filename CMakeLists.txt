@@ -4,7 +4,10 @@ cmake_minimum_required(VERSION 3.13)
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 include($ENV{PICO_EXTRAS_PATH}/external/pico_extras_import.cmake)
 
-project(${PROJECT} C CXX)
+project(${PROJECT} C CXX ASM)
+
+# Force build type to Release with debug as display is not fast enough in debug mode
+set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 
 OPTION(TIME_SPARE "Set to true to measure idle time" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
@@ -26,6 +29,8 @@ endif()
 # e.g. cmake -DPICO_BOARD=olimexpcboard
 # Set to "lcdws28board" for Waveshare Pico-ResTouch-LCD-2.8
 # e.g. cmake -DPICO_BOARD=lcdws28board
+# Set to "lcdmakerboard" for Waveshare Pico-ResTouch-LCD-2.8
+# e.g. cmake -DPICO_BOARD=lcdmakerboard
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
