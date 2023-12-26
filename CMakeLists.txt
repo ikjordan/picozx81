@@ -6,8 +6,10 @@ include($ENV{PICO_EXTRAS_PATH}/external/pico_extras_import.cmake)
 
 project(${PROJECT} C CXX ASM)
 
-# Force build type to Release with debug as display is not fast enough in debug mode
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+# Do not allow debug build, as display is not fast enough in debug mode
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+endif()
 
 OPTION(TIME_SPARE "Set to true to measure idle time" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
@@ -23,6 +25,8 @@ endif()
 # e.g. cmake -DPICO_BOARD=dviboard
 # Set to "vga332board" for home brew 332 vga board
 # e.g. cmake -DPICO_BOARD=vga332board
+# Set to "vgamakerboard" for vga based on maker board
+# e.g. cmake -DPICO_BOARD=vgamakerboard
 # Set to "picomitevgaboard" for PicoMite vga board
 # e.g. cmake -DPICO_BOARD=picomitevgaboard
 # Set to "olimexpcboard" for Olimex RP2040-PICO-PC board
@@ -159,6 +163,8 @@ else()
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga")
     elseif (${PICO_BOARD} STREQUAL "picomitevgaboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picomitevga")
+    elseif (${PICO_BOARD} STREQUAL "vgamakerboard")
+        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vgamaker")
     else()
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga332")
     endif()
