@@ -6,11 +6,6 @@ include($ENV{PICO_EXTRAS_PATH}/external/pico_extras_import.cmake)
 
 project(${PROJECT} C CXX ASM)
 
-# Do not allow debug build, as display is not fast enough in debug mode
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
-endif()
-
 OPTION(TIME_SPARE "Set to true to measure idle time" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
 OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
@@ -23,10 +18,8 @@ endif()
 
 # Set to "dviboard" to build for Pimoroni dvi board
 # e.g. cmake -DPICO_BOARD=dviboard
-# Set to "vga332board" for home brew 332 vga board
+# Set to "vga332board" for vga 332 board similar to that used in MCUME
 # e.g. cmake -DPICO_BOARD=vga332board
-# Set to "vgamakerboard" for vga based on maker board
-# e.g. cmake -DPICO_BOARD=vgamakerboard
 # Set to "picomitevgaboard" for PicoMite vga board
 # e.g. cmake -DPICO_BOARD=picomitevgaboard
 # Set to "olimexpcboard" for Olimex RP2040-PICO-PC board
@@ -35,6 +28,8 @@ endif()
 # e.g. cmake -DPICO_BOARD=lcdws28board
 # Set to "lcdmakerboard" for Waveshare Pico-ResTouch-LCD-2.8
 # e.g. cmake -DPICO_BOARD=lcdmakerboard
+# Set to "vgamaker222cboard" for vga 222 with csync based on maker board
+# e.g. cmake -DPICO_BOARD=vgamaker222cboard
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
@@ -57,6 +52,11 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
     add_subdirectory(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/include)
+elseif (${PICO_BOARD} STREQUAL "vgamaker222cboard")
+    # Build local scanvideo, to use CSYNC
+    add_subdirectory(scanvideo)
+    include_directories(scanvideo/pico_scanvideo/include)
+    include_directories(scanvideo/pico_scanvideo_dpi/include)
 endif()
 
 set(ZX8X_SOURCES
@@ -163,12 +163,17 @@ else()
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga")
     elseif (${PICO_BOARD} STREQUAL "picomitevgaboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picomitevga")
-    elseif (${PICO_BOARD} STREQUAL "vgamakerboard")
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vgamaker")
-    else()
+    elseif (${PICO_BOARD} STREQUAL "vga332board")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga332")
+    elseif (${PICO_BOARD} STREQUAL "vgamaker222cboard")
+        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vgamaker222c")
     endif()
-    target_link_libraries(${PROJECT} pico_scanvideo_dpi)
+
+    if (${PICO_BOARD} STREQUAL "vgamaker222cboard")
+        target_link_libraries(${PROJECT} mod_scanvideo_dpi)
+    else ()
+        target_link_libraries(${PROJECT} pico_scanvideo_dpi)
+    endif()
 endif()
 
 if (${TIME_SPARE})
@@ -189,7 +194,7 @@ target_link_libraries(${PROJECT}
                       tinyusb_host
                       tinyusb_board)
 
-# Cannot use serial port with Pimoroni vga card
+# Cannot use serial port with Pimoroni vga
 if (${PICO_BOARD} STREQUAL "vgaboard")
     pico_enable_stdio_uart(${PROJECT} 0)
 else()
