@@ -36,7 +36,7 @@
 + [PicoMite VGA board](https://geoffg.net/picomitevga.html)
 + [Olimex RP2040-PICO-PC (HDMI)](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware)
 + [Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
-+ [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with 320 by 240 LCD displays
++ [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with 320 by 240 LCD and RGB222 VGA displays
 ## Examples
 ### Installed in a reproduction case
 The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
@@ -545,7 +545,7 @@ The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real
 Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n; set n,(hl); res n,(hl);`
 ## Possible Future Developments
 + Support for USB gamepads as well as joysticks
-+ Extend the VGA322 board type to support original DB9 joysticks
++ Extend the Maker VGA222 board type to support original DB9 joysticks
 + Add vsync (TV) based sound
 + Support for composite video output
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
