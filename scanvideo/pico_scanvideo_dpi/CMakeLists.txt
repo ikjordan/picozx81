@@ -1,0 +1,20 @@
+add_library(mod_scanvideo_dpi INTERFACE)
+
+pico_generate_pio_header(mod_scanvideo_dpi ${CMAKE_CURRENT_LIST_DIR}/timing.pio)
+
+target_sources(mod_scanvideo_dpi INTERFACE
+        ${CMAKE_CURRENT_LIST_DIR}/scanvideo.c
+)
+
+target_include_directories(mod_scanvideo_dpi INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
+target_compile_definitions(mod_scanvideo_dpi INTERFACE VIDEO_DPI)
+target_link_libraries(mod_scanvideo_dpi INTERFACE hardware_dma hardware_pio hardware_irq mod_scanvideo)
+
+if (PICO_C_COMPILER_IS_CLANG)
+    # Clang does not support optimize pragma
+    set_source_files_properties(
+            ${CMAKE_CURRENT_LIST_DIR}/scanvideo.c
+            PROPERTIES
+            COMPILE_OPTIONS "-O3"
+    )
+endif()

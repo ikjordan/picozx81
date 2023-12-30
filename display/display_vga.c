@@ -39,7 +39,11 @@ const scanvideo_timing_t vga_timing_640x480_60_default1 =
     .h_front_porch = 16,
     .h_pulse = 96,
     .h_total = 800,
+#ifdef PICO_VGAMAKER222C_BOARD
+    .h_sync_polarity = 5,
+#else
     .h_sync_polarity = 1,
+#endif
 
     .v_front_porch = 10,
     .v_pulse = 2,
@@ -70,7 +74,11 @@ const scanvideo_timing_t vga_timing_720x576_50 =
     .h_front_porch = 12,
     .h_pulse = 64,
     .h_total = 864,
+#ifdef PICO_VGAMAKER222C_BOARD
+    .h_sync_polarity = 5,
+#else
     .h_sync_polarity = 1,
+#endif
     .v_front_porch = 5,
     .v_pulse = 5,
     .v_total = 625,
@@ -99,7 +107,11 @@ const scanvideo_timing_t vga_timing_720x576_51 =
     .h_front_porch = 12,
     .h_pulse = 64,
     .h_total = 864,
+#ifdef PICO_VGAMAKER222C_BOARD
+    .h_sync_polarity = 5,
+#else
     .h_sync_polarity = 1,
+#endif
     .v_front_porch = 5,
     .v_pulse = 5,
     .v_total = 617,

@@ -28,7 +28,7 @@
 + Supports loading and saving of memory blocks using [ZXpand like syntax](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual#load)
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
-+ Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME)
++ Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME) and for a RGB 222 board with CSYNC similar to [PICOZX](https://hackaday.io/project/186039-pico-zx-spectrum-128k)
 + Supports sound over HDMI (experimental)
 ## Supported Hardware
 + [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base)
@@ -447,7 +447,8 @@ This will be named `picozx81_vga.uf2`
 | PicoMite VGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga.uf2`|
 | Olimex PICO DVI |`cmake -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc.uf2`|
 | Pimoroni VGA |`cmake -DPICO_BOARD=vgaboard ..` | `picozx81_vga.uf2`|
-| Custom 332 VGA|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
+| Custom 332 VGA (similar to MCUME)|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
+| Cytron Maker based 222 VGA with CSYNC (similar to PICOZX)|`cmake -DPICO_BOARD=vgamaker222cboard ..`| `picozx81_vgamaker222c.uf2`|
 | Pimoroni DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=dviboard ..` | `picozx81_dvi_hdmi_sound.uf2`|
 | Olimex PICO DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_hdmi_sound.uf2`|
 | Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28.uf2`|
