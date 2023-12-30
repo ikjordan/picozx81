@@ -22,6 +22,8 @@ Display_T disp;                     // Dimension information for the display
 uint emu_VideoInit(void)
 {
     bool match = false;
+    DisplayExtraInfo_T extra;
+
     bool five = (emu_576Requested() != OFF);
 
     if (five)
@@ -29,8 +31,18 @@ uint emu_VideoInit(void)
         match = (emu_576Requested() != ON);
     }
 
+#ifdef PICO_LCD_CS_PIN
+    extra.info.lcd.invertColour = emu_lcdInvertColourRequested();
+    extra.info.lcd.skipFrame = emu_lcdSkipFrameRequested();
+    extra.info.lcd.rotate = emu_lcdRotateRequested();
+    extra.info.lcd.reflect = emu_lcdReflectRequested();
+    extra.info.lcd.bgr = emu_lcdBGRRequested();
+#else
+    extra.info.hdmi.audioRate = emu_SoundSampleRate();
+#endif
+
     uint clock = displayInitialise(five, match, 1, &disp.width,
-                                   &disp.height, &disp.stride_bit, emu_SoundSampleRate());
+                                   &disp.height, &disp.stride_bit, &extra);
 
     if (disp.width >= 360)      // As use double pixels
     {

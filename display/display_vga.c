@@ -39,7 +39,11 @@ const scanvideo_timing_t vga_timing_640x480_60_default1 =
     .h_front_porch = 16,
     .h_pulse = 96,
     .h_total = 800,
+#ifdef PICO_VGAMAKER222C_BOARD
+    .h_sync_polarity = 5,
+#else
     .h_sync_polarity = 1,
+#endif
 
     .v_front_porch = 10,
     .v_pulse = 2,
@@ -70,7 +74,11 @@ const scanvideo_timing_t vga_timing_720x576_50 =
     .h_front_porch = 12,
     .h_pulse = 64,
     .h_total = 864,
+#ifdef PICO_VGAMAKER222C_BOARD
+    .h_sync_polarity = 5,
+#else
     .h_sync_polarity = 1,
+#endif
     .v_front_porch = 5,
     .v_pulse = 5,
     .v_total = 625,
@@ -99,7 +107,11 @@ const scanvideo_timing_t vga_timing_720x576_51 =
     .h_front_porch = 12,
     .h_pulse = 64,
     .h_total = 864,
+#ifdef PICO_VGAMAKER222C_BOARD
+    .h_sync_polarity = 5,
+#else
     .h_sync_polarity = 1,
+#endif
     .v_front_porch = 5,
     .v_pulse = 5,
     .v_total = 617,
@@ -140,9 +152,9 @@ static void core1_main();
 
     // Determine the video mode
 uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
-                       uint16_t* pixelHeight, uint16_t* strideBit, uint16_t audio_rate)
+                       uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
 {
-    (void)audio_rate;
+    (void)info;
 
     mutex_init(&next_frame_mutex);
 
@@ -289,7 +301,7 @@ static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, i
     for (int i = 0; i < (keyboard_x & 0x3); ++i)
     {
         // Add 1 to account for interlaced messages at start
-        buff[(keyboard->width>>1)+keyboard_x+1+i] = 
+        buff[(keyboard->width>>1)+keyboard_x+1+i] =
          lookup[display_line[(keyboard->width>>3)+(keyboard_x>>2)]].i32[4-(keyboard_x&0x3)+i];
     }
 

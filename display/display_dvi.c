@@ -14,7 +14,7 @@
 #define DVI_TIMING dvi_timing_720x576p_51hz
 #define __dvi_const(x) __not_in_flash_func(x)
 
-// Define a slightly higher frame rate, as in normal operation the 
+// Define a slightly higher frame rate, as in normal operation the
 // ZX81 also produces a display approximately 1.3% faster than 50 Hz
 // The increase in frame rate is achieved by reducing the back porch
 // Adjusting the timing to 50 * 625 / (625 - 39 + 31) = 50.65 Hz
@@ -49,7 +49,7 @@ static uint16_t keyboard_to_fill = 0;
 
 #ifdef SOUND_HDMI
 static const int hdmi_n[3] = {4096, 6272, 6144};
-static uint16_t  rate;
+static uint16_t  rate  = 32000;     // Default audio rate
 #define AUDIO_BUFFER_SIZE   (0x1<<8) // Must be power of 2
 audio_sample_t      audio_buffer[AUDIO_BUFFER_SIZE];
 #endif
@@ -67,17 +67,19 @@ static void render_loop();
 //
 
 uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
-                       uint16_t* pixelHeight, uint16_t* strideBit, uint16_t audio_rate)
+                       uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
 {
 #ifndef SOUND_HDMI
-(void)audio_rate;
+    (void)info;
+#else
+    if (info)
+    {
+        rate = info->info.hdmi.audioRate;
+    }
 #endif
 
     mutex_init(&next_frame_mutex);
 
-#ifdef SOUND_HDMI
-    rate = audio_rate;
-#endif
     // Determine the video mode
     video_mode = (!fiveSevenSix) ? &dvi_timing_640x480p_60hz : (match) ? &dvi_timing_720x576p_51hz : &dvi_timing_720x576p_50hz;
 

@@ -205,6 +205,11 @@ typedef struct
   bool allFiles;
   FiveSevenSix_T fiveSevenSix;
   FrameSync_T frameSync;
+  bool lcdInvertColour;
+  bool lcdskipFrame;
+  bool lcdRotate;
+  bool lcdReflect;
+  bool lcdBGR;
 } Configuration_T;
 
 typedef struct
@@ -348,12 +353,44 @@ bool emu_ResetNeeded(void)
 
 FrameSync_T emu_FrameSyncRequested(void)
 {
-  return specific.frameSync;
+  if (specific.lcdskipFrame && (specific.frameSync == SYNC_ON_INTERLACED))
+  {
+    return SYNC_ON;
+  }
+  else
+  {
+    return specific.frameSync;
+  }
 }
 
 FiveSevenSix_T emu_576Requested(void)
 {
   return specific.fiveSevenSix;
+}
+
+bool emu_lcdInvertColourRequested(void)
+{
+  return specific.lcdInvertColour;
+}
+
+bool emu_lcdSkipFrameRequested(void)
+{
+  return specific.lcdskipFrame;
+}
+
+bool emu_lcdRotateRequested(void)
+{
+  return specific.lcdRotate;
+}
+
+bool emu_lcdReflectRequested(void)
+{
+  return specific.lcdReflect;
+}
+
+bool emu_lcdBGRRequested(void)
+{
+  return specific.lcdBGR;
 }
 
 const char* emu_GetDirectory(void)
@@ -561,7 +598,7 @@ static char convert(const char *val)
 
 static bool isEnabled(const char* val)
 {
-  return ((strcasecmp(val, "OFF") != 0) && (strcasecmp(val, "0") != 0));
+  return (strcasecmp(val, "OFF") && strcasecmp(val, "0") && strcasecmp(val, "FALSE"));
 }
 
 static int handler(void *user, const char *section, const char *name,
@@ -750,12 +787,12 @@ static int handler(void *user, const char *section, const char *name,
       {
         long res=strtol(value, NULL, 10);
 
-        if ((res == LONG_MIN || res == LONG_MAX  || res <= 0))
+        if ((res == LONG_MIN) || (res == LONG_MAX)  || (res < 0))
         {
           // Defaults to 1
           res = 1;
         }
-        if ((res > 4) || (res < 0))
+        if (res > 4)
         {
           res = 1;
         }
@@ -777,6 +814,33 @@ static int handler(void *user, const char *section, const char *name,
           c->conf->fiveSevenSix = OFF;
         }
       }
+#ifdef PICO_LCD_CS_PIN      
+      else if (!strcasecmp(name, "LCDInvertColour"))
+      {
+        // Defaults to off
+        c->conf->lcdInvertColour = isEnabled(value);
+      }
+      else if (!strcasecmp(name, "LCDSkipFRame"))
+      {
+        // Defaults to off
+        c->conf->lcdskipFrame = isEnabled(value);
+      }
+      else if (!strcasecmp(name, "LCDRotate"))
+      {
+        // Defaults to off
+        c->conf->lcdRotate = isEnabled(value);
+      }
+      else if (!strcasecmp(name, "LCDReflect"))
+      {
+        // Defaults to off
+        c->conf->lcdReflect = isEnabled(value);
+      }
+      else if (!strcasecmp(name, "LCDBGR"))
+      {
+        // Defaults to off
+        c->conf->lcdBGR = isEnabled(value);
+      }
+#endif
       else
       {
         return 0;
@@ -840,6 +904,16 @@ void emu_ReadDefaultValues(void)
     general.menuBorder = 1;
     general.fiveSevenSix = OFF;
     general.frameSync = SYNC_OFF;
+    general.lcdInvertColour = false;
+    general.lcdReflect = false;
+    general.lcdRotate = false;
+    general.lcdskipFrame = false;
+    general.lcdBGR = false;
+#ifdef PICO_LCDWS28_BOARD
+    general.lcdInvertColour = true;
+    general.lcdReflect = true;
+    general.lcdRotate = true;
+#endif
 
     selection[0] = 0;
   }
@@ -940,12 +1014,14 @@ bool emu_EndsWith(const char * s, const char * suffix)
   bool retval = false;
   int len = strlen(s);
   int slen = strlen(suffix);
-  if (len > slen ) {
-    if (!strcasecmp(&s[len-slen], suffix)) {
+  if (len > slen)
+  {
+    if (!strcasecmp(&s[len-slen], suffix))
+    {
       retval = true;
     }
   }
-   return (retval);
+  return (retval);
 }
 
 /********************************

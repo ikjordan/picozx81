@@ -10,9 +10,6 @@
 
 # Features
 + Supports VGA, HDMI, DVI and LCD displays
-+ Runs on the [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base),
-the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base), the [PicoMite VGA board](https://geoffg.net/picomitevga.html) the [Olimex RP2040-PICO-PC](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware) and the
-[Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
 + Supports sound over onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
@@ -31,9 +28,15 @@ the [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pim
 + Supports loading and saving of memory blocks using [ZXpand like syntax](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual#load)
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
-+ Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME)
++ Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME) and for a RGB 222 board with CSYNC similar to [PICOZX](https://hackaday.io/project/186039-pico-zx-spectrum-128k)
 + Supports sound over HDMI (experimental)
-
+## Supported Hardware
++ [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base)
++ [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base)
++ [PicoMite VGA board](https://geoffg.net/picomitevga.html)
++ [Olimex RP2040-PICO-PC (HDMI)](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware)
++ [Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
++ [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with 320 by 240 LCD and RGB222 VGA displays
 ## Examples
 ### Installed in a reproduction case
 The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
@@ -63,6 +66,17 @@ To the right can be seen a status page, illustrating some of the configurable op
 <img src="images/status.jpg" width="45.15%" />
 </p>
 
+### LCD Displays with Cytron Maker Board
+[Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with [Waveshare 2.0" LCD](https://www.waveshare.com/wiki/2inch_LCD_Module) (ST7789V controller) displaying the [25thanni](https://bodo4all.fortunecity.ws/zx/25thanni.html) full screen demo
+<p align="middle">
+<img src="images/lcd_2_0.jpg" width="95%" />
+</p>
+
+[Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with [Generic 3.2" LCD](http://www.lcdwiki.com/3.2inch_SPI_Module_ILI9341_SKU:MSP3218) (ILI9341 controller) displaying the [25thanni](https://bodo4all.fortunecity.ws/zx/25thanni.html) full screen demo
+<p align="middle">
+<img src="images/lcd_3_2.jpg" width="95%" />
+</p>
+
 # Quick Start
 The fastest way to get started is to:
 1. Write data onto a Micro SD Card
@@ -85,6 +99,7 @@ Click on the uf2 name corresponding to your board in the table below to download
 | Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound.uf2)|
 | Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound.uf2)|
 | Waveshare 2.8 LCD | [`picozx81_lcdws28.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28.uf2)|
+| Cytron Maker + 320x240 LCD | [`picozx81_lcdmaker.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdmaker.uf2)|
 
 
 1. Connect your Board to your display using a VGA or HDMI cable, as appropriate for your board
@@ -172,9 +187,9 @@ Six extra options apply across all programs and can only be set in the `[default
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81` and `.80` are initially displayed|Off|
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 4| 1 |
 
-**Notes:** 
+**Notes:**
 1. By default the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
-2. The Waveshare LCD 2.8 board has a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for this board (50 Hz, 50.65 Hz or 60 Hz)
+2. The LCD supported displays all have a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for these displays (50 Hz, 50.65 Hz or 60 Hz)
 
 ### Examples
 Examples of the `config.ini` files used to test the programs listed in this [section](#applications-tested) can be found [here](examples)
@@ -235,7 +250,7 @@ The changes are *not* written back to the config files, so will be lost when the
 ### F8 - Reboot
 Allows the impact of changes to display resolution and frequency to be seen without editing config files. If a change is made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots.
 
-On the Waveshare 2.8 LCD board the display resolution is fixed and only the frequency can be changed
+On the LCD builds the display resolution is fixed and only the frequency can be changed
 ## Loading and saving options
 The emulator supports loading `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
 Files to be loaded should only contain characters that are in the ZX81 or ZX80 character set
@@ -263,7 +278,7 @@ If such a `REM` is found the file is saved with the name `filename` with `.o` ap
 **Note:** The `SAVE` in the `REM` is the keyword. Enter it first then use the cursor keys to insert the REM in front of it
 
 If no `REM` statement of the required format is found, then a save screen will be displayed to allow a filename to be entered.
-The ZX80 keyboard image is automatically displayed to make it easier to enter non alphanumeric characters. The cursor keys (`SHIFT 5` and `SHIFT 8`) and `Rubout` (`SHIFT 0`) can be used. 
+The ZX80 keyboard image is automatically displayed to make it easier to enter non alphanumeric characters. The cursor keys (`SHIFT 5` and `SHIFT 8`) and `Rubout` (`SHIFT 0`) can be used.
 Press `ENTER` to exit the screen and use the filename, `.o` is appended if not supplied. Press `Esc` or `SHIFT 1` to leave the screen without setting a filename
 
 The program is saved to the current directory. If no valid file name is supplied a default filename of `"zx80prog.o"` is used. Any existing file with the same name is overwritten
@@ -403,7 +418,7 @@ Both generate a display more than 320 pixels wide, so some information is not di
   A frame rate adjusted version of the final Rezurrection screen exists in the [Demos](examples/ZX81/Demos) example directory: [head.p](examples/ZX81/Demos/heap.p) and [config.ini](examples/ZX81/Demos/config.ini). When run with `FiveSevenSix` and `FrameSync`  set to `on` or `interlaced` a stable interlaced image can be seen after the scrolling is complete
 # Building
 **Notes:**
-+ Prebuilt executable files for the 5 supported board types can be found [here](uf2/)
++ Prebuilt executable files for the 7 supported board types can be found [here](uf2/)
 + If a **zip** of the source files is downloaded from GitHub, it will be **incomplete**, as the zip will not contain the submodules. Zip files of the submodules would have to be downloaded separately from GitHub. It is easier to clone recursive the repository, as described in the following section
 ### To build:
 1. Install the Raspberry Pi Pico toolchain and SDK
@@ -432,17 +447,65 @@ This will be named `picozx81_vga.uf2`
 | PicoMite VGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga.uf2`|
 | Olimex PICO DVI |`cmake -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc.uf2`|
 | Pimoroni VGA |`cmake -DPICO_BOARD=vgaboard ..` | `picozx81_vga.uf2`|
-| Custom 332 VGA|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
+| Custom 332 VGA (similar to MCUME)|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
+| Cytron Maker based 222 VGA with CSYNC (similar to PICOZX)|`cmake -DPICO_BOARD=vgamaker222cboard ..`| `picozx81_vgamaker222c.uf2`|
 | Pimoroni DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=dviboard ..` | `picozx81_dvi_hdmi_sound.uf2`|
 | Olimex PICO DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_hdmi_sound.uf2`|
 | Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28.uf2`|
+| Cytron Maker|`cmake -DPICO_BOARD=lcdmakerboard ..`| `picozx81_lcdmaker.uf2`|
 
-**Notes:** 
+**Notes:**
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
 + The HDMI sound builds are experimental
 
 6. Upload the `uf2` file to the pico
 7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
+
+## Using the Cytron Maker with a LCD
+The Maker board can be used with a range of 320 by 240 LCDs, controlled over the SPI bus, with controllers from either the ILI9341 or ST7789 families. The boards are configured using entries in the `default` section of the config file
+### Wiring
+The LCD should be connected to the Maker board as follows:
+| Function | Name |Pico GPIO Pin|
+| --- | --- | --- |
+| Backlight| BL| 4 |
+| Chip Select | CS | 5 |
+| Clock | CLK | 6 |
+| Data In | DIN or MOSI | 7 |
+| Reset | RST | 8 |
+| Data / Command Selection | DC | 9 |
+| VCC | 3.3V | 3V3 (OUT) |
+| GND | Ground | Any Ground Pin |
+
+Touchscreen functionality is not supported. Any pins used for the touchscreen do not need to be connected
+
+### LCD Configuration Options
+All options are set in the `[default]` section of the `config.ini` file in the root directory of the SD Card.
+| Item | Description | Default Value |
+| --- | --- | --- |
+| LCDInvertColour | Inverts the colour of the display. i.e. changes white to black and black to white | False |
+| LCDReflect | Defines the horizontal scan direction. Use if the `K` prompt is displayed on the right hand side of the display | False |
+| LCDBGR | Set to true if blue displays as red and red displays as blue | False |
+| LCDRotate | Rotates the display through 180 degrees | False |
+| LCDSkipFrame | Displays every other frame, to reduce bandwidth | False |
+
+ e.g. to set `LCDReflect` to true, add the following to the `[default]` section of the configuration file: `LCDReflect = True`
+
+ **Notes:**
+ 1. If the configuration appears correct for a display, but no image appears, it could be that the display cannot support the SPI bus speed required to display every frame. In this case set `LCDFrameSkip = True`
+ 2. If `LCDFrameSkip` equals `True`, then if `FrameSync` is set to `Interlaced` it will be interpreted as `On`
+
+### Configuration of Tested LCDs
+
+| Display | Controller | Invert Colour | Reflect | Frame Skip | BGR |
+| --- | --- | --- | --- | --- | --- |
+| [Waveshare 2" LCD](https://www.waveshare.com/wiki/2inch_LCD_Module) | ST7789V |True | False | True | False |
+| [Waveshare 2.4" LCD](https://www.waveshare.com/2.4inch-lcd-module.htm) | ILI9341 |False | False | False | True |
+| [Waveshare 2.8" LCD](https://www.waveshare.com/2.8inch-resistive-touch-lcd.htm) | ST7789 |True | True | False | False |
+| [Generic 3.2" LCD](http://www.lcdwiki.com/3.2inch_SPI_Module_ILI9341_SKU:MSP3218) | ILI9341 |False | False | False | True |
+
+Example `config.ini` settings for these LCDs can be seen [here](examples/config.ini). Uncomment the lines in the section matching the LCD you wish to use
+## Rotating the display on the Waveshare Pico-ResTouch-LCD-2.8
+By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rotated, so that the usb connection and SD Card is at the bottom of the display. To undo the rotation, so that usb connection and SD Card is at the top, set `LCDRotate = False` in the default section of the config file
 
 # Extra Information
 + The intention of the emulator is to provide an authentic '80s feel. There have been amazing ZX81 developments in recent years, such as ([Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm), [ZXpand+](https://www.rwapsoftware.co.uk/zx812.html) etc). These are not supported. Instead it emulates the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. However, basic support to load and save memory blocks, using a syntax similar to ZXpand is implemented
@@ -455,8 +518,8 @@ This will be named `picozx81_vga.uf2`
 + On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
 + The PicoMite VGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
 + The Waveshare Pico-ResTouch-LCD-2.8 board has touch controller, but the emulator does not support its use
-+ The Olimex RP2040-PICO-PC has a stereo audio jack. ~~but the left channel cannot be used with HDMI, so only mono audio through the right channel is possible when using this board~~ The emulator now supports stereo sound on this board
 + The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
++ The Cytron Maker Pi Pico has an onboard piezo buzzer. The audio quality is poor, but it can be used instead of speakers. If the buzzer is enabled (using the switch on the maker board) ensure that ACB Stereo is disabled 
 + In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
 # Developer Notes
@@ -481,12 +544,9 @@ The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real
 
 Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n; set n,(hl); res n,(hl);`
 ## Possible Future Developments
-+ Add support for more LCD displays
-+ Add vsync (TV) based sound
-+ Experimental configurations supporting sound over the HDMI signal are available
-+ Use the contents of a string variable to supply a file name to the ZX80 load and save commands
 + Support for USB gamepads as well as joysticks
-+ Extend the VGA322 board type to support original DB9 joysticks
++ Extend the Maker VGA222 board type to support original DB9 joysticks
++ Add vsync (TV) based sound
 + Support for composite video output
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 ## Comparison to MCUME

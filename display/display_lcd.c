@@ -5,7 +5,7 @@
 #include "pico/multicore.h"
 #include "hardware/pio.h"
 #include "hardware/gpio.h"
-#include "st7789_lcd.pio.h"
+#include "spi_lcd.pio.h"
 #include "sdcard.h"
 
 #include "display.h"
@@ -27,25 +27,19 @@ static int32_t period;
 
 static PIO pio = SDCARD_PIO;
 static uint sm;
+
+#ifdef PICO_SPI_LCD_SD_SHARE
 static volatile bool allowedSPI = true;
+#endif
 
 #define SERIAL_CLK_DIV 2.0f
 #define CLOCK_SPEED_KHZ 250000
 
-// Format: cmd length (including cmd byte), post delay in units of 5 ms, then cmd payload
-// Note the delays have been shortened a little
-static const uint8_t st7789_init_seq[] = {
-        1, 20, 0x01,                        // Software reset
-        1, 10, 0x11,                        // Exit sleep mode
-        2, 2, 0x3a, 0x53,                   // Set colour mode to 12 bit
-        2, 0, 0x36, 0x60,                   // Set MADCTR: row then column, refresh is bottom to top ????
-        5, 0, 0x2a, 0x00, 0x00, PIXEL_WIDTH >> 8, PIXEL_WIDTH & 0xff,   // CASET: column addresses
-        5, 0, 0x2b, 0x00, 0x00, HEIGHT >> 8, HEIGHT & 0xff,             // RASET: row addresses
-        1, 2, 0x21,                         // Inversion on, then 10 ms delay (supposedly a hack?)
-        1, 2, 0x13,                         // Normal display on, then 10 ms delay
-        1, 2, 0x29,                         // Main screen turn on, then wait 500 ms
-        0                                   // Terminate list
-};
+static bool invert = false;     // Invert colours on display
+static bool skip = false;       // Skip every other frame
+static bool rotate = false;     // Rotate display by 180 degrees
+static bool reflect = false;    // Change horizontal scan direction
+static bool bgr = false;        // use bgr instead of rgb
 
 #include "display_common.c"
 
@@ -55,15 +49,28 @@ static const uint8_t st7789_init_seq[] = {
 
 static void render_loop();
 static bool timer_callback(repeating_timer_t *rt);
+static inline void lcd_set_dc_cs(bool dc, bool cs);
+static inline void lcd_write_cmd(const uint8_t cmd, const uint8_t *data, size_t count, size_t delay);
+static inline void lcd_init(void);
+static inline void lcd_start_pixels(void);
 
 //
 // Public functions
 //
+#include <stdio.h>
 
 uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
-                       uint16_t* pixelHeight, uint16_t* strideBit, uint16_t audio_rate)
+                       uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
 {
-    (void)audio_rate;
+    if (info)
+    {
+        invert = info->info.lcd.invertColour;
+        skip = info->info.lcd.skipFrame;
+        rotate = info->info.lcd.rotate;
+        reflect = info->info.lcd.reflect;
+        bgr = info->info.lcd.bgr;
+        reflect = rotate ? !reflect : reflect;
+    }
 
     // fiveSevenSix value used to set refresh rate, but not the resolution
     // fiveSevenSix false = 60 Hz
@@ -77,6 +84,8 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     {
         period = 16667; // 60 Hz
     }
+
+    if (skip) period <<= 1;
 
     mutex_init(&next_frame_mutex);
 
@@ -105,6 +114,12 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
 
 void displayStart(void)
 {
+    printf("Invert %s\n", invert ? "True": "false");
+    printf("Skip %s\n", skip ? "True": "false");
+    printf("Rotate %s\n", rotate ? "True": "false");
+    printf("Reflect %s\n", reflect ? "True": "false");
+    printf("BGR %s\n", bgr ? "True": "false");
+
     displayStartCommon();
 }
 
@@ -124,6 +139,7 @@ bool displayShowKeyboard(bool zx81)
     return previous;
 }
 
+#ifdef PICO_SPI_LCD_SD_SHARE
 // Request SPI bus from the display and wait until available
 void displayRequestSPIBus(void)
 {
@@ -138,6 +154,7 @@ void displayGrantSPIBus(void)
     pio_sm_set_enabled(pio, sm, true);
     allowedSPI = true;
 }
+#endif
 
 //
 // Private functions
@@ -150,57 +167,93 @@ static inline void lcd_set_dc_cs(bool dc, bool cs)
     sleep_us(1);
 }
 
-static inline void lcd_write_cmd(const uint8_t *cmd, size_t count)
+static inline void lcd_write_cmd(const uint8_t cmd, const uint8_t *data, size_t count, size_t delay)
 {
-    st7789_lcd_wait_idle(pio, sm);
+    spi_lcd_wait_idle();
     lcd_set_dc_cs(0, 0);
-    st7789_lcd_put(pio, sm, *cmd++);
-    if (count >= 2)
+    spi_lcd_put(cmd);
+    if (count)
     {
-        st7789_lcd_wait_idle(pio, sm);
+        spi_lcd_wait_idle();
         lcd_set_dc_cs(1, 0);
-        for (size_t i = 0; i < count - 1; ++i)
+        for (size_t i = 0; i < count; ++i)
         {
-            st7789_lcd_put(pio, sm, *cmd++);
+            spi_lcd_put(data[i]);
         }
     }
-    st7789_lcd_wait_idle(pio, sm);
+    spi_lcd_wait_idle();
     lcd_set_dc_cs(1, 1);
+    sleep_ms(delay);
 }
 
-static inline void lcd_init(const uint8_t *init_seq)
+static inline void lcd_init(void)
 {
-    const uint8_t *cmd = init_seq;
-    while (*cmd)
+    // Iterate through initialisation sequence
+    uint8_t data[4];
+
+    // reset
+    lcd_write_cmd(0x01, NULL, 0, 100);
+
+    // Exit sleep mode
+    lcd_write_cmd(0x11, NULL, 0, 50);
+
+    // Set colour mode to 12 bits
+    data[0] = 0x33;
+    lcd_write_cmd(0x3a, data, 1, 10);
+
+    // Set scan order
+    data[0] = 0x20;
+    data[0] |= bgr ? 0x8 : 0;
+    data[0] |= rotate ? 0x40 : 0;
+    data[0] |= reflect ? 0x80 : 0;
+    lcd_write_cmd(0x36, data, 1, 10);
+
+    // Column size
+    data[0] = 0x0;
+    data[1] = 0x0;
+    data[2] = PIXEL_WIDTH >> 8;
+    data[3] = PIXEL_WIDTH & 0xff;
+    lcd_write_cmd(0x2a, data, 4, 0);
+
+    // Row size
+    data[0] = 0x0;
+    data[1] = 0x0;
+    data[2] = HEIGHT >> 8;
+    data[3] = HEIGHT & 0xff;
+    lcd_write_cmd(0x2b, data, 4, 0);
+
+    if (invert)
     {
-        lcd_write_cmd(cmd + 2, *cmd);
-        sleep_ms(*(cmd + 1) * 5);
-        cmd += *cmd + 2;
+        lcd_write_cmd(0x21, NULL, 0, 10);
     }
+
+    // Display on
+    lcd_write_cmd(0x13, NULL, 0, 10);
+    lcd_write_cmd(0x29, NULL, 0, 10);
 }
 
-static inline void st7789_start_pixels(PIO pio, uint sm)
+static inline void lcd_start_pixels(void)
 {
-    uint8_t cmd = 0x2c; // RAMWR
-    lcd_write_cmd(&cmd, 1);
+    lcd_write_cmd(0x2C, NULL, 0, 0);    // RAMWR
     lcd_set_dc_cs(1, 0);
 }
 
 static void __not_in_flash_func(render_loop)()
 {
-    st7789_start_pixels(pio, sm);
+    lcd_start_pixels();
 
     while (true)
     {
         sem_acquire_blocking(&frame_sync);
         newFrame();
 
+#ifdef PICO_SPI_LCD_SD_SHARE
         // Check to see if allowed to access SPI bus
         if (allowedSPI)
         {
             // Ensure LCD has bus
             gpio_put(PICO_LCD_CS_PIN, 0);
-
+#endif
             // 1 pixel generates a 12 bit word - so 2 pixels are 3 bytes
             for (uint y = 0; y < HEIGHT; ++y)
             {
@@ -216,9 +269,9 @@ static void __not_in_flash_func(render_loop)()
 
                         for (int i=0; i<(keyboard_x>>1); ++i)
                         {
-                            st7789_lcd_put(pio, sm, (twoblank >> 16) & 0xff);
-                            st7789_lcd_put(pio, sm, (twoblank >> 8) & 0xff);
-                            st7789_lcd_put(pio, sm, twoblank & 0xff);
+                            spi_lcd_put((twoblank >> 16) & 0xff);
+                            spi_lcd_put((twoblank >> 8) & 0xff);
+                            spi_lcd_put(twoblank & 0xff);
                         }
 
                         // 256 pixels of keyboard, 2 bits per pixel
@@ -230,18 +283,18 @@ static void __not_in_flash_func(render_loop)()
                                 uint32_t colour = (keyboard->palette[(byte >> x) & 0x03] << 12) +
                                                    keyboard->palette[(byte >> (x-2)) & 0x03];
 
-                                st7789_lcd_put(pio, sm, (colour >> 16) & 0xff);
-                                st7789_lcd_put(pio, sm, (colour >> 8) & 0xff);
-                                st7789_lcd_put(pio, sm, colour & 0xff);
+                                spi_lcd_put((colour >> 16) & 0xff);
+                                spi_lcd_put((colour >> 8) & 0xff);
+                                spi_lcd_put(colour & 0xff);
                             }
                         }
 
                         // 32 more pixels of blank
                         for (int i=((PIXEL_WIDTH - keyboard_x)>>1); i<(PIXEL_WIDTH>>1); ++i)
                         {
-                            st7789_lcd_put(pio, sm, (twoblank >> 16) & 0xff);
-                            st7789_lcd_put(pio, sm, (twoblank >> 8) & 0xff);
-                            st7789_lcd_put(pio, sm, twoblank & 0xff);
+                            spi_lcd_put((twoblank >> 16) & 0xff);
+                            spi_lcd_put((twoblank >> 8) & 0xff);
+                            spi_lcd_put(twoblank & 0xff);
                         }
                     }
                     else
@@ -259,9 +312,9 @@ static void __not_in_flash_func(render_loop)()
                                 twobits = twobits << 12;
                                 twobits |= (byte & (0x1 << count--)) ? BLACK : WHITE;
 
-                                st7789_lcd_put(pio, sm, (twobits >> 16) & 0xff);
-                                st7789_lcd_put(pio, sm, (twobits >> 8) & 0xff);
-                                st7789_lcd_put(pio, sm, twobits & 0xff);
+                                spi_lcd_put((twobits >> 16) & 0xff);
+                                spi_lcd_put((twobits >> 8) & 0xff);
+                                spi_lcd_put(twobits & 0xff);
                             }
                         }
 
@@ -274,9 +327,9 @@ static void __not_in_flash_func(render_loop)()
                                 uint32_t colour = (keyboard->palette[(byte >> x) & 0x03] << 12) +
                                                    keyboard->palette[(byte >> (x-2)) & 0x03];
 
-                                st7789_lcd_put(pio, sm, (colour >> 16) & 0xff);
-                                st7789_lcd_put(pio, sm, (colour >> 8) & 0xff);
-                                st7789_lcd_put(pio, sm, colour & 0xff);
+                                spi_lcd_put((colour >> 16) & 0xff);
+                                spi_lcd_put((colour >> 8) & 0xff);
+                                spi_lcd_put(colour & 0xff);
                             }
                         }
 
@@ -293,9 +346,9 @@ static void __not_in_flash_func(render_loop)()
                                 twobits = twobits << 12;
                                 twobits |= (byte & (0x1 << count--)) ? BLACK : WHITE;
 
-                                st7789_lcd_put(pio, sm, (twobits >> 16) & 0xff);
-                                st7789_lcd_put(pio, sm, (twobits >> 8) & 0xff);
-                                st7789_lcd_put(pio, sm, twobits & 0xff);
+                                spi_lcd_put((twobits >> 16) & 0xff);
+                                spi_lcd_put((twobits >> 8) & 0xff);
+                                spi_lcd_put(twobits & 0xff);
                             }
                         }
                     }
@@ -308,9 +361,9 @@ static void __not_in_flash_func(render_loop)()
 
                         for (int x=0; (x<PIXEL_WIDTH>>1); x++)
                         {
-                            st7789_lcd_put(pio, sm, (twobits >> 16) & 0xff);
-                            st7789_lcd_put(pio, sm, (twobits >> 8) & 0xff);
-                            st7789_lcd_put(pio, sm, twobits & 0xff);
+                            spi_lcd_put((twobits >> 16) & 0xff);
+                            spi_lcd_put((twobits >> 8) & 0xff);
+                            spi_lcd_put(twobits & 0xff);
                         }
                     }
                     else
@@ -327,21 +380,23 @@ static void __not_in_flash_func(render_loop)()
                                 twobits = twobits << 12;
                                 twobits |= (byte & (0x1 << count--)) ? BLACK : WHITE;
 
-                                st7789_lcd_put(pio, sm, (twobits >> 16) & 0xff);
-                                st7789_lcd_put(pio, sm, (twobits >> 8) & 0xff);
-                                st7789_lcd_put(pio, sm, twobits & 0xff);
+                                spi_lcd_put((twobits >> 16) & 0xff);
+                                spi_lcd_put((twobits >> 8) & 0xff);
+                                spi_lcd_put(twobits & 0xff);
                             }
                         }
                     }
                 }
             }
+#ifdef PICO_SPI_LCD_SD_SHARE
         }
         else
         {
             // Release SPI bus
-            st7789_lcd_wait_idle(pio, sm);
+            spi_lcd_wait_idle();
             lcd_set_dc_cs(1, 1);
         }
+#endif
     }
 }
 
@@ -358,9 +413,16 @@ static void core1_main()
         exit(-1);
     }
 
-    uint offset = pio_add_program(pio, &st7789_lcd_program);
-    st7789_lcd_program_init(pio, sm, offset, PICO_SD_CMD_PIN, PICO_SD_CLK_PIN, SERIAL_CLK_DIV);
-
+    uint offset = pio_add_program(pio, &spi_lcd_program);
+#ifndef PICO_LCD_CLK_PIN
+    spi_lcd_program_init(pio, sm, offset, PICO_SD_CMD_PIN, PICO_SD_CLK_PIN, (SERIAL_CLK_DIV * (skip ? 2: 1)));
+#else
+    gpio_init(PICO_LCD_CMD_PIN);
+    gpio_init(PICO_LCD_CLK_PIN);
+    gpio_set_dir(PICO_LCD_CMD_PIN, GPIO_OUT);
+    gpio_set_dir(PICO_LCD_CLK_PIN, GPIO_OUT);
+    spi_lcd_program_init(pio, sm, offset, PICO_LCD_CMD_PIN, PICO_LCD_CLK_PIN, (SERIAL_CLK_DIV * (skip ? 2: 1)));
+#endif
     gpio_init(PICO_LCD_DC_PIN);
     gpio_init(PICO_LCD_RS_PIN);
     gpio_init(PICO_LCD_BL_PIN);
@@ -369,7 +431,7 @@ static void core1_main()
     gpio_set_dir(PICO_LCD_BL_PIN, GPIO_OUT);
 
     gpio_put(PICO_LCD_RS_PIN, 1);
-    lcd_init(st7789_init_seq);
+    lcd_init();
     gpio_put(PICO_LCD_BL_PIN, 1);
 
     sem_release(&display_initialised);

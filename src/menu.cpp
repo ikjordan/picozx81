@@ -617,13 +617,20 @@ bool modifyMenu(void)
                 case HID_KEY_ARROW_RIGHT:
                     if (field == PSYNC)
                     {
-                        if (modify.fsync == SYNC_ON_INTERLACED)
+                        if (!emu_lcdSkipFrameRequested())
                         {
-                            modify.fsync = SYNC_OFF;
+                            if (modify.fsync == SYNC_ON_INTERLACED)
+                            {
+                                modify.fsync = SYNC_OFF;
+                            }
+                            else
+                            {
+                                modify.fsync = (FrameSync_T)(((int)modify.fsync) + 1);
+                            }
                         }
                         else
                         {
-                            modify.fsync = (FrameSync_T)(((int)modify.fsync) + 1);
+                            modify.fsync = (modify.fsync == SYNC_OFF) ? SYNC_ON : SYNC_OFF;
                         }
                     }
                     else if (field == PNTSC)
@@ -1229,16 +1236,7 @@ static void setConvert(bool zx80)
 // Write string to screen, terminate string at screen edge
 static void writeString(const char* s, uint col, uint row)
 {
-    if ((col < (uint)(disp.width>>3)) && (row < (uint)(disp.height>>3)))
-    {
-        unsigned int len = strlen(s);
-
-        len = len > ((disp.width>>3)-col-1) ? ((disp.width>>3)-col-1) : len;
-        for (uint i=0; i<len; ++i)
-        {
-            writeChar(s[i], col+i, row);
-        }
-    }
+    writeInvertString(s, col, row, false);
 }
 
 // Write string to screen, terminate string at screen edge, optionally inverting characters
@@ -1248,7 +1246,7 @@ static void writeInvertString(const char* s, uint col, uint row, bool invert)
     {
         unsigned int len = strlen(s);
 
-        len = len > ((disp.width>>3)-col-1) ? ((disp.width>>3)-col-1) : len;
+        len = len > ((disp.width>>3)-col) ? ((disp.width>>3)-col) : len;
         for (uint i=0; i<len; ++i)
         {
             if (invert)
@@ -1349,10 +1347,10 @@ static int populateFiles(const char* path, uint first)
                     strncpy(&name[1], fno.fname, sizeof(name)-1);
 
                     len = strlen(fno.fname) + 1; // Position of closing >
-                    if (len > ((disp.width>>3) - (border<<1) -1))
+                    if (len > ((disp.width>>3) - (border<<1) - 1))
                     {
-                        name[(disp.width>>3) - (border<<1) -2] = '+';
-                        name[(disp.width>>3) - (border<<1) -1] = '>';
+                        name[(disp.width>>3) - (border<<1) - 2] = '+';
+                        name[(disp.width>>3) - (border<<1) - 1] = '>';
                         name[(disp.width>>3) - (border<<1)] = 0;
                     }
                     else

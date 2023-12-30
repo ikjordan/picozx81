@@ -31,6 +31,8 @@ build_uf2 dvi
 build_uf2 picomitevga
 build_uf2 olimexpc
 build_uf2 vga332
+build_uf2 vgamaker222c
 build_uf2 lcdws28
+build_uf2 lcdmaker
 build_uf2_hdmi dvi
 build_uf2_hdmi olimexpc
