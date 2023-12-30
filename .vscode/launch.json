@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Pi4 Debug",
+            "name": "Pi",
             "cwd": "${workspaceRoot}",
             "executable": "${command:cmake.launchTargetPath}",
             "request": "launch",
@@ -25,7 +25,7 @@
             //]
         },
         {
-            "name": "Picoprobe Debug",
+            "name": "Debug Probe",
             "cwd": "${workspaceRoot}",
             "executable": "${command:cmake.launchTargetPath}",
             "request": "launch",
