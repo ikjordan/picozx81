@@ -403,14 +403,14 @@ Both generate a display more than 320 pixels wide, so some information is not di
   + Best viewed with `FrameSync` set to `Interlaced`
 ## ZX80
 + [ZX80 3K QS DEFENDER](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Defender.htm)
-  + This game generates 32 lines of text. The bottom two line is not displayed in the emulator, but the game is still playable. The QS sound board is emulated
+  + This game generates 32 lines of text. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` so that the score, which is towards the top of the display, is visible. The game is still playable without the bottom of the display being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated
 + [Breakout](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Breakout.htm)
 + [Double Breakout](http://www.fruitcake.plus.com/Sinclair/ZX80/SoftwareArchive4K/BeamSoftware.htm)
 + [Kong](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Kong.htm)
 + [Pacman](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Pacman.htm)
 ## Programs with limitations or artefacts
 + [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda)
-  + This game generates 31 lines of text. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` to display the top lines (which includes the score). The game is still playable without the bottom line being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated correctly
+  + This game generates 31 lines of text, one less than ZX80 QS DEFENDER. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` to display the top lines, which include the score. The game is still playable without the bottom line being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated correctly
 + [Wa-Tor](http://www.pictureviewerpro.com/hosting/zx81/download/zx81/fred/wator.zip)
   + This has a pseudo hi-res introduction screen. Towards the bottom of the screen is the text: "Experiment with predators and prey". On a "real" ZX81 the text is distorted, due to a variation in the time of the horizontal sync pulse. This emulator does not show the distortion
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
