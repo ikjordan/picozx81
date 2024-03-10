@@ -62,6 +62,8 @@ uint emu_VideoInit(void)
     disp.end_x = disp.start_x + disp.width;
     disp.end_y = disp.height + disp.start_y;
     disp.offset = -(disp.stride_bit * disp.start_y) - disp.start_x;
+    disp.padding = (disp.stride_bit - disp.width) >> 3;
+    disp.length = disp.stride_byte * disp.height;
 
     return clock;
 }

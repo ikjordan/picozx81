@@ -174,6 +174,25 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     {
         free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
                          + minBuffByte;
+
+        // Store original index, so that can map a chroma buffer, if necessary
+        index_to_display[i] = free_buff[i];
+    }
+
+    // Allocate chroma buffers
+    if (1)  // Replace with chroma option
+    {
+        for (int i=0; i<MAX_FREE; ++i)
+        {
+            chroma_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
+                            + minBuffByte;
+
+            if (!chroma_buff[i])
+            {
+                printf("Insufficient memory for chroma - aborting\n");
+                exit(-1);
+            }
+        }
     }
 
     free_count = MAX_FREE;

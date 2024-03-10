@@ -21,6 +21,8 @@ bool parseNumber(const char* input,
                  char term,
                  unsigned int* out);
 
+static void adjustChroma(bool start);
+
 #define ERROR_D() mem[16384] = 12;
 #define ERROR_INV1() mem[16384] = 128;
 #define ERROR_INV2() mem[16384] = 129;
@@ -39,6 +41,10 @@ int ramsize=16;
 static byte keyboard[ 8 ] = {0xff,0xff,0xff,0xff, 0xff,0xff,0xff,0xff};;
 int zx80=0;
 int autoload=1;
+int chromamode=0;
+unsigned char bordercolour=0x0f;
+unsigned char bordercolournew=0x0f;
+
 static bool resetRequired = false;
 
 /* the ZX81 char is used to index into this, to give the ascii.
@@ -87,6 +93,18 @@ unsigned int in(int h, int l)
   data |= (tapemask & 0x0100) ? 0x80 : 0;
   if (useNTSC) data|=64;
 
+  if ((h == 0x7f) && (l == 0xef))
+  {
+    if ((ramsize < 48) || (!LowRAM))
+    {
+#ifdef DEBUG_CHROMA
+      printf("Insufficient RAM Size for Chroma!\n");
+#endif
+      return 255;
+    }
+    return 0; /* chroma available */
+  }
+
   if (!(l&1))
   {
     LastInstruction=LASTINSTINFE;
@@ -122,8 +140,37 @@ unsigned int in(int h, int l)
   return(255);
 }
 
-unsigned int out(int l,int a)
+unsigned int out(int h,int l,int a)
 {
+  if ((h==0x7f) && (l==0xef))
+  {	/* chroma */
+    chromamode = a&0x30;
+    if (chromamode)
+    {
+#ifdef DEBUG_CHROMA
+      printf"Selecting Chroma mode 0x%x.\n",a);
+#endif
+      if ((ramsize < 48) || (!LowRAM))
+      {
+        chromamode = 0;
+        printf("Insufficient RAM Size for Chroma!\n");
+      }
+      else
+      {
+        adjustChroma(true);
+        bordercolournew = a & 0x0f;
+      }
+    }
+    else
+    {
+#ifdef DEBUG_CHROMA
+      printf("Selecting B/W mode.\n");
+#endif
+      adjustChroma(false);
+    }
+    return 0;
+  }
+
   switch(l)
   {
     case 0x0f:
@@ -860,3 +907,8 @@ char *strzx80_to_ascii(int memaddr)
   return translated;
 }
 
+/* Ensure that chroma and pixels are byte aligned*/
+static void adjustChroma(bool start)
+{
+    adjustStartX = start ? disp.adjust_x : emu_CentreX();
+}

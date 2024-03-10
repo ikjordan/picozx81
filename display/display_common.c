@@ -21,6 +21,8 @@ static uint8_t* last_buff = 0;      // previously displayed buffer (interlace mo
 static uint8_t* pend_buff[MAX_PEND] = {0, 0};           // Buffers queued for display
 static uint8_t* free_buff[MAX_FREE] = {0, 0, 0, 0};     // Buffers available to be claimed
 
+static uint8_t* index_to_display[MAX_FREE] = {0, 0, 0, 0};
+static uint8_t* chroma_buff[MAX_FREE] = {0, 0, 0, 0};
 static uint8_t free_count = 0;
 static uint8_t pend_count = 0;
 static uint16_t stride = 0;
@@ -179,6 +181,20 @@ void __not_in_flash_func(displayGetCurrentBuffer)(uint8_t** buff)
 
     // free lock
     mutex_exit(&next_frame_mutex);
+}
+
+/* Get the chroma buffer associated with a display buffer */
+void __not_in_flash_func(displayGetChromaBuffer)(uint8_t** chroma, uint8_t* buff)
+{
+    for (int i=0; i<MAX_FREE; i++)
+    {
+        if (index_to_display[i] == buff)
+        {
+            *chroma = chroma_buff[i];
+            return;
+        }
+    }
+    *chroma = 0;
 }
 
 void __not_in_flash_func(displayBlank)(bool black)

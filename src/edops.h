@@ -54,7 +54,7 @@ instr(0x40,8);
 endinstr;
 
 instr(0x41,8);
-   tstates+=out(c,b);
+   tstates+=out(b,c,b);
 endinstr;
 
 instr(0x42,11);
@@ -90,7 +90,7 @@ instr(0x48,8);
 endinstr;
 
 instr(0x49,8);
-   tstates+=out(c,c);
+   tstates+=out(b,c,c);
 endinstr;
 
 instr(0x4a,11);
@@ -127,7 +127,7 @@ instr(0x50,8);
 endinstr;
 
 instr(0x51,8);
-   tstates+=out(c,d);
+   tstates+=out(b,c,d);
 endinstr;
 
 instr(0x52,11);
@@ -163,7 +163,7 @@ instr(0x58,8);
 endinstr;
 
 instr(0x59,8);
-   tstates+=out(c,e);
+   tstates+=out(b,c,e);
 endinstr;
 
 instr(0x5a,11);
@@ -201,7 +201,7 @@ instr(0x60,8);
 endinstr;
 
 instr(0x61,8);
-   tstates+=out(c,h);
+   tstates+=out(b,c,h);
 endinstr;
 
 instr(0x62,11);
@@ -241,7 +241,7 @@ instr(0x68,8);
 endinstr;
 
 instr(0x69,8);
-   tstates+=out(c,l);
+   tstates+=out(b,c,l);
 endinstr;
 
 instr(0x6a,11);
@@ -282,7 +282,7 @@ instr(0x70,8);
 endinstr;
 
 instr(0x71,8);
-   tstates+=out(c,0);
+   tstates+=out(b,c,0);
 endinstr;
 
 instr(0x72,11);
@@ -313,7 +313,7 @@ instr(0x78,8);
 endinstr;
 
 instr(0x79,8);
-   tstates+=out(c,a);
+   tstates+=out(b,c,a);
 endinstr;
 
 instr(0x7a,11);
@@ -373,7 +373,7 @@ instr(0xa3,12); /* I can't determine the correct flags outcome for the
                    flag is left unchanged and N is set to 1, but that
                    doesn't seem to be the case... */
    {unsigned char x=fetch(hl);
-    tstates+=out(c,x);
+    tstates+=out(b,c,x);
     if(!++l)h++;
     b--;
     f=(f&1)|0x12|(b&0xa8)|((b==0)<<6);
@@ -411,7 +411,7 @@ endinstr;
 
 instr(0xab,12);
    {unsigned char x=fetch(hl);
-    tstates+=out(c,x);
+    tstates+=out(b,c,x);
     if(!l--)h--;
     b--;
     f=(f&1)|0x12|(b&0xa8)|((b==0)<<6);
@@ -455,7 +455,7 @@ endinstr;
 
 instr(0xb3,12);
    {unsigned char x=fetch(hl);
-    tstates+=out(c,x);
+    tstates+=out(b,c,x);
     if(!++l)h++;
     b--;
     f=(f&1)|0x12|(b&0xa8)|((b==0)<<6);
@@ -497,7 +497,7 @@ endinstr;
 
 instr(0xbb,12);
    {unsigned char x=fetch(hl);
-    tstates+=out(c,x);
+    tstates+=out(b,c,x);
     if(!l--)h--;
     b--;
     f=(f&1)|0x12|(b&0xa8)|((b==0)<<6);

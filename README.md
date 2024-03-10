@@ -100,6 +100,7 @@ Click on the uf2 name corresponding to your board in the table below to download
 | Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound.uf2)|
 | Waveshare 2.8 LCD | [`picozx81_lcdws28.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28.uf2)|
 | Cytron Maker + 320x240 LCD | [`picozx81_lcdmaker.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdmaker.uf2)|
+| Cytron Maker + VGA 222 CSYNC | [`picozx81_vgamaker222c.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vgamaker222c.uf2)|
 
 
 1. Connect your Board to your display using a VGA or HDMI cable, as appropriate for your board
