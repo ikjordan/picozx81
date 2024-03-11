@@ -90,6 +90,7 @@ static bool wasBlack = false;
 static uint8_t* currBuff = 0;
 
 static uint8_t* menuscreen = 0;
+static uint8_t* menuchroma = 0;
 
 static bool allfiles = false;
 static int border = 0;
@@ -991,12 +992,17 @@ void rebootMenu(void)
 /*
  * Private interface
  */
+
+/* Build the menu. If clone is true, then copy the current menu, including any possible chroma buffer */
 static bool buildMenu(bool clone)
 {
+    uint8_t* chroma_curr = 0;
+
     // Obtain a display buffer
     displayGetFreeBuffer(&menuscreen);
+    menuchroma = 0;
 
-    // Store the current display
+    // Store the current display state
     wasBlank = displayIsBlank(&wasBlack);
 
     border = emu_MenuBorderRequested();
@@ -1008,6 +1014,7 @@ static bool buildMenu(bool clone)
     {
         // Get the current displayed buffer
         displayGetCurrentBuffer(&currBuff);
+        displayGetChromaBuffer(&chroma_curr, currBuff);
     }
 
     if (clone)
@@ -1026,6 +1033,24 @@ static bool buildMenu(bool clone)
                 d += disp.stride_byte;
                 s += disp.stride_byte;
             }
+
+            // Clone chroma is required
+            if (chroma_curr && (chromamode != 0))
+            {
+                displayGetChromaBuffer(&menuchroma, menuscreen);
+
+                if (menuchroma)
+                {
+                    uint8_t* s = chroma_curr;
+                    uint8_t* d = menuchroma;
+                    for (int i = 0; i < disp.height; i++)
+                    {
+                        memcpy(d, s, disp.stride_byte);
+                        d += disp.stride_byte;
+                        s += disp.stride_byte;
+                    }
+                }
+            }
         }
     }
     else
@@ -1033,7 +1058,7 @@ static bool buildMenu(bool clone)
         memset(menuscreen, 0x00, disp.stride_byte * disp.height);
     }
     // Display
-    displayBuffer(menuscreen, false, false);
+    displayBuffer(menuscreen, false, false, clone ? (chromamode != 0): false);
     return true;
 }
 
@@ -1050,7 +1075,7 @@ static void endMenu(bool blank)
         {
             memset(currBuff, 0x00, disp.stride_byte * disp.height);
         }
-        displayBuffer(currBuff, false, true);
+        displayBuffer(currBuff, false, true, (chromamode != 0));
     }
 }
 
@@ -1298,6 +1323,17 @@ static void invertChar(char c, uint col, uint row)
     {
         *pos = (zx81rom[offset+i] ^ 0xff);
         pos += disp.stride_byte;
+    }
+
+    // Update chroma foreground, so inverse char is visible
+    if (menuchroma)
+    {
+        pos = menuchroma + row * disp.stride_bit + col;
+        for (uint i=0; i<8; ++i)
+        {
+            *pos = (*pos ^ 0xf0);
+            pos += disp.stride_byte;
+        }
     }
 }
 

@@ -46,10 +46,10 @@ unsigned char partable[256]={
       4, 0, 0, 4, 0, 4, 4, 0, 0, 4, 4, 0, 4, 0, 0, 4
    };
 
-
 unsigned long tstates=0,tsmax=65000,frames=0;
 
 static unsigned char* scrnbmp_new = 0;
+static unsigned char* scrnbmpc_new = 0;
 
 static int vsx=0;
 static int vsy=0;
@@ -138,12 +138,17 @@ void setEmulatedTV(bool fiftyHz, uint16_t vtol)
 static void __not_in_flash_func(displayAndNewScreen)(bool sync)
 {
   // Display the current screen
-  displayBuffer(scrnbmp_new, sync, true);
+  displayBuffer(scrnbmp_new, sync, true, (chromamode != 0));
   displayGetFreeBuffer(&scrnbmp_new);
+
+  /* Need a chroma buffer ready in case it is switched on mid frame */
+  displayGetChromaBuffer(&scrnbmpc_new, scrnbmp_new);
 
   // Clear the new screen - we have 3 buffers, so will not
   // have race with switching the screens to be displayed
-  memset(scrnbmp_new, 0x00, disp.stride_byte * disp.height);
+  memset(scrnbmp_new, 0x00, disp.length);
+  if (chromamode && (bordercolournew != bordercolour)) bordercolour = bordercolournew;
+  if (chromamode) memset(scrnbmpc_new, (bordercolour << 4) + bordercolour, disp.length);
 }
 
 static void __not_in_flash_func(vsync_raise)(void)
@@ -245,12 +250,14 @@ void __not_in_flash_func(ExecZ80)(void)
   unsigned char v=0;
 
   bool retval = false;
+  unsigned char colour;
 
   do
   {
     v=0;
     ts = 0;
     LastInstruction = LASTINSTNONE;
+    colour = (bordercolour << 4) + bordercolour;
 
     if(intsample && !((radjust-1)&64) && iff1)
       int_pending=1;
@@ -273,7 +280,9 @@ void __not_in_flash_func(ExecZ80)(void)
       if (m1not && pc<0xC000)
       {
         videodata = false;
-      } else {
+      }
+      else
+      {
         videodata = (pc&0x8000) ? true: false;
       }
 
@@ -307,6 +316,14 @@ void __not_in_flash_func(ExecZ80)(void)
           }
         }
         v = (op&128)?~v:v;
+
+        if (chromamode)
+        {
+            if (chromamode & 0x10)
+                colour = fetch(pc);
+            else
+                colour = fetch(0xc000 | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter);
+        }
         op=0; /* the CPU sees a nop */
       }
       tstore = tstates;
@@ -368,6 +385,7 @@ void __not_in_flash_func(ExecZ80)(void)
       break;
     }
 
+#if 0
     // Plot data in shift register
     // Note subtract 6 as this leaves the smallest positive number
     // of bits to carry to next byte (2)
@@ -393,6 +411,43 @@ void __not_in_flash_func(ExecZ80)(void)
         }
       }
     }
+#endif
+
+    // Plot data in shift register
+    // Note subtract 6 as this leaves the smallest positive number
+    // of bits to carry to next byte (2)
+    if ((v || chromamode) &&
+        (RasterX >= (disp.start_x - adjustStartX - 6)) &&
+        (RasterX < (disp.end_x - adjustStartX)) &&
+        (RasterY >= (disp.start_y - adjustStartY)) &&
+        (RasterY < (disp.end_y - adjustStartY)))
+    {
+      if (chromamode)
+      {
+        int k = (dest + RasterX) >> 3;
+        scrnbmpc_new[k] = colour;
+        scrnbmp_new[k] = v;
+      }
+      else
+      {
+        if (v)
+        {
+          int k = dest + RasterX;
+          int kh = k >> 3;
+          int kl = k & 7;
+
+          if (kl)
+          {
+            scrnbmp_new[kh++] |= (v >> kl);
+            scrnbmp_new[kh] = (v << (8 - kl));
+          }
+          else
+          {
+            scrnbmp_new[kh] = v;
+          }
+        }
+      }
+    }
 
     int tstate_inc;
     int states_remaining = ts;
@@ -410,7 +465,8 @@ void __not_in_flash_func(ExecZ80)(void)
       if (hsync_counter >= HLEN)
       {
         hsync_counter -= HLEN;
-        if (!zx80) hsync_pending = 1;
+        if (!zx80)
+          hsync_pending = 1;
       }
 
       // Start of HSYNC, and NMI if enabled
@@ -439,7 +495,8 @@ void __not_in_flash_func(ExecZ80)(void)
         {
           rowcounter = 0;
           rowcounter_hold = false;
-        } else
+        }
+        else
         {
           rowcounter++;
           rowcounter &= 7;
@@ -490,17 +547,23 @@ void ResetZ80(void)
   nrmvideo=0;
   RasterX = 0;
   RasterY = 0;
-  dest = disp.offset;
+  dest = disp.offset + (adjustStartY * disp.stride_bit) + adjustStartX;
   psync = 1;
   sync_len = 0;
 
-/* ULA */
+  /* ULA */
   NMI_generator=0;
   int_pending=0;
   hsync_pending=0;
   VSYNC_state=HSYNC_state=0;
 
   emu_VideoSetInterlace();
+
+  /* Ensure chroma is turned off */
+  bordercolour=0x0f;
+  bordercolournew=0x0f;
+  chromamode = 0;
+  displayResetChroma();
 
   if (!scrnbmp_new)
   {
@@ -509,7 +572,10 @@ void ResetZ80(void)
 
   if (scrnbmp_new)
   {
-    memset(scrnbmp_new, 0x00, disp.stride_byte * disp.height);
+    memset(scrnbmp_new, 0x00, disp.length);
+
+    /* Need a chroma buffer ready in case it is switched on mid frame */
+    displayGetChromaBuffer(&scrnbmpc_new, scrnbmp_new);
   }
 
   if(autoload)
@@ -679,7 +745,8 @@ static inline void __not_in_flash_func(checksync)(int inc)
     sync_len += inc;
     checkhsync(1);
     checkvsync(1);
-  } else
+  }
+  else
   {
     if (!psync)
     {

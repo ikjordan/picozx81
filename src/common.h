@@ -40,13 +40,17 @@ extern bool useNTSC;
 extern bool frameSync;
 extern int adjustStartX;
 extern int adjustStartY;
+/* Chroma variables */
+extern int chromamode;
+extern unsigned char bordercolour;
+extern unsigned char bordercolournew;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 extern unsigned int in(int h,int l);
-extern unsigned int out(int l,int a);
+extern unsigned int out(int h,int l,int a);
 extern void save_p(int a);
 extern void load_p(int a);
 
