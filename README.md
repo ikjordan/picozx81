@@ -18,6 +18,7 @@
 + Emulates pseudo and Hi-res graphics
 + Emulates ZonX and Quicksilva sound
 + Emulates user defined graphics, including CHR$128 and QS User Defined Graphics
++ Emulates [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm) to allow a colour display (VGA and LCD displays only)
 + Emulation runs at accurate speed of a 3.25MHz ZX81
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
@@ -75,6 +76,14 @@ To the right can be seen a status page, illustrating some of the configurable op
 [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with [Generic 3.2" LCD](http://www.lcdwiki.com/3.2inch_SPI_Module_ILI9341_SKU:MSP3218) (ILI9341 controller) displaying the [25thanni](https://bodo4all.fortunecity.ws/zx/25thanni.html) full screen demo
 <p align="middle">
 <img src="images/lcd_3_2.jpg" width="95%" />
+</p>
+
+### Chroma ZX81 Emulation
+
+[ColourAttrModeTest](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/Files/Programs/ColourAttrModeTest.zip) and [HiRes ZX-Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip)
+<p align="middle">
+<img src="images/chroma_attribute.jpg" width="49.0%" />
+<img src="images/chroma_galaxians.jpg" width="49.0%" />
 </p>
 
 # Quick Start
@@ -334,6 +343,7 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
   + Creates a 40 by 30 character display
 ### Pseudo Hi-res
 + [Celebration and Lightning Display Driver](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/Celebration.htm)
+  + Set UDG and LowRAM on, and Memory to 48kB to view a colour version of celebration
 + [Z-Xtricator](http://www.zx81stuff.org.uk/zx81/tape/Z-Xtricator)
   + For the bomb (aka "Super Zapper") effects to render correctly `WRX` must be set to Off (see [here](https://www.sinclairzxworld.com/viewtopic.php?p=46499#p46499))
 + [Rocket Man](http://www.zx81stuff.org.uk/zx81/tape/RocketMan)
@@ -362,7 +372,10 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [QS Asteroids](http://www.zx81stuff.org.uk/zx81/tape/QSAsteroids)
 + [QS Scramble](http://www.zx81stuff.org.uk/zx81/tape/QSScramble)
 ### Other UDG graphics
-+ [HiRes Galaxian](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip)
++ [HiRes Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip)
+  + To use with colour Chroma 81 Colourisation set memory to 48kB (see example configuration file)
++ [ColourAttrModeTest](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/Files/Programs/ColourAttrModeTest.zip) (Chroma 81 Native Colour Program)
+
 + [Airport HR](http://zx81.eu5.org/files/soft/toddy/AEROP-HR.zip)
 #### CHR128
 + [zedragon](https://github.com/charlierobson/zedragon/blob/master/zedragon.p)
@@ -509,7 +522,7 @@ Example `config.ini` settings for these LCDs can be seen [here](examples/config.
 By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rotated, so that the usb connection and SD Card is at the bottom of the display. To undo the rotation, so that usb connection and SD Card is at the top, set `LCDRotate = False` in the default section of the config file
 
 # Extra Information
-+ The intention of the emulator is to provide an authentic '80s feel. There have been amazing ZX81 developments in recent years, such as ([Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm), [ZXpand+](https://www.rwapsoftware.co.uk/zx812.html) etc). These are not supported. Instead it emulates the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. However, basic support to load and save memory blocks, using a syntax similar to ZXpand is implemented
++ The original intention of the emulator was to provide an authentic '80s feel. It emulated the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. It has now been extended to provide emulation of some of the amazing ZX81 developments of recent years, such as [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm). It supports the loading and saving of memory blocks, using a syntax similar to ZXpand
 + The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
 + Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
 + To achieve a full speed emulation the Pico is overclocked to 250MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_CLOCK` to the cmake command
@@ -548,7 +561,7 @@ Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n;
 + Support for USB gamepads as well as joysticks
 + Extend the Maker VGA222 board type to support original DB9 joysticks
 + Add vsync (TV) based sound
-+ Support for composite video output
++ Add Chroma 81 support to the DVI / HDMI variants
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 ## Comparison to MCUME
 [MCUME](https://github.com/Jean-MarcHarvengt/MCUME/) demonstrated that a Raspberry Pi Pico based ZX80/81 emulator was feasible. The custom VGA RGB 332 board type is similar to the hardware required for MCUME
