@@ -6,6 +6,12 @@
 #define MAX_FREE 4
 #define MAX_PEND 2
 
+typedef struct
+{
+    uint8_t* buff;
+    bool     used;
+} chroma_t;
+
 // Note: Need 4 buffers, as the ZX81 produces rates at greater than 50 Hz
 // so 2 frames can be created in one time slice, and 1 emulated time slice
 // may complete in 14ms, therefore a backlog of 2 frames is valid, no_skip
@@ -21,8 +27,11 @@ static uint8_t* last_buff = 0;      // previously displayed buffer (interlace mo
 static uint8_t* pend_buff[MAX_PEND] = {0, 0};           // Buffers queued for display
 static uint8_t* free_buff[MAX_FREE] = {0, 0, 0, 0};     // Buffers available to be claimed
 
+static uint8_t* cbuffer = 0;        // Chroma buffer
+
+
 static uint8_t* index_to_display[MAX_FREE] = {0, 0, 0, 0};
-static uint8_t* chroma_buff[MAX_FREE] = {0, 0, 0, 0};
+static chroma_t chroma[MAX_FREE] = { {0, false}, {0, false}, {0,false}, {0,false} };
 static uint8_t free_count = 0;
 static uint8_t pend_count = 0;
 static uint16_t stride = 0;
@@ -39,6 +48,8 @@ static inline void freeAllPending(void);
 static inline void freeLast(void);
 static inline void swapCurrAndLast(void);
 static inline void newFrame(void);
+static inline void displayGetChromaBufferUsed(uint8_t** chroma_buff, uint8_t* buff);
+static inline void set_chroma_used(uint8_t* buff, bool used);
 
 //
 // Public functions
@@ -104,11 +115,12 @@ void __not_in_flash_func(displayGetFreeBuffer)(uint8_t** buff)
    note the option to not put the previous buffer onto the
    free list allows for it to be redisplayed later (e.g.
    after a menu is removed) */
-void __not_in_flash_func(displayBuffer)(uint8_t* buff, bool sync, bool free)
+void __not_in_flash_func(displayBuffer)(uint8_t* buff, bool sync, bool free, bool chroma)
 {
     // Obtain lock
     mutex_enter_blocking(&next_frame_mutex);
 
+    set_chroma_used(buff, chroma);
     if (sync && !blank)
     {
         // Store in next, unless next is full
@@ -184,19 +196,31 @@ void __not_in_flash_func(displayGetCurrentBuffer)(uint8_t** buff)
 }
 
 /* Get the chroma buffer associated with a display buffer */
-void __not_in_flash_func(displayGetChromaBuffer)(uint8_t** chroma, uint8_t* buff)
+void __not_in_flash_func(displayGetChromaBuffer)(uint8_t** chroma_buff, uint8_t* buff)
 {
     for (int i=0; i<MAX_FREE; i++)
     {
         if (index_to_display[i] == buff)
         {
-            *chroma = chroma_buff[i];
+            *chroma_buff = chroma[i].buff;
             return;
         }
     }
-    *chroma = 0;
+    *chroma_buff = 0;
 }
 
+static inline void displayGetChromaBufferUsed(uint8_t** chroma_buff, uint8_t* buff)
+{
+    for (int i=0; i<MAX_FREE; i++)
+    {
+        if (index_to_display[i] == buff)
+        {
+            *chroma_buff = chroma[i].used ? chroma[i].buff : 0;
+            return;
+        }
+    }
+    *chroma_buff = 0;
+}
 void __not_in_flash_func(displayBlank)(bool black)
 {
     // Obtain lock
@@ -324,7 +348,22 @@ static inline void __not_in_flash_func(newFrame)(void)
             }
         }
     }
+    // Determine chroma
+    displayGetChromaBufferUsed(&cbuffer, curr_buff);
     mutex_exit(&next_frame_mutex);
+}
+
+static inline void set_chroma_used(uint8_t* buff, bool used)
+{
+    // Find the index of the buffer
+    for (int i=0; i<MAX_FREE; i++)
+    {
+        if (index_to_display[i] == buff)
+        {
+            chroma[i].used = used;
+            return;
+        }
+    }
 }
 
 static inline void __not_in_flash_func(freeAllPending)(void)

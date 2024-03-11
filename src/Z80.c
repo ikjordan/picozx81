@@ -138,7 +138,7 @@ void setEmulatedTV(bool fiftyHz, uint16_t vtol)
 static void __not_in_flash_func(displayAndNewScreen)(bool sync)
 {
   // Display the current screen
-  displayBuffer(scrnbmp_new, sync, true);
+  displayBuffer(scrnbmp_new, sync, true, (chromamode != 0));
   displayGetFreeBuffer(&scrnbmp_new);
   displayGetChromaBuffer(&scrnbmpc_new, scrnbmp_new);
 
@@ -314,7 +314,6 @@ void __not_in_flash_func(ExecZ80)(void)
           }
         }
         v = (op&128)?~v:v;
-        op=0; /* the CPU sees a nop */
 
         if (chromamode)
         {
@@ -323,6 +322,7 @@ void __not_in_flash_func(ExecZ80)(void)
             else
                 colour = fetch(0xc000 | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter);
         }
+        op=0; /* the CPU sees a nop */
       }
       tstore = tstates;
 

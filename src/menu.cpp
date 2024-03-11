@@ -1033,7 +1033,7 @@ static bool buildMenu(bool clone)
         memset(menuscreen, 0x00, disp.stride_byte * disp.height);
     }
     // Display
-    displayBuffer(menuscreen, false, false);
+    displayBuffer(menuscreen, false, false, false);
     return true;
 }
 
@@ -1050,7 +1050,7 @@ static void endMenu(bool blank)
         {
             memset(currBuff, 0x00, disp.stride_byte * disp.height);
         }
-        displayBuffer(currBuff, false, true);
+        displayBuffer(currBuff, false, true, (chromamode != 0));
     }
 }
 

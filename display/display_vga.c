@@ -29,6 +29,26 @@ static const KEYBOARD_PIC* keyboard = &ZX81KYBD;
 static uint16_t keyboard_x = 0;
 static uint16_t keyboard_y = 0;
 
+// Do not make const - as want to keep in RAM
+static uint16_t colour_table[16] = {
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0x00, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0x00, 0x7f),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x7f, 0x00, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x7f, 0x00, 0x7f),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0x7f, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0x7f, 0x7f),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x7f, 0x7f, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x7f, 0x7f, 0x7f),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0x00, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0x00, 0xff),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xff, 0x00, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xff, 0x00, 0xff),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0xff, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0xff, 0xff),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xff, 0xff, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xff, 0xff, 0xff)
+};
+
 // Define timing here due to sdk issue with h_pulse length
 const scanvideo_timing_t vga_timing_640x480_60_default1 =
 {
@@ -138,11 +158,12 @@ static const scanvideo_mode_t* video_mode = 0;
 // Private interface
 //
 
-static int32_t populate_line(uint8_t* display_line, uint32_t* buff);
+static int32_t populate_line(uint8_t* display_line, uint8_t* colour_line, uint32_t* buff);
 static int32_t populate_blank_line(uint16_t colour, uint32_t* buff);
 static int32_t populate_keyboard_line(int linenum, uint16_t bcolour, uint32_t* buff);
 static int32_t populate_mixed_line(uint8_t* display_line, int linenum, uint32_t* buff);
 static void render_loop();
+static Fill_u expand_display(uint8_t disp, uint8_t colours);
 static void initialise1bppLookup();
 static void core1_main();
 
@@ -184,10 +205,10 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     {
         for (int i=0; i<MAX_FREE; ++i)
         {
-            chroma_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
+            chroma[i].buff = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
                             + minBuffByte;
 
-            if (!chroma_buff[i])
+            if (!chroma[i].buff)
             {
                 printf("Insufficient memory for chroma - aborting\n");
                 exit(-1);
@@ -337,32 +358,33 @@ static int32_t __not_in_flash_func(populate_mixed_line)(uint8_t* display_line, i
     return (PIXEL_WIDTH >> 1) + 2;
 }
 
-static int32_t __not_in_flash_func(populate_line)(uint8_t* display_line, uint32_t* buff)
+static int32_t __not_in_flash_func(populate_line)(uint8_t* display_line, uint8_t* colour_line, uint32_t* buff)
 {
     // Need to interlace commands with first 2 pixels at start of buffer line
-    Fill_u first;
+    Fill_u pixels;
+    uint16_t colours = (colour_line) ? 0x0 : 0xf0;  // Black foreground, white background
 
     // Extract the data for the first 8 pixels
-    first.i64[0] = lookup[display_line[0]].i64[0];
-    first.i64[1] = lookup[display_line[0]].i64[1];
+    pixels = expand_display(display_line[0], colours ? colours : colour_line[0]);
 
     // interlace the first two
-    buff[0] = COMPOSABLE_RAW_RUN          | (first.i16[0] << 16);
+    buff[0] = COMPOSABLE_RAW_RUN          | (pixels.i16[0] << 16);
 
     // Note pixel length +1 as have final black pixel
-    buff[1] = (PIXEL_WIDTH + 1 - MIN_RUN) | (first.i16[1] << 16);
+    buff[1] = (PIXEL_WIDTH + 1 - MIN_RUN) | (pixels.i16[1] << 16);
 
     // Populate the rest of the pixels in the first byte
-    buff[2] = first.i32[1];
-    buff[3] = first.i32[2];
-    buff[4] = first.i32[3];
+    buff[2] = pixels.i32[1];
+    buff[3] = pixels.i32[2];
+    buff[4] = pixels.i32[3];
 
     // Process the remaining 320/8 - 1 bytes
     uint64_t* dest = (uint64_t*)(&buff[5]);
     for (int i=1; i<BYTE_WIDTH; ++i)
     {
-        *dest++ = lookup[display_line[i]].i64[0];
-        *dest++ = lookup[display_line[i]].i64[1];
+        pixels = expand_display(display_line[i], colours ? colours : colour_line[i]);
+        *dest++ = pixels.i64[0];
+        *dest++ = pixels.i64[1];
     }
 
     // Must end with a black pixel
@@ -393,6 +415,8 @@ static void __not_in_flash_func(render_loop)()
         }
 
         uint8_t* current = curr_buff;    // As disp_index can change at any time
+        uint8_t* cbuf = cbuffer;
+
         if (showKeyboard && (line_num >= keyboard_y) && (line_num <(keyboard_y + keyboard->height)))
         {
             if (blank)
@@ -413,7 +437,7 @@ static void __not_in_flash_func(render_loop)()
             }
             else
             {
-                buf->data_used = populate_line(&current[stride * line_num],
+                buf->data_used = populate_line(&current[stride * line_num], cbuf ? &cbuf[stride * line_num] : cbuf,
                                                buf->data);
             }
         }
@@ -428,12 +452,24 @@ static void initialise1bppLookup()
     {
         for (int j=0; j<8; ++j)
         {
-            // If the bit is set, then the byte will be black
+            // If the bit is set, then the 16 bit word will be black
             lookup[i].i16[j] = ((i<<j)&0x80) ? BLACK : WHITE;
         }
     }
 }
 
+static Fill_u __not_in_flash_func(expand_display)(uint8_t disp, uint8_t colours)
+{
+    Fill_u result;
+    uint16_t foreground = colour_table[colours & 0xf];
+    uint16_t background = colour_table[colours >> 4];
+
+    for (int i = 0; i < 8; ++i)
+    {
+        result.i16[i] = ((disp << i) & 0x80) ? foreground : background;
+    }
+    return result;
+}
 static void core1_main()
 {
     scanvideo_setup(video_mode);

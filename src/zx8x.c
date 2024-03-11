@@ -148,7 +148,7 @@ unsigned int out(int h,int l,int a)
     if (chromamode)
     {
 #ifdef DEBUG_CHROMA
-      printf"Selecting Chroma mode 0x%x.\n",a);
+      printf("Selecting Chroma mode 0x%x.\n",a);
 #endif
       if ((ramsize < 48) || (!LowRAM))
       {
