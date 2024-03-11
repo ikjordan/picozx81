@@ -41,6 +41,26 @@ static bool rotate = false;     // Rotate display by 180 degrees
 static bool reflect = false;    // Change horizontal scan direction
 static bool bgr = false;        // use bgr instead of rgb
 
+// Do not make const - as want to keep in RAM
+static uint16_t colour_table[16] = {
+    0x0000,
+    0x0007,
+    0x0700,
+    0x0707,
+    0x0070,
+    0x0077,
+    0x0770,
+    0x0777,
+    0x0000,
+    0x000f,
+    0x0f00,
+    0x0f0f,
+    0x00f0,
+    0x00ff,
+    0x0ff0,
+    0x0fff
+};
+
 #include "display_common.c"
 
 //
@@ -92,11 +112,27 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     // Is padding requested? For LCD can pad a single byte
     stride = minBuffByte + (PIXEL_WIDTH >> 3);
 
-        // Allocate the buffers
+    // Allocate the buffers
     for (int i=0; i<MAX_FREE; ++i)
     {
         free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
                          + minBuffByte;
+
+        // Store original index, so that can map a chroma buffer, if necessary
+        index_to_display[i] = free_buff[i];
+    }
+
+    // Allocate chroma buffers
+    for (int i=0; i<MAX_FREE; ++i)
+    {
+        chroma[i].buff = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
+                        + minBuffByte;
+
+        if (!chroma[i].buff)
+        {
+            printf("Insufficient memory for chroma - aborting\n");
+            exit(-1);
+        }
     }
 
     free_count = MAX_FREE;
@@ -258,7 +294,10 @@ static void __not_in_flash_func(render_loop)()
             for (uint y = 0; y < HEIGHT; ++y)
             {
                 uint8_t* buff = curr_buff;    // As curr_buff can change at any time
-                const uint8_t *linebuf = &buff[stride * y];
+                uint8_t* cbuff = cbuffer;
+
+                uint8_t* linebuf = &buff[stride * y];
+                uint8_t* clinebuf = cbuff ? &cbuff[stride * y] : 0;
 
                 if (showKeyboard && (y >= keyboard_y) && (y <(keyboard_y + keyboard->height)))
                 {
@@ -303,14 +342,16 @@ static void __not_in_flash_func(render_loop)()
                         for (int x = 0; x < (keyboard_x >> 3); ++x)
                         {
                             uint8_t byte = linebuf[x];
+                            uint16_t foreground = cbuff ? colour_table[clinebuf[x] & 0xf] : BLACK;
+                            uint16_t background = cbuff ? colour_table[clinebuf[x] >> 4] : WHITE;
 
                             int count = 7;
 
                             for (int j=0; j<4; j++)
                             {
-                                uint32_t twobits = (byte & (0x1 << count--)) ? BLACK : WHITE;
+                                uint32_t twobits = (byte & (0x1 << count--)) ? foreground : background;
                                 twobits = twobits << 12;
-                                twobits |= (byte & (0x1 << count--)) ? BLACK : WHITE;
+                                twobits |= (byte & (0x1 << count--)) ? foreground : background;
 
                                 spi_lcd_put((twobits >> 16) & 0xff);
                                 spi_lcd_put((twobits >> 8) & 0xff);
@@ -337,14 +378,16 @@ static void __not_in_flash_func(render_loop)()
                         for (int x=((PIXEL_WIDTH - keyboard_x) >> 3); x<(PIXEL_WIDTH >> 3); ++x)
                         {
                             uint8_t byte = linebuf[x];
+                            uint16_t foreground = cbuff ? colour_table[clinebuf[x] & 0xf] : BLACK;
+                            uint16_t background = cbuff ? colour_table[clinebuf[x] >> 4] : WHITE;
 
                             int count = 7;
 
                             for (int j=0; j<4; j++)
                             {
-                                uint32_t twobits = (byte & (0x1 << count--)) ? BLACK : WHITE;
+                                uint32_t twobits = (byte & (0x1 << count--)) ? foreground : background;
                                 twobits = twobits << 12;
-                                twobits |= (byte & (0x1 << count--)) ? BLACK : WHITE;
+                                twobits |= (byte & (0x1 << count--)) ? foreground : background;
 
                                 spi_lcd_put((twobits >> 16) & 0xff);
                                 spi_lcd_put((twobits >> 8) & 0xff);
@@ -368,17 +411,19 @@ static void __not_in_flash_func(render_loop)()
                     }
                     else
                     {
+                        // Two bits of screen data gives 24 bits of ldc data = 3 bytes
                         for (int x = 0; x < (PIXEL_WIDTH >> 3); ++x)
                         {
                             uint8_t byte = linebuf[x];
-
+                            uint16_t foreground = cbuff ? colour_table[clinebuf[x] & 0xf] : BLACK;
+                            uint16_t background = cbuff ? colour_table[clinebuf[x] >> 4] : WHITE;
                             int count = 7;
 
                             for (int j=0; j<4; j++)
                             {
-                                uint32_t twobits = (byte & (0x1 << count--)) ? BLACK : WHITE;
+                                uint32_t twobits = (byte & (0x1 << count--)) ? foreground : background;
                                 twobits = twobits << 12;
-                                twobits |= (byte & (0x1 << count--)) ? BLACK : WHITE;
+                                twobits |= (byte & (0x1 << count--)) ? foreground : background;
 
                                 spi_lcd_put((twobits >> 16) & 0xff);
                                 spi_lcd_put((twobits >> 8) & 0xff);

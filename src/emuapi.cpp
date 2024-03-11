@@ -1025,6 +1025,19 @@ bool emu_EndsWith(const char * s, const char * suffix)
 }
 
 /********************************
+ * Chroma
+ ********************************/
+bool emu_chromaSupported(void)
+{
+    // Chroma supported for VGA and LCD
+#ifdef DVI_MONOCHROME_TMDS
+    return false;
+#else
+    return true;
+#endif
+}
+
+/********************************
  * Clock
  ********************************/
 extern semaphore_t timer_sem;

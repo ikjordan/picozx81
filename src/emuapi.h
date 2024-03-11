@@ -79,6 +79,8 @@ extern bool emu_lcdBGRRequested(void);
 extern FrameSync_T emu_FrameSyncRequested(void);
 extern FiveSevenSix_T emu_576Requested(void);
 
+extern bool emu_chromaSupported(void);
+
 extern void emu_SetZX80(bool zx80);
 extern void emu_SetFrameSync(FrameSync_T fsync);
 extern void emu_SetNTSC(bool ntsc);

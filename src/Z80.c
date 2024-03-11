@@ -140,6 +140,8 @@ static void __not_in_flash_func(displayAndNewScreen)(bool sync)
   // Display the current screen
   displayBuffer(scrnbmp_new, sync, true, (chromamode != 0));
   displayGetFreeBuffer(&scrnbmp_new);
+
+  /* Need a chroma buffer ready in case it is switched on mid frame */
   displayGetChromaBuffer(&scrnbmpc_new, scrnbmp_new);
 
   // Clear the new screen - we have 3 buffers, so will not
@@ -549,13 +551,19 @@ void ResetZ80(void)
   psync = 1;
   sync_len = 0;
 
-/* ULA */
+  /* ULA */
   NMI_generator=0;
   int_pending=0;
   hsync_pending=0;
   VSYNC_state=HSYNC_state=0;
 
   emu_VideoSetInterlace();
+
+  /* Ensure chroma is turned off */
+  bordercolour=0x0f;
+  bordercolournew=0x0f;
+  chromamode = 0;
+  displayResetChroma();
 
   if (!scrnbmp_new)
   {
@@ -564,7 +572,10 @@ void ResetZ80(void)
 
   if (scrnbmp_new)
   {
-    memset(scrnbmp_new, 0x00, disp.stride_byte * disp.height);
+    memset(scrnbmp_new, 0x00, disp.length);
+
+    /* Need a chroma buffer ready in case it is switched on mid frame */
+    displayGetChromaBuffer(&scrnbmpc_new, scrnbmp_new);
   }
 
   if(autoload)

@@ -102,6 +102,13 @@ unsigned int in(int h, int l)
 #endif
       return 255;
     }
+    else if (!emu_chromaSupported())
+    {
+#ifdef DEBUG_CHROMA
+      printf("Display does not support Chroma \n");
+#endif
+      return 255;
+    }
     return 0; /* chroma available */
   }
 
@@ -144,29 +151,38 @@ unsigned int out(int h,int l,int a)
 {
   if ((h==0x7f) && (l==0xef))
   {	/* chroma */
-    chromamode = a&0x30;
-    if (chromamode)
+    if (emu_chromaSupported())
     {
-#ifdef DEBUG_CHROMA
-      printf("Selecting Chroma mode 0x%x.\n",a);
-#endif
-      if ((ramsize < 48) || (!LowRAM))
+      chromamode = a&0x30;
+      if (chromamode)
       {
-        chromamode = 0;
-        printf("Insufficient RAM Size for Chroma!\n");
+    #ifdef DEBUG_CHROMA
+        printf("Selecting Chroma mode 0x%x.\n",a);
+    #endif
+        if ((ramsize < 48) || (!LowRAM))
+        {
+          chromamode = 0;
+          printf("Insufficient RAM Size for Chroma!\n");
+        }
+        else
+        {
+          adjustChroma(true);
+          bordercolournew = a & 0x0f;
+        }
       }
       else
       {
-        adjustChroma(true);
-        bordercolournew = a & 0x0f;
+    #ifdef DEBUG_CHROMA
+        printf("Selecting B/W mode.\n");
+    #endif
+        adjustChroma(false);
       }
     }
     else
     {
 #ifdef DEBUG_CHROMA
-      printf("Selecting B/W mode.\n");
+      printf("Chroma requested, but not supported.\n");
 #endif
-      adjustChroma(false);
     }
     return 0;
   }
@@ -907,7 +923,7 @@ char *strzx80_to_ascii(int memaddr)
   return translated;
 }
 
-/* Ensure that chroma and pixels are byte aligned*/
+/* Ensure that chroma and pixels are byte aligned */
 static void adjustChroma(bool start)
 {
     adjustStartX = start ? disp.adjust_x : emu_CentreX();

@@ -54,6 +54,8 @@ static inline void set_chroma_used(uint8_t* buff, bool used);
 //
 // Public functions
 //
+
+/* Set the interlace state */
 void __not_in_flash_func(displaySetInterlace)(bool on)
 {
     mutex_enter_blocking(&next_frame_mutex);
@@ -209,6 +211,17 @@ void __not_in_flash_func(displayGetChromaBuffer)(uint8_t** chroma_buff, uint8_t*
     *chroma_buff = 0;
 }
 
+/* Set all chroma buffers to unused */
+void displayResetChroma(void)
+{
+    for (int i=0; i<MAX_FREE; i++)
+    {
+        chroma[i].used = false;
+    }
+}
+
+/* Obtain a pointer to the chroma buffer associated with the pixel buffer
+   return null pointer if chroma not enabled for this pixel buffer */
 static inline void displayGetChromaBufferUsed(uint8_t** chroma_buff, uint8_t* buff)
 {
     for (int i=0; i<MAX_FREE; i++)
@@ -221,6 +234,8 @@ static inline void displayGetChromaBufferUsed(uint8_t** chroma_buff, uint8_t* bu
     }
     *chroma_buff = 0;
 }
+
+/* Blank the display */
 void __not_in_flash_func(displayBlank)(bool black)
 {
     // Obtain lock
@@ -348,11 +363,12 @@ static inline void __not_in_flash_func(newFrame)(void)
             }
         }
     }
-    // Determine chroma
+    // Obtain the associated chroma buffer iff chroma enabled
     displayGetChromaBufferUsed(&cbuffer, curr_buff);
     mutex_exit(&next_frame_mutex);
 }
 
+/* Indicate whether chroma is enabled for the supplied pixel buffer */
 static inline void set_chroma_used(uint8_t* buff, bool used)
 {
     // Find the index of the buffer

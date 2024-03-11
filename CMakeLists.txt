@@ -26,9 +26,9 @@ endif()
 # e.g. cmake -DPICO_BOARD=olimexpcboard
 # Set to "lcdws28board" for Waveshare Pico-ResTouch-LCD-2.8
 # e.g. cmake -DPICO_BOARD=lcdws28board
-# Set to "lcdmakerboard" for Waveshare Pico-ResTouch-LCD-2.8
+# Set to "lcdmakerboard" for LCD connected to Cytron Maker board
 # e.g. cmake -DPICO_BOARD=lcdmakerboard
-# Set to "vgamaker222cboard" for vga 222 with csync based on maker board
+# Set to "vgamaker222cboard" for vga 222 with csync based on Cytron Maker board
 # e.g. cmake -DPICO_BOARD=vgamaker222cboard
 
 set(CMAKE_C_STANDARD 11)
