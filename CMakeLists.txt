@@ -77,7 +77,9 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
     set(DISPLAY_SOURCES
         display/display_dvi.c
         display/tmds_double.S
-        display/tmds_double.h)
+        display/tmds_double.h
+        display/tmds_chroma.S
+        display/tmds_chroma.h)
 elseif ((${PICO_BOARD} STREQUAL "lcdws28board") OR (${PICO_BOARD} STREQUAL "lcdmakerboard"))
     set(DISPLAY_SOURCES
         display/display_lcd.c)
@@ -129,9 +131,7 @@ endif()
 if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard"))
     target_compile_definitions(${PROJECT} PUBLIC
                                 -DDVI_1BPP_BIT_REVERSE=1
-                                -DDVI_VERTICAL_REPEAT=2
-                                -DDVI_N_TMDS_BUFFERS=3
-                                -DDVI_MONOCHROME_TMDS)
+                                -DDVI_VERTICAL_REPEAT=2)
     target_link_libraries(${PROJECT} libdvi)
 
     if (${PICO_BOARD} STREQUAL "dviboard")
