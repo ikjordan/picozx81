@@ -48,7 +48,7 @@ extern void ExecZ80(void);
 #define QSUDG_STORE_CHECK(x,y) \
          if(useQSUDG) {\
             if (x>=0x8400 && x<0x8800){\
-               font[x-0x8400] = y;\
+               mem[x] = y;\
                UDGEnabled = true;\
             }\
          }\

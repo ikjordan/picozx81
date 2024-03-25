@@ -75,7 +75,6 @@ tmds_encode_screen:
   mov r8, r4
   mov r9, r5
   mov r10, r6
-  mov r0, r2        // Return the updated output buffer pointer
   pop {r4-r7, pc}   // Restore registers and put ret address in pc
 
 //
@@ -128,7 +127,6 @@ tmds_encode_border:
   cmp r2, ip
   blo 3b
 
-  mov r0, r2         // Return the output buffer pointer
   pop {r6-r7, pc}    // Restore remaining registers set pc to return address
 
 

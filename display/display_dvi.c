@@ -48,6 +48,7 @@ static uint16_t keyboard_x = 0;
 static uint16_t keyboard_y = 0;
 static uint16_t keyboard_right = 0;
 static uint16_t keyboard_to_fill = 0;
+static uint16_t chromaAdjust576 = 0;
 
 #ifdef SOUND_HDMI
 static const int hdmi_n[3] = {4096, 6272, 6144};
@@ -111,9 +112,11 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     }
 
     // Allocate chroma buffers
+    chromaAdjust576 = fiveSevenSix ? info->info.hdmi.chromaAdjust576 : 0;
+
     for (int i=0; i<MAX_FREE; ++i)
     {
-        chroma[i].buff = (uint8_t*)malloc(startPad + stride * HEIGHT)
+        chroma[i].buff = (uint8_t*)malloc(startPad + stride * (HEIGHT - chromaAdjust576))
                          + startPad;
 
         if (!chroma[i].buff)
@@ -191,95 +194,104 @@ static void __not_in_flash_func(render_loop)()
             uint8_t* buff = curr_buff;    // As curr_buff can change at any time
             uint8_t* cbuf = cbuffer;
 
-			const uint32_t *linebuf = (const uint32_t*)&buff[stride * y];
-			const uint32_t *chromabuf = cbuf ? (const uint32_t*)&cbuf[stride * y] : 0;
+			const uint8_t *linebuf = &buff[stride * y];
+			const uint8_t *chromabuf = cbuf ? &cbuf[stride * y] : 0;
+			const uint32_t *linebuf32 = (const uint32_t*)&buff[stride * y];
 
 			uint32_t *tmdsbuf;
             queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
-            if (showKeyboard && (y >= keyboard_y) && (y <(keyboard_y + keyboard->height)))
+
+            if (cbuf && (y >= (HEIGHT - chromaAdjust576 * 2)) && (!blank))
             {
-                if (blank)
-                {
-                    for (int p=0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH)
-                    {
-                        uint32_t tm = (blank_colour == BLACK) ? 0x7fd00 : 0xbfe00;
-
-                        // 32 words of blank
-                        for (int i=0; i<keyboard_x; i++)
-                        {
-                            tmdsbuf[p + i] = tm;
-                        }
-
-                        // 256 words of keyboard
-                        tmds_double_2bpp((const uint32_t*)&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
-                                        &tmdsbuf[p + keyboard_x],
-                                        keyboard->width<<1);
-
-                        // 32 more words of blank
-                        for (int i=(PIXEL_WIDTH - keyboard_x); i<PIXEL_WIDTH; i++)
-                        {
-                            tmdsbuf[p + i] = tm;
-                        }
-                    }
-                }
-                else
-                {
-                    for (int p=0, plane = 0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH, ++plane)
-                    {
-                        if (cbuf)
-                        {
-                            // 32 words of display at 320, 52 words at 360
-                            tmds_encode_screen((uint8_t*)linebuf, (uint8_t*)chromabuf, &tmdsbuf[p], 4, plane);
-
-                            // Now do the end, as we need to encode from a 32 bit aligned boundary
-
-                            // 32 more words of display at 320, 52 more words at 360
-                            // Calculate start in pixels - to get to 32 bit words need to shift 5 times
-                            tmds_encode_screen((uint8_t*)&linebuf[keyboard_right>>5],
-                                                (uint8_t*)(&chromabuf[keyboard_right>>5]), &tmdsbuf[p], 4, plane);
-                        }
-                        else
-                        {
-                            // 32 words of display at 320, 52 words at 360
-                            tmds_double_1bpp(linebuf, &tmdsbuf[p], keyboard_x<<1);
-
-                            // Now do the end, as we need to encode from a 32 bit aligned boundary
-
-                            // 32 more words of display at 320, 52 more words at 360
-                            // Calculate start in pixels - to get to 32 bit words need to shift 5 times
-                            tmds_double_1bpp(&linebuf[keyboard_right>>5], &tmdsbuf[p + keyboard_right], keyboard_to_fill<<1);
-                        }
-                        // Insert 256 words of keyboard
-                        tmds_double_2bpp((const uint32_t*)&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
-                                        &tmdsbuf[p + keyboard_x],
-                                        keyboard->width<<1);
-                    }
-                }
+                for (int p=0, plane = 0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH, ++plane)
+                    tmds_encode_border(CHARACTER_WIDTH, plane, &tmdsbuf[p], chroma_border_colour);
             }
             else
             {
-                if (blank)
+                if (showKeyboard && (y >= keyboard_y) && (y <(keyboard_y + keyboard->height)))
                 {
-                    uint32_t tm = (blank_colour == BLACK) ? 0x7fd00 : 0xbfe00;
-
-                    for (int i=0; i<(3 * PIXEL_WIDTH); i++)
+                    if (blank)
                     {
-                        tmdsbuf[i] = tm;
+                        for (int p=0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH)
+                        {
+                            uint32_t tm = (blank_colour == BLACK) ? 0x7fd00 : 0xbfe00;
+
+                            // 32 words of blank
+                            for (int i=0; i<keyboard_x; i++)
+                            {
+                                tmdsbuf[p + i] = tm;
+                            }
+
+                            // 256 words of keyboard
+                            tmds_double_2bpp((const uint32_t*)&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
+                                            &tmdsbuf[p + keyboard_x],
+                                            keyboard->width<<1);
+
+                            // 32 more words of blank
+                            for (int i=(PIXEL_WIDTH - keyboard_x); i<PIXEL_WIDTH; i++)
+                            {
+                                tmdsbuf[p + i] = tm;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int p=0, plane = 0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH, ++plane)
+                        {
+                            if (cbuf)
+                            {
+
+                                // 32 pixels of display at 320, 52 pixels at 360
+                                tmds_encode_screen(linebuf, chromabuf, &tmdsbuf[p], (keyboard_x+7) >> 3, plane);
+
+                                // Now do the end, as we need to encode from a character aligned boundary
+
+                                // 32 more pixels of display at 320, 52 more pxels at 360
+                                // Calculate start in pixels - to get to bytes need to shift 3 times
+                                tmds_encode_screen(&linebuf[keyboard_right >> 3], &chromabuf[keyboard_right >> 3], 
+                                                   &tmdsbuf[p + keyboard_right], (keyboard_x+7) >> 3, plane);
+                            }
+                            else
+                            {
+                                // 32 pixels of display at 320, 52 pixels at 360
+                                tmds_double_1bpp(linebuf32, &tmdsbuf[p], keyboard_x<<1);
+
+                                // Now do the end, as we need to encode from a 32 bit aligned boundary
+
+                                // 32 more pixels of display at 320, 52 more pixels at 360
+                                // Calculate start in pixels - to get to 32 bit words need to shift 5 times
+                                tmds_double_1bpp(&linebuf32[keyboard_right>>5], &tmdsbuf[p + keyboard_right], keyboard_to_fill<<1);
+                            }
+                            // Insert 256 pixel of keyboard
+                            tmds_double_2bpp((const uint32_t*)&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
+                                            &tmdsbuf[p + keyboard_x],
+                                            keyboard->width<<1);
+                        }
                     }
                 }
                 else
                 {
-                    if (cbuf)
+                    if (blank)
                     {
-                        uint32_t* tmds = tmdsbuf;
+                        uint32_t tm = (blank_colour == BLACK) ? 0x7fd00 : 0xbfe00;
 
-                        for (int p=0; p<3; ++p)
-                            tmds = tmds_encode_screen((uint8_t*)linebuf, (uint8_t*)chromabuf, tmds, CHARACTER_WIDTH, p);
+                        for (int i=0; i<(3 * PIXEL_WIDTH); i++)
+                        {
+                            tmdsbuf[i] = tm;
+                        }
                     }
                     else
                     {
-                        for (int p=0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH)
-                            tmds_double_1bpp(linebuf, &tmdsbuf[p], video_mode->h_active_pixels);
+                        if (cbuf)
+                        {
+                            for (int p=0, plane = 0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH, ++plane)
+                                tmds_encode_screen(linebuf, chromabuf, &tmdsbuf[p], CHARACTER_WIDTH, plane);
+                        }
+                        else
+                        {
+                            for (int p=0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH)
+                                tmds_double_1bpp(linebuf32, &tmdsbuf[p], video_mode->h_active_pixels);
+                        }
                     }
                 }
             }

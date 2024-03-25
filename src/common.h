@@ -23,7 +23,6 @@ extern int LastInstruction;
 
 extern unsigned char mem[MEMORYRAM_SIZE];
 extern unsigned char *memptr[64];
-extern unsigned char font[1024];
 extern int memattr[64];
 extern unsigned long tstates,tsmax;
 extern int vsync_visuals;

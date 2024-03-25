@@ -28,7 +28,7 @@ extern Display_T disp;
 
 extern uint emu_VideoInit(void);
 extern void emu_VideoSetInterlace(void);
-
+extern void emu_VideoChromaAdjust(bool set, uint8_t colour);
 
 #ifdef __cplusplus
 }

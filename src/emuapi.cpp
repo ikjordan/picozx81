@@ -365,8 +365,7 @@ FrameSync_T emu_FrameSyncRequested(void)
 
 FiveSevenSix_T emu_576Requested(void)
 {
-    return FiveSevenSix_T::OFF;
-  //return specific.fiveSevenSix;
+  return specific.fiveSevenSix;
 }
 
 bool emu_lcdInvertColourRequested(void)

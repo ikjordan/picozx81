@@ -30,7 +30,6 @@ static void adjustChroma(bool start);
 
 byte mem[MEMORYRAM_SIZE];
 unsigned char *memptr[64];
-unsigned char font[1024];
 int memattr[64];
 int nmigen=0,hsyncgen=0,vsync=0;
 int vsync_visuals=1;
@@ -927,4 +926,5 @@ char *strzx80_to_ascii(int memaddr)
 static void adjustChroma(bool start)
 {
     adjustStartX = start ? disp.adjust_x : emu_CentreX();
+    emu_VideoChromaAdjust(start, bordercolour);
 }
