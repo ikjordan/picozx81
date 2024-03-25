@@ -194,11 +194,11 @@ static void __not_in_flash_func(render_loop)()
             uint8_t* buff = curr_buff;    // As curr_buff can change at any time
             uint8_t* cbuf = cbuffer;
 
-			const uint8_t *linebuf = &buff[stride * y];
-			const uint8_t *chromabuf = cbuf ? &cbuf[stride * y] : 0;
-			const uint32_t *linebuf32 = (const uint32_t*)&buff[stride * y];
+            const uint8_t *linebuf = &buff[stride * y];
+            const uint8_t *chromabuf = cbuf ? &cbuf[stride * y] : 0;
+            const uint32_t *linebuf32 = (const uint32_t*)&buff[stride * y];
 
-			uint32_t *tmdsbuf;
+            uint32_t *tmdsbuf;
             queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
 
             if (cbuf && (y >= (HEIGHT - chromaAdjust576 * 2)) && (!blank))
@@ -248,7 +248,7 @@ static void __not_in_flash_func(render_loop)()
 
                                 // 32 more pixels of display at 320, 52 more pxels at 360
                                 // Calculate start in pixels - to get to bytes need to shift 3 times
-                                tmds_encode_screen(&linebuf[keyboard_right >> 3], &chromabuf[keyboard_right >> 3], 
+                                tmds_encode_screen(&linebuf[keyboard_right >> 3], &chromabuf[keyboard_right >> 3],
                                                    &tmdsbuf[p + keyboard_right], (keyboard_x+7) >> 3, plane);
                             }
                             else

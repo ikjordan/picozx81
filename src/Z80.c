@@ -398,7 +398,7 @@ void __not_in_flash_func(ExecZ80)(void)
         (RasterY >= (disp.start_y - adjustStartY)) &&
         (RasterY < (disp.end_y - adjustStartY)))
     {
-      if (chromamode) 
+      if (chromamode)
       {
         int k = (dest + RasterX) >> 3;
         scrnbmpc_new[k] = colour;
@@ -610,15 +610,15 @@ void ResetZ80(void)
         radjust = 0xa9;
       }
       /* System variables */
-      mem[0x4000] = 0xff;				/* ERR_NR */
-      mem[0x4001] = 0x80;				/* FLAGS */
-      mem[0x4002] = sp & 0xff;		/* ERR_SP lo */
-      mem[0x4003] = sp >> 8;			/* ERR_SP hi */
-      mem[0x4004] = (sp + 4) & 0xff;	/* RAMTOP lo */
-      mem[0x4005] = (sp + 4) >> 8;	/* RAMTOP hi */
-      mem[0x4006] = 0x00;				/* MODE */
-      mem[0x4007] = 0xfe;				/* PPC lo */
-      mem[0x4008] = 0xff;				/* PPC hi */
+      mem[0x4000] = 0xff;               /* ERR_NR */
+      mem[0x4001] = 0x80;;              /* FLAGS */
+      mem[0x4002] = sp & 0xff;;         /* ERR_SP lo */
+      mem[0x4003] = sp >> 8;            /* ERR_SP hi */
+      mem[0x4004] = (sp + 4) & 0xff;    /* RAMTOP lo */
+      mem[0x4005] = (sp + 4) >> 8;      /* RAMTOP hi */
+      mem[0x4006] = 0x00;               /* MODE */
+      mem[0x4007] = 0xfe;               /* PPC lo */
+      mem[0x4008] = 0xff;               /* PPC hi */
     }
 
     /* finally, load. It'll reset (via reset81) if it fails. */

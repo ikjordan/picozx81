@@ -18,7 +18,7 @@
 + Emulates pseudo and Hi-res graphics
 + Emulates ZonX and Quicksilva sound
 + Emulates user defined graphics, including CHR$128 and QS User Defined Graphics
-+ Emulates [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm) to allow a colour display (VGA and LCD displays only)
++ Emulates [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm) to allow a colour display
 + Emulation runs at accurate speed of a 3.25MHz ZX81
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
@@ -561,7 +561,6 @@ Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n;
 + Support for USB gamepads as well as joysticks
 + Extend the Maker VGA222 board type to support original DB9 joysticks
 + Add vsync (TV) based sound
-+ Add Chroma 81 support to the DVI / HDMI variants
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 ## Comparison to MCUME
 [MCUME](https://github.com/Jean-MarcHarvengt/MCUME/) demonstrated that a Raspberry Pi Pico based ZX80/81 emulator was feasible. The custom VGA RGB 332 board type is similar to the hardware required for MCUME
@@ -572,7 +571,7 @@ This emulator offers the following over MCUME:
 + Ability to save files
 + Ability to load a program without reset
 + Support for Hi-res and pseudo Hi-res graphics
-+ Support for multiple DVI and VGA boards
++ Support for multiple DVI, VGA and LCD boards
 + Support for programs which use more than 32 columns or 24 rows of characters
 + ZonX and QS Sound emulation
 + Emulated QS UDG
