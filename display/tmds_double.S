@@ -196,3 +196,23 @@ tmds_d2bpp_table:
 	.word 0xb3e30 // 10, 10
 	.word 0x73d30 // 01, 01
 	.word 0x7f103 // 00, 00
+
+// r0: start of tdms buffer for plane 1
+// r1: pixel count to copy
+decl_func tmds_clone
+    push {lr}
+    lsls r1, #2     // convert to 32 bit words
+    adds r2, r0, r1 // Start of plane 2
+    mov ip, r2      // End when get to plane 2
+    adds r3, r2, r1 // Start of plane 3
+    b 2f
+
+1:
+    ldm r0!, {r1}
+    stm r2!, {r1}
+    stm r3!, {r1}
+
+2:
+    cmp r0, ip
+    blo 1b
+    pop {pc}
