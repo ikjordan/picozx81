@@ -201,7 +201,7 @@ static void __not_in_flash_func(render_loop)()
 
             queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
 
-            if (cbuf && (y >= (HEIGHT - chromaAdjust576 * 2)) && (!blank))
+            if (cbuf && (y >= (HEIGHT - chromaAdjust576)) && (!blank))
             {
                 // Process chroma HDMI memory workaround
                 for (int p=0, plane = 0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH, ++plane)
