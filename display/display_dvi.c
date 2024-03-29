@@ -184,7 +184,7 @@ bool displayShowKeyboard(bool zx81)
 //
 static void __not_in_flash_func(render_loop)()
 {
-    uint32_t *tmdsbuf;
+    uint32_t *tmdsbuf = 0;
 
     while (true)
     {

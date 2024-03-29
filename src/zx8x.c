@@ -99,16 +99,16 @@ unsigned int in(int h, int l)
 #ifdef DEBUG_CHROMA
       printf("Insufficient RAM Size for Chroma!\n");
 #endif
-      return 255;
+      return 0xFF;
     }
     else if (!emu_chromaSupported())
     {
 #ifdef DEBUG_CHROMA
       printf("Display does not support Chroma \n");
 #endif
-      return 255;
+      return 0xFF;
     }
-    return 0; /* chroma available */
+    return 0x02; /* chroma 80 and 81 available*/
   }
 
   if (!(l&1))
@@ -183,6 +183,7 @@ unsigned int out(int h,int l,int a)
       printf("Chroma requested, but not supported.\n");
 #endif
     }
+    LastInstruction=LASTINSTOUTFF;
     return 0;
   }
 
@@ -409,6 +410,22 @@ void load_p(int a)
       {
         start = 0x4009;
         max_read -= 9;
+      }
+    }
+
+    // A ZX81 loading a .p81 file should skip the filename
+    if (!zx80)
+    {
+      if (emu_EndsWith(fname, ".p81"))
+      {
+        char temp[1];
+        int pos = 0;
+        do
+        {
+          emu_FileRead(temp, 1, pos++);
+        } while (!(temp[0] & 0x80));    // Last character has bit 7 set
+
+        offset += pos;
       }
     }
 
@@ -844,8 +861,11 @@ void z8x_Start(const char * filename)
         // Read the new specific values
         emu_ReadSpecificValues(fname);
 
-        // Determine the computer type from the ending
-        emu_SetZX80(emu_EndsWith(fname, ".o") || emu_EndsWith(fname, ".80"));
+        // Determine the computer type from the ending - do not change for .p81
+        if (!emu_EndsWith(fname, ".p81"))
+        {
+          emu_SetZX80(emu_EndsWith(fname, ".o") || emu_EndsWith(fname, ".80"));
+        }
       }
       emu_FileClose();
       EMU_UNLOCK_SDCARD
