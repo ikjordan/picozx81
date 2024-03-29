@@ -442,7 +442,9 @@ void __not_in_flash_func(ExecZ80)(void)
       {
         hsync_counter -= HLEN;
         if (!zx80)
+        {
           hsync_pending = 1;
+        }
       }
 
       // Start of HSYNC, and NMI if enabled
@@ -680,8 +682,8 @@ static inline int __not_in_flash_func(nmi_interrupt)(void)
 /* Normally, these sync checks are done by the TV :-) */
 static inline void __not_in_flash_func(checkhsync)(int tolchk)
 {
-  if ( ( !tolchk && sync_len >= HSYNC_MINLEN && sync_len < (HSYNC_MAXLEN + MAX_JMP) && RasterX>=HSYNC_TOLERANCEMIN )  ||
-       (  tolchk &&                                                                    RasterX>=HSYNC_TOLERANCEMAX ) )
+  if ( ( !tolchk && sync_len >= HSYNC_MINLEN && sync_len <= (HSYNC_MAXLEN + MAX_JMP) && RasterX>=HSYNC_TOLERANCEMIN )  ||
+       (  tolchk &&                                                                     RasterX>=HSYNC_TOLERANCEMAX ) )
   {
     if (zx80)
       RasterX = (hsync_counter - HSYNC_END) << 1;
