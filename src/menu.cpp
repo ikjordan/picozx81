@@ -1413,7 +1413,7 @@ static int populateFiles(const char* path, uint first)
             if ((!(fno.fattrib & AM_DIR) && (strlen(fno.fname) < MAX_FILENAME_LEN)) &&
                 ((emu_EndsWith(fno.fname, ".o") || emu_EndsWith(fno.fname, ".p") ||
                   emu_EndsWith(fno.fname, ".80") || emu_EndsWith(fno.fname, ".81") ||
-                  allfiles)))
+                  emu_EndsWith(fno.fname, ".p81") || allfiles)))
             {
                 if ((count >= first) && (count < (first + fullrow)))
                 {
@@ -1520,7 +1520,7 @@ static bool getFile(char* inout, uint index, bool* direct)
                 if ((strlen(fno.fname) < MAX_FILENAME_LEN) &&
                     ((emu_EndsWith(fno.fname, ".o") || emu_EndsWith(fno.fname, ".p") ||
                       emu_EndsWith(fno.fname, ".80") || emu_EndsWith(fno.fname, ".81")) ||
-                      allfiles))
+                      emu_EndsWith(fno.fname, ".p81") || allfiles))
                 {
                     ++count;
                 }

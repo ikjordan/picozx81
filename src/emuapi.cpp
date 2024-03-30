@@ -714,7 +714,7 @@ static int handler(void *user, const char *section, const char *name,
     }
     else if (!strcasecmp(name, "FrameSync"))
     {
-      if (!strcasecmp(value, "Interlaced"))
+      if ((!strcasecmp(value, "Interlaced")) || (!strcasecmp(value, "Interlace")))
       {
         c->conf->frameSync = SYNC_ON_INTERLACED;
       }

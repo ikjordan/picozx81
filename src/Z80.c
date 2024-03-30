@@ -147,7 +147,10 @@ static void __not_in_flash_func(displayAndNewScreen)(bool sync)
   // Clear the new screen - we have 3 buffers, so will not
   // have race with switching the screens to be displayed
   memset(scrnbmp_new, 0x00, disp.length);
-  if (chromamode && (bordercolournew != bordercolour)) bordercolour = bordercolournew;
+  if (chromamode && (bordercolournew != bordercolour))
+  {
+    bordercolour = bordercolournew;
+  }
   if (chromamode) memset(scrnbmpc_new, (bordercolour << 4) + bordercolour, disp.length);
 }
 
@@ -300,7 +303,7 @@ void __not_in_flash_func(ExecZ80)(void)
 
           if (UDGEnabled && addr>=0x1E00 && addr<0x2000)
           {
-            v = font[addr-((op&128)?0x1C00:0x1E00)];
+            v = mem[addr + ((op&128) ? 0x6800 : 0x6600)];
           }
           else
           {
@@ -385,34 +388,6 @@ void __not_in_flash_func(ExecZ80)(void)
       break;
     }
 
-#if 0
-    // Plot data in shift register
-    // Note subtract 6 as this leaves the smallest positive number
-    // of bits to carry to next byte (2)
-    if (v &&
-        (RasterX >= (disp.start_x - adjustStartX - 6)) &&
-        (RasterX < (disp.end_x - adjustStartX)) &&
-        (RasterY >= (disp.start_y - adjustStartY)) &&
-        (RasterY < (disp.end_y - adjustStartY)))
-    {
-      int k = dest + RasterX;
-      {
-        int kh = k >> 3;
-        int kl = k & 7;
-
-        if (kl)
-        {
-          scrnbmp_new[kh++]|=(v>>kl);
-          scrnbmp_new[kh]=(v<<(8-kl));
-        }
-        else
-        {
-          scrnbmp_new[kh]=v;
-        }
-      }
-    }
-#endif
-
     // Plot data in shift register
     // Note subtract 6 as this leaves the smallest positive number
     // of bits to carry to next byte (2)
@@ -466,7 +441,9 @@ void __not_in_flash_func(ExecZ80)(void)
       {
         hsync_counter -= HLEN;
         if (!zx80)
+        {
           hsync_pending = 1;
+        }
       }
 
       // Start of HSYNC, and NMI if enabled
@@ -634,15 +611,15 @@ void ResetZ80(void)
         radjust = 0xa9;
       }
       /* System variables */
-      mem[0x4000] = 0xff;				/* ERR_NR */
-      mem[0x4001] = 0x80;				/* FLAGS */
-      mem[0x4002] = sp & 0xff;		/* ERR_SP lo */
-      mem[0x4003] = sp >> 8;			/* ERR_SP hi */
-      mem[0x4004] = (sp + 4) & 0xff;	/* RAMTOP lo */
-      mem[0x4005] = (sp + 4) >> 8;	/* RAMTOP hi */
-      mem[0x4006] = 0x00;				/* MODE */
-      mem[0x4007] = 0xfe;				/* PPC lo */
-      mem[0x4008] = 0xff;				/* PPC hi */
+      mem[0x4000] = 0xff;               /* ERR_NR */
+      mem[0x4001] = 0x80;;              /* FLAGS */
+      mem[0x4002] = sp & 0xff;;         /* ERR_SP lo */
+      mem[0x4003] = sp >> 8;            /* ERR_SP hi */
+      mem[0x4004] = (sp + 4) & 0xff;    /* RAMTOP lo */
+      mem[0x4005] = (sp + 4) >> 8;      /* RAMTOP hi */
+      mem[0x4006] = 0x00;               /* MODE */
+      mem[0x4007] = 0xfe;               /* PPC lo */
+      mem[0x4008] = 0xff;               /* PPC hi */
     }
 
     /* finally, load. It'll reset (via reset81) if it fails. */
@@ -704,8 +681,8 @@ static inline int __not_in_flash_func(nmi_interrupt)(void)
 /* Normally, these sync checks are done by the TV :-) */
 static inline void __not_in_flash_func(checkhsync)(int tolchk)
 {
-  if ( ( !tolchk && sync_len >= HSYNC_MINLEN && sync_len < (HSYNC_MAXLEN + MAX_JMP) && RasterX>=HSYNC_TOLERANCEMIN )  ||
-       (  tolchk &&                                                                    RasterX>=HSYNC_TOLERANCEMAX ) )
+  if ( ( !tolchk && sync_len >= HSYNC_MINLEN && sync_len <= (HSYNC_MAXLEN + MAX_JMP) && RasterX>=HSYNC_TOLERANCEMIN )  ||
+       (  tolchk &&                                                                     RasterX>=HSYNC_TOLERANCEMAX ) )
   {
     if (zx80)
       RasterX = (hsync_counter - HSYNC_END) << 1;

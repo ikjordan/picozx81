@@ -72,4 +72,3 @@ void emu_VideoSetInterlace(void)
 {
     displaySetInterlace(emu_FrameSyncRequested() == SYNC_ON_INTERLACED);
 }
-

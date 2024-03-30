@@ -10,7 +10,7 @@
 
 # Features
 + Supports VGA, HDMI, DVI and LCD displays
-+ Supports sound over onboard DAC or PWM when available in hardware
++ Supports sound over HDMI, onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
 + Can be fully controlled from a ZX81 style 40 key keyboard
@@ -18,11 +18,11 @@
 + Emulates pseudo and Hi-res graphics
 + Emulates ZonX and Quicksilva sound
 + Emulates user defined graphics, including CHR$128 and QS User Defined Graphics
-+ Emulates [Chroma 81 Interface](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm) to allow a colour display (VGA and LCD displays only)
++ Emulates the [Chroma 80](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface.htm) and [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm) interfaces to allow a colour display
 + Emulation runs at accurate speed of a 3.25MHz ZX81
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
-+ Load `.p`, `.81`, `.o` and `.80` files from micro SD Card. Save `.p` and `.o` files
++ Load `.p`, `.81`, `.o`, `.80` and `.p81` files from micro SD Card. Save `.p` and `.o` files
 + Can display at 640x480 or 720x576 (for an authentic display on a UK TV)
 + 720x576 can be configured to run at a frame rate to match the "real" ZX81 (~50.65 Hz).
 + An interlaced mode can be selected to display interlaced images with minimal flicker
@@ -30,7 +30,6 @@
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
 + Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME) and for a RGB 222 board with CSYNC similar to [PICOZX](https://hackaday.io/project/186039-pico-zx-spectrum-128k)
-+ Supports sound over HDMI (experimental)
 ## Supported Hardware
 + [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base)
 + [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base)
@@ -78,8 +77,7 @@ To the right can be seen a status page, illustrating some of the configurable op
 <img src="images/lcd_3_2.jpg" width="95%" />
 </p>
 
-### Chroma ZX81 Emulation
-
+### Chroma 80 and Chroma 81 Emulation
 [ColourAttrModeTest](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/Files/Programs/ColourAttrModeTest.zip) and [HiRes ZX-Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip)
 <p align="middle">
 <img src="images/chroma_attribute.jpg" width="49.0%" />
@@ -158,7 +156,7 @@ The following can be configured:
 | M1NOT | Allows machine code to be executed between 0x8000 and 0xbfff| Off |Memory must be set to 32 or 48|
 | ExtendFile| Enables the loading and saving of memory blocks for the ZX81, using ZXpand+ syntax|On| See [Loading and Saving Memory Blocks](#loading-and-saving-memory-blocks)|
 | Centre | When enabled the usual 32 by 24 character display is centred on screen| On | When in 640 by 480 mode, set to Off for some programs that require the full 320 by 240 pixel display (e.g. [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) or [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html))|
-| FrameSync | Synchronises screen updates to the start of the display frame. Option to synchronise frame pairs for programs that display interlaced images| Off |On reduces "tearing" in programs with horizontal scrolling, at the expense of a possible small lag. Interlaced reduces flickering in programs that display interlaced images|
+| FrameSync | Synchronises screen updates to the start of the display frame. Option to synchronise frame pairs for programs that display interlaced images| Off |`On` reduces "tearing" in programs with horizontal scrolling, at the expense of a possible small lag. `Interlaced` reduces flickering in programs that display interlaced images|
 | CHR128 | Enables emulation of a 128 character user defined graphics board (CHR$128) in Low memory. | Off|When enabled LowRAM is forced to On, WRX and QSUDG are forced to off|
 | QSUDG | Enables emulation of the QS user defined graphics board| Off |Memory automatically limited to 16 when selected |
 | Sound | Selects sound card (if any) | Off | Quicksilva and ZonX supported |
@@ -343,7 +341,7 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
   + Creates a 40 by 30 character display
 ### Pseudo Hi-res
 + [Celebration and Lightning Display Driver](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/Celebration.htm)
-  + Set UDG and LowRAM on, and Memory to 48kB to view a colour version of celebration
+  + Set LowRAM on, and Memory to 48kB to view a colour version of celebration
 + [Z-Xtricator](http://www.zx81stuff.org.uk/zx81/tape/Z-Xtricator)
   + For the bomb (aka "Super Zapper") effects to render correctly `WRX` must be set to Off (see [here](https://www.sinclairzxworld.com/viewtopic.php?p=46499#p46499))
 + [Rocket Man](http://www.zx81stuff.org.uk/zx81/tape/RocketMan)
@@ -351,6 +349,7 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [ZX81 Hires Invaders](https://www.perfectlynormalsite.com/hiresinvaders.html)
 + [High Resolution Invaders](http://www.fruitcake.plus.com/Sinclair/ZX81/Archive/OdysseyComputing.htm)
 + [Against The Elements](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm)
+  + Set LowRAM on, and Memory to 48kB to view a colour version of celebration
 ### WRX
 + Dr Beep's amazing collection of [81 1K games](https://www.sinclairzxworld.com/viewtopic.php?f=4&t=552&start=220)
   + A sub-set have been tested. More will be test tested, but it is very easy to become distracted as they are very addictive! So far all appear to be displayed correctly
@@ -415,6 +414,15 @@ Both generate a display more than 320 pixels wide, so some information is not di
 ### Interlaced Images
 + [Ilena](https://www.sinclairzxworld.com/viewtopic.php?p=16058)
   + Best viewed with `FrameSync` set to `Interlaced`
+### Chroma 81
++ To enable chroma support set LowRAM on, and Memory to 48kB
++ [Celebration](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/Celebration.htm)
++ [Against The Elements](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm)
++ [Attribute Mode Test Program](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm)
++ [HiRes Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip). Ensure WRX RAM is disabled
++ [Chroma Slideshow](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm). This works well with `FrameSync` set to `Interlaced`. Note that the program loads a series of image files. A config entry with `FrameSync` set to `Interlaced` needs to be created for each image file
++ [ROCK CRUSH 80](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_RockCrush80.htm). This is a ZX80 game, but the `.p81` file will also run on the ZX81 
+
 ## ZX80
 + [ZX80 3K QS DEFENDER](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Defender.htm)
   + This game generates 32 lines of text. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` so that the score, which is towards the top of the display, is visible. The game is still playable without the bottom of the display being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated
@@ -422,6 +430,12 @@ Both generate a display more than 320 pixels wide, so some information is not di
 + [Double Breakout](http://www.fruitcake.plus.com/Sinclair/ZX80/SoftwareArchive4K/BeamSoftware.htm)
 + [Kong](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Kong.htm)
 + [Pacman](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Pacman.htm)
+### Chroma 80
++ To enable chroma support set LowRAM on, and Memory to 48kB
++ [Colour Mode 1 Demo](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface_Software_NativeColour.htm)
++ [ROCK CRUSH 80](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_RockCrush80.htm)
++ [Demo display drivers](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface_Software_ExampleHiResDrivers.htm)
+
 ## Programs with limitations or artefacts
 + [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda)
   + This game generates 31 lines of text, one less than ZX80 QS DEFENDER. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` to display the top lines, which include the score. The game is still playable without the bottom line being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated correctly
@@ -470,7 +484,6 @@ This will be named `picozx81_vga.uf2`
 
 **Notes:**
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
-+ The HDMI sound builds are experimental
 
 6. Upload the `uf2` file to the pico
 7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
@@ -561,7 +574,6 @@ Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n;
 + Support for USB gamepads as well as joysticks
 + Extend the Maker VGA222 board type to support original DB9 joysticks
 + Add vsync (TV) based sound
-+ Add Chroma 81 support to the DVI / HDMI variants
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 ## Comparison to MCUME
 [MCUME](https://github.com/Jean-MarcHarvengt/MCUME/) demonstrated that a Raspberry Pi Pico based ZX80/81 emulator was feasible. The custom VGA RGB 332 board type is similar to the hardware required for MCUME
@@ -572,7 +584,7 @@ This emulator offers the following over MCUME:
 + Ability to save files
 + Ability to load a program without reset
 + Support for Hi-res and pseudo Hi-res graphics
-+ Support for multiple DVI and VGA boards
++ Support for multiple DVI, VGA and LCD boards
 + Support for programs which use more than 32 columns or 24 rows of characters
 + ZonX and QS Sound emulation
 + Emulated QS UDG

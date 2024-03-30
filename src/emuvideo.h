@@ -29,7 +29,6 @@ extern Display_T disp;
 extern uint emu_VideoInit(void);
 extern void emu_VideoSetInterlace(void);
 
-
 #ifdef __cplusplus
 }
 #endif

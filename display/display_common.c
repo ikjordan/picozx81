@@ -29,7 +29,6 @@ static uint8_t* free_buff[MAX_FREE] = {0, 0, 0, 0};     // Buffers available to 
 
 static uint8_t* cbuffer = 0;        // Chroma buffer
 
-
 static uint8_t* index_to_display[MAX_FREE] = {0, 0, 0, 0};
 static chroma_t chroma[MAX_FREE] = { {0, false}, {0, false}, {0,false}, {0,false} };
 static uint8_t free_count = 0;

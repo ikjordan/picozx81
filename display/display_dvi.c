@@ -7,12 +7,16 @@
 #include "dvi_serialiser.h"
 #include "common_dvi_pin_configs.h"
 #include "tmds_double.h"
+#include "tmds_chroma.h"
 #include "display.h"
 #include "zx80bmp.h"
 #include "zx81bmp.h"
 
 #define DVI_TIMING dvi_timing_720x576p_51hz
 #define __dvi_const(x) __not_in_flash_func(x)
+
+#define TDMS_BLACK 0x7fd00
+#define TDMS_WHITE 0xbfe00
 
 // Define a slightly higher frame rate, as in normal operation the
 // ZX81 also produces a display approximately 1.3% faster than 50 Hz
@@ -39,6 +43,7 @@ static struct dvi_inst dvi0;
 static const struct dvi_timing* video_mode = 0;
 
 static uint16_t PIXEL_WIDTH = 0;
+static uint16_t CHARACTER_WIDTH = 0;
 static uint16_t HEIGHT = 0;
 
 static const KEYBOARD_PIC* keyboard = &ZX81KYBD;
@@ -85,24 +90,32 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
 
     PIXEL_WIDTH = video_mode->h_active_pixels >> 1;
     HEIGHT = video_mode->v_active_lines >> 1;
-    uint16_t byte_width = PIXEL_WIDTH >> 3;
+    CHARACTER_WIDTH = PIXEL_WIDTH >> 3;
 
-    // Is padding requested? For DVI need to pad to 4 bytes
-    uint16_t startPad = ((minBuffByte + 3) >> 2) << 2;
-    uint16_t linePad = (4 - (byte_width % 4)) % 4;
-
-    if (linePad < minBuffByte)
-    {
-        linePad += (((minBuffByte - linePad) >> 2) + 1) << 2;
-    }
-
-    stride = linePad + byte_width;
+    // Is padding requested? For DVI can pad a single byte
+    stride = minBuffByte + (PIXEL_WIDTH >> 3);
 
     // Allocate the buffers
     for (int i=0; i<MAX_FREE; ++i)
     {
-        free_buff[i] = (uint8_t*)malloc(startPad + stride * HEIGHT)
-                         + startPad;
+        free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
+                         + minBuffByte;
+
+        // Store original index, so that can map a chroma buffer, if necessary
+        index_to_display[i] = free_buff[i];
+    }
+
+    // Allocate chroma buffers
+    for (int i=0; i<MAX_FREE; ++i)
+    {
+        chroma[i].buff = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
+                        + minBuffByte;
+
+        if (!chroma[i].buff)
+        {
+            printf("Insufficient memory for chroma - aborting\n");
+            exit(-1);
+        }
     }
 
     free_count = MAX_FREE;
@@ -163,6 +176,8 @@ bool displayShowKeyboard(bool zx81)
 //
 static void __not_in_flash_func(render_loop)()
 {
+    uint32_t *tmdsbuf = 0;
+
     while (true)
     {
         newFrame();
@@ -171,63 +186,110 @@ static void __not_in_flash_func(render_loop)()
         for (uint y = 0; y < HEIGHT; ++y)
         {
             uint8_t* buff = curr_buff;    // As curr_buff can change at any time
-			const uint32_t *linebuf = (const uint32_t*)&buff[stride * y];
-			uint32_t *tmdsbuf;
+            uint8_t* cbuf = cbuffer;
+
+            const uint8_t* linebuf = &buff[stride * y];
+
             queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
+
             if (showKeyboard && (y >= keyboard_y) && (y <(keyboard_y + keyboard->height)))
             {
                 if (blank)
                 {
-                    uint32_t tm = (blank_colour == BLACK) ? 0x7fd00 : 0xbfe00;
+                    uint32_t tm = (blank_colour == BLACK) ? TDMS_BLACK : TDMS_WHITE;
 
-                    // 32 words of blank
+                    // Initial words of blank
                     for (int i=0; i<keyboard_x; i++)
                     {
                         tmdsbuf[i] = tm;
                     }
 
                     // 256 words of keyboard
-                    tmds_double_2bpp((const uint32_t*)&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
+                    tmds_double_2bpp(&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
                                      &tmdsbuf[keyboard_x],
                                      keyboard->width<<1);
 
-                    // 32 more words of blank
+                    // Final words of blank
                     for (int i=(PIXEL_WIDTH - keyboard_x); i<PIXEL_WIDTH; i++)
                     {
                         tmdsbuf[i] = tm;
                     }
+
+                    // Fill in other colour channels
+                    tmds_clone(tmdsbuf, PIXEL_WIDTH);
                 }
                 else
                 {
-                    // 32 words of display at 320, 52 words at 360
-                    tmds_double_1bpp(linebuf, tmdsbuf, keyboard_x<<1);
+                    if (cbuf)
+                    {
+                        const uint8_t* chromabuf = &cbuf[stride * y];
 
-                    // Now do the end, as we need to encode from a 32 bit aligned boundary
+                        for (int p=0, plane = 0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH, ++plane)
+                        {
 
-                    // 32 more words of display at 320, 52 more words at 360
-                    // Calculate start in pixels - to get to 32 bit words need to shift 5 times
-                    tmds_double_1bpp(&linebuf[keyboard_right>>5], &tmdsbuf[keyboard_right], keyboard_to_fill<<1);
+                            // 32 pixels of display at 320, 52 pixels at 360
+                            tmds_encode_screen(linebuf, chromabuf, &tmdsbuf[p], (keyboard_x+7) >> 3, plane);
 
-                    // Insert 256 words of keyboard
-                    tmds_double_2bpp((const uint32_t*)&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
-                                     &tmdsbuf[keyboard_x],
-                                     keyboard->width<<1);
+                            // Now do the end, as we need to encode from a character aligned boundary
+
+                            // 32 more pixels of display at 320, 52 more pixels at 360
+                            // Calculate start in pixels - to get to bytes need to shift 3 times
+                            tmds_encode_screen(&linebuf[keyboard_right >> 3], &chromabuf[keyboard_right >> 3],
+                                               &tmdsbuf[p + keyboard_right], (keyboard_x+7) >> 3, plane);
+
+                            // Insert 256 pixel of keyboard
+                            tmds_double_2bpp(&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
+                                             &tmdsbuf[p + keyboard_x],
+                                             keyboard->width<<1);
+                        }
+                    }
+                    else
+                    {
+                        // 32 pixels of display at 320, 52 pixels at 360
+                        tmds_double_1bpp(linebuf, tmdsbuf, keyboard_x<<1);
+
+                        // Now do the end, as we need to encode from a 32 bit aligned boundary
+
+                        // 32 more pixels of display at 320, 52 more pixels at 360
+                            // Calculate start in pixels - to get to bytes need to shift 3 times
+                        tmds_double_1bpp(&linebuf[keyboard_right>>3], &tmdsbuf[keyboard_right], keyboard_to_fill<<1);
+
+                        // Insert 256 pixel of keyboard
+                        tmds_double_2bpp(&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
+                                         &tmdsbuf[keyboard_x],
+                                         keyboard->width<<1);
+
+                        // Fill in other colour channels
+                        tmds_clone(tmdsbuf, PIXEL_WIDTH);
+                    }
                 }
             }
             else
             {
                 if (blank)
                 {
-                    uint32_t tm = (blank_colour == BLACK) ? 0x7fd00 : 0xbfe00;
+                    uint32_t tm = (blank_colour == BLACK) ? TDMS_BLACK : TDMS_WHITE;
 
                     for (int i=0; i<PIXEL_WIDTH; i++)
                     {
                         tmdsbuf[i] = tm;
                     }
+                    tmds_clone(tmdsbuf, PIXEL_WIDTH);
                 }
                 else
                 {
-                    tmds_double_1bpp(linebuf, tmdsbuf, video_mode->h_active_pixels);
+                    if (cbuf)
+                    {
+                        const uint8_t* chromabuf = &cbuf[stride * y];
+
+                        for (int p=0, plane = 0; p <= (PIXEL_WIDTH << 1); p += PIXEL_WIDTH, ++plane)
+                            tmds_encode_screen(linebuf, chromabuf, &tmdsbuf[p], CHARACTER_WIDTH, plane);
+                    }
+                    else
+                    {
+                        tmds_double_1bpp(linebuf, tmdsbuf, video_mode->h_active_pixels);
+                        tmds_clone(tmdsbuf, PIXEL_WIDTH);
+                    }
                 }
             }
             queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmdsbuf);
