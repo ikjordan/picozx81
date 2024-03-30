@@ -189,7 +189,6 @@ static void __not_in_flash_func(render_loop)()
             uint8_t* cbuf = cbuffer;
 
             const uint8_t* linebuf = &buff[stride * y];
-            const uint32_t* linebuf32 = (const uint32_t*)linebuf;
 
             queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
 
@@ -206,9 +205,9 @@ static void __not_in_flash_func(render_loop)()
                     }
 
                     // 256 words of keyboard
-                    tmds_double_2bpp((const uint32_t*)&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
-                                    &tmdsbuf[keyboard_x],
-                                    keyboard->width<<1);
+                    tmds_double_2bpp(&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
+                                     &tmdsbuf[keyboard_x],
+                                     keyboard->width<<1);
 
                     // Final words of blank
                     for (int i=(PIXEL_WIDTH - keyboard_x); i<PIXEL_WIDTH; i++)
@@ -233,32 +232,32 @@ static void __not_in_flash_func(render_loop)()
 
                             // Now do the end, as we need to encode from a character aligned boundary
 
-                            // 32 more pixels of display at 320, 52 more pxels at 360
+                            // 32 more pixels of display at 320, 52 more pixels at 360
                             // Calculate start in pixels - to get to bytes need to shift 3 times
                             tmds_encode_screen(&linebuf[keyboard_right >> 3], &chromabuf[keyboard_right >> 3],
-                                                &tmdsbuf[p + keyboard_right], (keyboard_x+7) >> 3, plane);
+                                               &tmdsbuf[p + keyboard_right], (keyboard_x+7) >> 3, plane);
 
                             // Insert 256 pixel of keyboard
-                            tmds_double_2bpp((const uint32_t*)&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
-                                            &tmdsbuf[p + keyboard_x],
-                                            keyboard->width<<1);
+                            tmds_double_2bpp(&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
+                                             &tmdsbuf[p + keyboard_x],
+                                             keyboard->width<<1);
                         }
                     }
                     else
                     {
                         // 32 pixels of display at 320, 52 pixels at 360
-                        tmds_double_1bpp(linebuf32, tmdsbuf, keyboard_x<<1);
+                        tmds_double_1bpp(linebuf, tmdsbuf, keyboard_x<<1);
 
                         // Now do the end, as we need to encode from a 32 bit aligned boundary
 
                         // 32 more pixels of display at 320, 52 more pixels at 360
-                        // Calculate start in pixels - to get to 32 bit words need to shift 5 times
-                        tmds_double_1bpp(&linebuf32[keyboard_right>>5], &tmdsbuf[keyboard_right], keyboard_to_fill<<1);
+                            // Calculate start in pixels - to get to bytes need to shift 3 times
+                        tmds_double_1bpp(&linebuf[keyboard_right>>3], &tmdsbuf[keyboard_right], keyboard_to_fill<<1);
 
                         // Insert 256 pixel of keyboard
-                        tmds_double_2bpp((const uint32_t*)&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
-                                        &tmdsbuf[keyboard_x],
-                                        keyboard->width<<1);
+                        tmds_double_2bpp(&keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2)],
+                                         &tmdsbuf[keyboard_x],
+                                         keyboard->width<<1);
 
                         // Fill in other colour channels
                         tmds_clone(tmdsbuf, PIXEL_WIDTH);
@@ -288,7 +287,7 @@ static void __not_in_flash_func(render_loop)()
                     }
                     else
                     {
-                        tmds_double_1bpp(linebuf32, tmdsbuf, video_mode->h_active_pixels);
+                        tmds_double_1bpp(linebuf, tmdsbuf, video_mode->h_active_pixels);
                         tmds_clone(tmdsbuf, PIXEL_WIDTH);
                     }
                 }

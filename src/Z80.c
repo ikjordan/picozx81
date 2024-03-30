@@ -150,7 +150,6 @@ static void __not_in_flash_func(displayAndNewScreen)(bool sync)
   if (chromamode && (bordercolournew != bordercolour))
   {
     bordercolour = bordercolournew;
-    displaySetChromaBorder(bordercolour);
   }
   if (chromamode) memset(scrnbmpc_new, (bordercolour << 4) + bordercolour, disp.length);
 }

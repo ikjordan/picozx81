@@ -28,7 +28,6 @@ static uint8_t* pend_buff[MAX_PEND] = {0, 0};           // Buffers queued for di
 static uint8_t* free_buff[MAX_FREE] = {0, 0, 0, 0};     // Buffers available to be claimed
 
 static uint8_t* cbuffer = 0;        // Chroma buffer
-static uint8_t chroma_border_colour = 0;
 
 static uint8_t* index_to_display[MAX_FREE] = {0, 0, 0, 0};
 static chroma_t chroma[MAX_FREE] = { {0, false}, {0, false}, {0,false}, {0,false} };
@@ -218,12 +217,6 @@ void displayResetChroma(void)
     {
         chroma[i].used = false;
     }
-}
-
-/* Set the chroma border colour */
-void displaySetChromaBorder(uint8_t colour)
-{
-    chroma_border_colour = colour;
 }
 
 /* Obtain a pointer to the chroma buffer associated with the pixel buffer

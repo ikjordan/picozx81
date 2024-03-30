@@ -50,7 +50,6 @@ extern void displayBuffer(uint8_t* buff, bool sync, bool free, bool chroma);
 extern void displayGetCurrentBuffer(uint8_t** buff);
 extern void displayGetChromaBuffer(uint8_t** chroma, uint8_t* buff);
 extern void displayResetChroma(void);
-extern void displaySetChromaBorder(uint8_t colour);
 extern void displaySetInterlace(bool on);
 
 extern void displayBlank(bool black);
