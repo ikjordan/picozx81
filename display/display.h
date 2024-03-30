@@ -12,7 +12,6 @@ extern "C" {
 typedef struct
 {
     uint16_t audioRate;
-    uint16_t chromaAdjust576;
 } DisplayExtraInfoHDMI_T;
 
 typedef struct

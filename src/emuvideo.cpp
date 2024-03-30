@@ -17,8 +17,6 @@
 #define DISPLAY_START_Y_720      0  // Y Offset to first pixel with no centring
 #define DISPLAY_ADJUST_X_720     2  // The number of pixels to adjust in X dimension to centre the display
 
-#define DISPLAY_CHROMA_ADJUST    8  // Number of lines to skip
-
 Display_T disp;                     // Dimension information for the display
 
 uint emu_VideoInit(void)
@@ -41,7 +39,6 @@ uint emu_VideoInit(void)
     extra.info.lcd.bgr = emu_lcdBGRRequested();
 #else
     extra.info.hdmi.audioRate = emu_SoundSampleRate();
-    extra.info.hdmi.chromaAdjust576 = DISPLAY_CHROMA_ADJUST;
 #endif
 
     uint clock = displayInitialise(five, match, 1, &disp.width,
@@ -74,37 +71,4 @@ uint emu_VideoInit(void)
 void emu_VideoSetInterlace(void)
 {
     displaySetInterlace(emu_FrameSyncRequested() == SYNC_ON_INTERLACED);
-}
-
-void emu_VideoChromaAdjust(bool set, uint8_t colour)
-{
-    // Workaround for lack of memory with HDMI
-#ifdef DVI_DEFAULT_SERIAL_CONFIG
-    static bool enabled = false;
-
-    // Ensure that the correct border is set - only needed when lines are skipped
-    displaySetChromaBorder(colour);
-
-    if (disp.width >= 360)
-    {
-        if (set != enabled)
-        {
-            enabled = set;
-
-            if (enabled)
-            {
-                // Reduce depth by DISPLAY_CHROMA_ADJUST lines
-                disp.height -= DISPLAY_CHROMA_ADJUST;
-            }
-            else
-            {
-                // Restore full depth by DISPLAY_CHROMA_ADJUST lines
-                disp.height += DISPLAY_CHROMA_ADJUST;
-            }
-            disp.end_y = disp.height + disp.start_y;
-            disp.length = disp.stride_byte * disp.height;
-        }
-    }
-#endif
-    return;
 }

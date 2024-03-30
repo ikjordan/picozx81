@@ -56,14 +56,14 @@
 
 .endm
 
-// r0: input buffer (word-aligned)
+// r0: input buffer (byte-aligned)
 // r1: output buffer (word-aligned)
 // r2: output pixel count
 decl_func tmds_double_1bpp
 	push {r4-r7, lr}        // Store scratch registers
 	mov r7, r8
 	push {r7}
-	lsls r2, #1             // Double the output pixel count - initially set to 640
+	lsls r2, #1             // Double the output pixel count
 	add r2, r1              // Now points to end of output buffer
 	mov ip, r2              // ip is r12 - store end of output buffer
 	adr r4, tmds_d1bpp_table // r4 contains pointer to look up table
@@ -71,30 +71,21 @@ decl_func tmds_double_1bpp
 	// Mask: 2 bit index, 8 bytes per entry
 	movs r3, #0x18          // bits 4 to 5 checked
 	b 2f                    // Jump over for the first pass
+
 1:
-	ldmia r0!, {r2}         // Loads r2 with contents pointed by r0 then inc r0
+	ldrb r2, [r0]
+	adds r0, #1
 #if !DVI_1BPP_BIT_REVERSE
 	tmds_double_1bpp_body lsls 3  lsls 1
 	tmds_double_1bpp_body lsrs 1  lsrs 3
-	tmds_double_1bpp_body lsrs 5  lsrs 7
-	tmds_double_1bpp_body lsrs 9  lsrs 11
-	tmds_double_1bpp_body lsrs 13 lsrs 15
-	tmds_double_1bpp_body lsrs 17 lsrs 19
-	tmds_double_1bpp_body lsrs 21 lsrs 23
-	tmds_double_1bpp_body lsrs 25 lsrs 27
 #else
 	tmds_double_1bpp_body lsrs 3   lsrs 1
 	tmds_double_1bpp_body lsls 1   lsls 3
-	tmds_double_1bpp_body lsrs 11  lsrs 9
-	tmds_double_1bpp_body lsrs 7   lsrs 5
-	tmds_double_1bpp_body lsrs 19  lsrs 17
-	tmds_double_1bpp_body lsrs 15  lsrs 13
-	tmds_double_1bpp_body lsrs 27  lsrs 25
-	tmds_double_1bpp_body lsrs 23  lsrs 21
 #endif
+
 2:
 	cmp r1, ip              // Has all of the output data been generated
-	blo 1b                  // If not, back to generate more 
+	blo 1b                  // If not, back to generate more
 
 	pop {r7}                // Restore registers and return
 	mov r8, r7
@@ -143,7 +134,7 @@ tmds_d1bpp_table:
 	ldr \rd, [r0, \rd]
 .endm
 
-// r0: input buffer (word-aligned)
+// r0: input buffer (byte-aligned)
 // r1: output buffer (word-aligned)
 // r2: output pixel count
 decl_func tmds_double_2bpp
@@ -161,27 +152,13 @@ decl_func tmds_double_2bpp
 	b 2f
 1:
 	mov r4, r8
-	ldmia r4!, {r2}
+	ldrb r2, [r4]
+	adds r4, #1
 	mov r8, r4
 	tmds_double_2bpp_body lsls 2  r7
 	tmds_double_2bpp_body lsrs 0  r6
 	tmds_double_2bpp_body lsrs 2  r5
 	tmds_double_2bpp_body lsrs 4  r4
-	stmia r1!, {r4-r7}
-	tmds_double_2bpp_body lsrs 6  r7
-	tmds_double_2bpp_body lsrs 8  r6
-	tmds_double_2bpp_body lsrs 10 r5
-	tmds_double_2bpp_body lsrs 12 r4
-	stmia r1!, {r4-r7}
-	tmds_double_2bpp_body lsrs 14 r7
-	tmds_double_2bpp_body lsrs 16 r6
-	tmds_double_2bpp_body lsrs 18 r5
-	tmds_double_2bpp_body lsrs 20 r4
-	stmia r1!, {r4-r7}
-	tmds_double_2bpp_body lsrs 22 r7
-	tmds_double_2bpp_body lsrs 24 r6
-	tmds_double_2bpp_body lsrs 26 r5
-	tmds_double_2bpp_body lsrs 28 r4
 	stmia r1!, {r4-r7}
 2:
 	cmp r1, ip

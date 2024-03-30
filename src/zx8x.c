@@ -946,5 +946,4 @@ char *strzx80_to_ascii(int memaddr)
 static void adjustChroma(bool start)
 {
     adjustStartX = start ? disp.adjust_x : emu_CentreX();
-    emu_VideoChromaAdjust(start, bordercolour);
 }
