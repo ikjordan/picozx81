@@ -10,7 +10,7 @@
 
 # Features
 + Supports VGA, HDMI, DVI and LCD displays
-+ Supports sound over onboard DAC or PWM when available in hardware
++ Supports sound over HDMI, onboard DAC or PWM when available in hardware
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
 + Can be fully controlled from a ZX81 style 40 key keyboard
@@ -30,7 +30,6 @@
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
 + Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME) and for a RGB 222 board with CSYNC similar to [PICOZX](https://hackaday.io/project/186039-pico-zx-spectrum-128k)
-+ Supports sound over HDMI (experimental)
 ## Supported Hardware
 + [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base)
 + [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base)
@@ -79,7 +78,6 @@ To the right can be seen a status page, illustrating some of the configurable op
 </p>
 
 ### Chroma 80 and Chroma 81 Emulation
-
 [ColourAttrModeTest](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/Files/Programs/ColourAttrModeTest.zip) and [HiRes ZX-Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip)
 <p align="middle">
 <img src="images/chroma_attribute.jpg" width="49.0%" />
@@ -486,7 +484,6 @@ This will be named `picozx81_vga.uf2`
 
 **Notes:**
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
-+ The HDMI sound builds are experimental
 
 6. Upload the `uf2` file to the pico
 7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
