@@ -366,15 +366,16 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 + [WRX1K1](https://quix.us/timex/rigter/1khires.html)
   + The assembler routine runs in 1K, but the BASIC demo program that draws concentric circles does not, as it requires more than 1K of RAM. This can be verified by using the BASIC listing tool in EightyOne to check the memory address of each line of BASIC. It will run in 2K
 + [zedit](https://forum.tlienhard.com/phpBB3/download/file.php?id=6795)
+#### ARX
+Set `WRX` to `Off` and `CHR128` to `on`
++ [ARX_Demo](https://www.sinclairzxworld.com/viewtopic.php?f=6&t=5448) Demonstrates ARX graphics
++ [ARX Hangman](https://sinclairzxworld.com/viewtopic.php?p=47308#p47308) Replicates the "off by 1 error" seen on real hardware and discussed [here](https://www.sinclairzxworld.com/viewtopic.php?f=6&t=5448)
 ### QS UDG Graphics
 + [QS Invaders](http://www.zx81stuff.org.uk/zx81/tape/QSInvaders)
 + [QS Asteroids](http://www.zx81stuff.org.uk/zx81/tape/QSAsteroids)
 + [QS Scramble](http://www.zx81stuff.org.uk/zx81/tape/QSScramble)
 ### Other UDG graphics
 + [HiRes Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip)
-  + To use with colour Chroma 81 Colourisation set memory to 48kB (see example configuration file)
-+ [ColourAttrModeTest](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/Files/Programs/ColourAttrModeTest.zip) (Chroma 81 Native Colour Program)
-
 + [Airport HR](http://zx81.eu5.org/files/soft/toddy/AEROP-HR.zip)
 #### CHR128
 + [zedragon](https://github.com/charlierobson/zedragon/blob/master/zedragon.p)
@@ -399,6 +400,14 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
 ### M1NOT
 + [Hot-Z II 64K](http://www.pictureviewerpro.com/hosting/zx81/download/zx81/Hot-Z_II.zip)
     + Requires at least 32kB of RAM. Runs correctly with `M1NOT` set to `On`. As expected, the emulated ZX81 crashes if `M1NOT` is set to `off`
+### Chroma 81
++ To enable chroma support set LowRAM on, and Memory to 48kB
++ [Celebration](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/Celebration.htm)
++ [Against The Elements](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm)
++ [Attribute Mode Test Program](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm)
++ [HiRes Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip). Ensure WRX RAM is disabled
++ [Chroma Slideshow](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm). This works well with `FrameSync` set to `Interlaced`. Note that the program loads a series of image files. A config entry with `FrameSync` set to `Interlaced` needs to be created for each image file
++ [ROCK CRUSH 80](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_RockCrush80.htm). This is a ZX80 game, but the `.p81` file will also run on the ZX81 
 ### 16kB Demos
 These really show off the capabilities of the ZX81 and are a good test that the emulator is accurate
 #### Without WRX RAM
@@ -414,15 +423,6 @@ Both generate a display more than 320 pixels wide, so some information is not di
 ### Interlaced Images
 + [Ilena](https://www.sinclairzxworld.com/viewtopic.php?p=16058)
   + Best viewed with `FrameSync` set to `Interlaced`
-### Chroma 81
-+ To enable chroma support set LowRAM on, and Memory to 48kB
-+ [Celebration](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/Celebration.htm)
-+ [Against The Elements](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm)
-+ [Attribute Mode Test Program](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm)
-+ [HiRes Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip). Ensure WRX RAM is disabled
-+ [Chroma Slideshow](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm). This works well with `FrameSync` set to `Interlaced`. Note that the program loads a series of image files. A config entry with `FrameSync` set to `Interlaced` needs to be created for each image file
-+ [ROCK CRUSH 80](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_RockCrush80.htm). This is a ZX80 game, but the `.p81` file will also run on the ZX81 
-
 ## ZX80
 + [ZX80 3K QS DEFENDER](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Defender.htm)
   + This game generates 32 lines of text. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` so that the score, which is towards the top of the display, is visible. The game is still playable without the bottom of the display being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated
@@ -560,6 +560,8 @@ One intention of this project was to show what can be quickly achieved by levera
 + [Pimoroni SD Card driver](https://github.com/pimoroni/pimoroni-pico/tree/main/drivers/sdcard)
 + [FatFS](http://elm-chan.org/fsw/ff/00index_e.html)
 + Config file parsing [inih](https://github.com/benhoyt/inih)
+
+Thanks to [Paul Farrow](http://www.fruitcake.plus.com/) for information on the Chroma expansion boards and the `.p81` file format
 ## Use with an original ZX80/ZX81 keyboard
 There are not enough unused GPIO pins on the Pimoroni demo boards to allow the direct connection of a ZX80/81 keyboard, but it can be done by using another Pico to convert the ZX80/81 keyboard into a USB keyboard. It may seem excessive to use a whole pico as a keyboard controller, but they are cheap and there is enough space to put the Pimoroni board, plus another Pico, plus a small USB hub into a ZX80 or ZX81 case
 
