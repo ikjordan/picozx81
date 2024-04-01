@@ -192,7 +192,7 @@ Six extra options apply across all programs and can only be set in the `[default
 | Dir | Sets the initial default directory to load and save programs | / |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
-| AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81` and `.80` are initially displayed|Off|
+| AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81`, `.80` and `.p81` are initially displayed|Off|
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 4| 1 |
 
 **Notes:**
@@ -233,7 +233,7 @@ If the name of a file or directory is too long to display in full it is truncate
 
 + The display can be navigated using the `up`, `down` and `enter` keys. The `7` key also generates `up` and the `6` key also generates `down`
 + For directories with a large number of files it is possible to move to the next page of files by using the `right`, `Page Down` or `8` key. To move to the previous page of files use the `left`, `Page Up` or `5` key
-+ Press `A` to display all files in the directory. Press `P` to only display files with extensions `.p`, `.o`, `.81` and `.80`
++ Press `A` to display all files in the directory. Press `P` to only display files with extensions `.p`, `.o`, `.81`, `.80` and .`p81`
 + Press `enter` whilst a directory entry is selected to move to that directory
 + Press `enter` when a file is selected to load that file
 + Press `Escape`, `space`, `Q` or `0` to return to the emulation without changing directory or loading a new program
@@ -260,7 +260,7 @@ Allows the impact of changes to display resolution and frequency to be seen with
 
 On the LCD builds the display resolution is fixed and only the frequency can be changed
 ## Loading and saving options
-The emulator supports loading `.p`, `.81`, `.o` and `.80` files from micro SD Card. It can save in `.p` and `.o` format.
+The emulator supports loading `.p`, `.81`, `.o`, `.80` and `.p81` files from micro SD Card. It can save in `.p` and `.o` format.
 Files to be loaded should only contain characters that are in the ZX81 or ZX80 character set
 ### Load
 There are 3 ways to load files:
