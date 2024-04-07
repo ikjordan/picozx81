@@ -347,7 +347,7 @@ static void beginAudio(void)
     audio_pin_slice_l = pwm_gpio_to_slice_num(AUDIO_PIN_L);
 #endif // AUDIO_PIN_L != AUDIO_PIN_R
 
-  #ifdef SOUND_DMA
+#ifdef SOUND_DMA
     dma_channel_sound = dma_claim_unused_channel(true);
 
     // Cannot use DMA if have two channels on different slices
@@ -402,7 +402,7 @@ static void beginAudio(void)
     }
 #endif // AUDIO_PIN_L != AUDIO_PIN_R
 
-  #ifdef SOUND_DMA
+#ifdef SOUND_DMA
     dma_start_channel_mask(0x1 << dma_channel_sound);
 #endif // SOUND_DMA
     // Cannot use mask here, as other libs may have already enabled PWM slices
