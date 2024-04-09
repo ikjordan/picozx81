@@ -67,6 +67,14 @@
 #define PICO_DEFAULT_UART_TX_PIN 16
 #define PICO_DEFAULT_UART_RX_PIN 17
 
+#define NINEPIN_JOYSTICK
+
+#define NINEPIN_UP      20
+#define NINEPIN_DOWN    21
+#define NINEPIN_LEFT    22
+#define NINEPIN_RIGHT   26
+#define NINEPIN_BUTTON  27
+
 #define PICO_VGAMAKER222C_BOARD
 
 // Maker board has a Pico on it, so default anything we haven't set above

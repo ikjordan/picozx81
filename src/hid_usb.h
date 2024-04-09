@@ -9,6 +9,7 @@ extern "C" {
 void hidInitialise(byte* keyboard);
 bool hidReadUsbKeyboard(uint8_t* special, bool usedouble);
 int16_t hidKeyboardToJoystick(void);
+void hidInjectKey(uint8_t code);
 
 int16_t hidReadUsbJoystick(int instance);
 void hidJoystickToKeyboard(int instance, byte up, byte down, byte left, byte right, byte button);

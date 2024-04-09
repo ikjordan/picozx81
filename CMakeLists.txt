@@ -26,6 +26,8 @@ endif()
 # e.g. cmake -DPICO_BOARD=olimexpcboard
 # Set to "lcdws28board" for Waveshare Pico-ResTouch-LCD-2.8
 # e.g. cmake -DPICO_BOARD=lcdws28board
+# Set to "wspizeroboard" for Waveshare PiZero
+# e.g. cmake -DPICO_BOARD=wspizeroboard
 # Set to "lcdmakerboard" for LCD connected to Cytron Maker board
 # e.g. cmake -DPICO_BOARD=lcdmakerboard
 # Set to "vgamaker222cboard" for vga 222 with csync based on Cytron Maker board
@@ -103,8 +105,8 @@ add_executable(${PROJECT}
                ${USB_SOURCES})
 
 # Determine sound system
-if (${HDMI_SOUND})
-    # HDMI
+if ((((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard")) AND ${HDMI_SOUND}) OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
+    # HDMI - The check also ensures that HDMI_SOUND is ignored if set for non HDMI boards
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_HDMI)
 else()
     if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
