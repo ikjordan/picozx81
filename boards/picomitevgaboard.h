@@ -77,6 +77,13 @@
 #define PICO_DEFAULT_UART_RX_PIN 1
 #endif
 
+//#define NINEPIN_JOYSTICK
+
+#define NINEPIN_UP      3
+#define NINEPIN_DOWN    4
+#define NINEPIN_LEFT    5
+#define NINEPIN_RIGHT   22
+#define NINEPIN_BUTTON  26
 
 #define PICO_PICOMITEVGA_BOARD
 
