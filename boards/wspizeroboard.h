@@ -61,10 +61,10 @@
 #define NINEPIN_JOYSTICK
 
 #define NINEPIN_UP      11
-#define NINEPIN_DOWN    10
-#define NINEPIN_LEFT    13
+#define NINEPIN_DOWN    12
+#define NINEPIN_LEFT    10
 #define NINEPIN_RIGHT   15
-#define NINEPIN_BUTTON  12
+#define NINEPIN_BUTTON  13
 
 #define PICO_WSPIZERO_BOARD
 

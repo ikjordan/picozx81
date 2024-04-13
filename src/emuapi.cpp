@@ -345,8 +345,7 @@ bool emu_AllFilesRequested(void)
 bool emu_NinePinJoystickRequested(void)
 {
 #ifdef NINEPIN_JOYSTICK
-  //return specific.ninePinJoystick;
-  return true;
+  return specific.ninePinJoystick;
 #else
   return false;
 #endif
