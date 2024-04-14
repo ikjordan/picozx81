@@ -210,6 +210,7 @@ typedef struct
   bool lcdRotate;
   bool lcdReflect;
   bool lcdBGR;
+  bool ninePinJoystick;
 } Configuration_T;
 
 typedef struct
@@ -339,6 +340,15 @@ bool emu_ExtendFileRequested(void)
 bool emu_AllFilesRequested(void)
 {
   return specific.allFiles;
+}
+
+bool emu_NinePinJoystickRequested(void)
+{
+#ifdef NINEPIN_JOYSTICK
+  return specific.ninePinJoystick;
+#else
+  return false;
+#endif
 }
 
 int emu_MenuBorderRequested(void)
@@ -792,7 +802,7 @@ static int handler(void *user, const char *section, const char *name,
           // Defaults to 1
           res = 1;
         }
-        if (res > 4)
+        if (res > 2)
         {
           res = 1;
         }
@@ -813,6 +823,11 @@ static int handler(void *user, const char *section, const char *name,
           // Defaults to off
           c->conf->fiveSevenSix = OFF;
         }
+      }
+      else if ((!strcasecmp(name, "NinePinJoystick")))
+      {
+        // Defaults to off
+        c->conf->ninePinJoystick = isEnabled(value);
       }
 #ifdef PICO_LCD_CS_PIN      
       else if (!strcasecmp(name, "LCDInvertColour"))
@@ -909,6 +924,7 @@ void emu_ReadDefaultValues(void)
     general.lcdRotate = false;
     general.lcdskipFrame = false;
     general.lcdBGR = false;
+    general.ninePinJoystick = false;
 #ifdef PICO_LCDWS28_BOARD
     general.lcdInvertColour = true;
     general.lcdReflect = true;
@@ -993,12 +1009,58 @@ void emu_ReadSpecificValues(const char *filename)
 /********************************
  * Input and keyboard
  ********************************/
+#ifdef NINEPIN_JOYSTICK
+enum joystick_t {
+    UP = 0,
+    DOWN = 1,
+    LEFT = 2,
+    RIGHT = 3,
+    BUTTON = 4
+};
+
+static uint gpmap[5];
+static void ninePinJoystickToKeyboard(byte up, byte down, byte left, byte right, byte button);
+#endif
+
+void emu_initialiseNinePinJoystick(void)
+{
+  // Only initialise joystick if defined for build and selected in config
+#ifdef NINEPIN_JOYSTICK
+  if (emu_NinePinJoystickRequested())
+  {
+    gpmap[UP] = NINEPIN_UP;
+    gpmap[DOWN] = NINEPIN_DOWN;
+    gpmap[LEFT] = NINEPIN_LEFT;
+    gpmap[RIGHT] = NINEPIN_RIGHT;
+    gpmap[BUTTON] = NINEPIN_BUTTON;
+
+    for (int i = 0; i < 5; ++i)
+    {
+      // Set pins to input and pull up to 3.3V
+      gpio_init(gpmap[i]);
+      gpio_set_dir(gpmap[i], GPIO_IN);
+      gpio_pull_up(gpmap[i]);
+    }
+  }
+#endif
+}
+
 bool emu_UpdateKeyboard(uint8_t* special)
 {
   bool ret = hidReadUsbKeyboard(special, specific.doubleShift);
 
   if (!ret)
   {
+#ifdef NINEPIN_JOYSTICK
+    if (emu_NinePinJoystickRequested())
+    {
+      ninePinJoystickToKeyboard(specific.up,
+                                specific.down,
+                                specific.left,
+                                specific.right,
+                                specific.button);
+    }
+#endif
     hidJoystickToKeyboard(1,
                           specific.up,
                           specific.down,
@@ -1024,12 +1086,36 @@ bool emu_EndsWith(const char * s, const char * suffix)
   return (retval);
 }
 
+#ifdef NINEPIN_JOYSTICK
+static void ninePinJoystickToKeyboard(byte up, byte down, byte left, byte right, byte button)
+{
+  if (!gpio_get(gpmap[RIGHT]))
+  {
+    hidInjectKey(right);
+  } else if (!gpio_get(gpmap[LEFT]))
+  {
+    hidInjectKey(left);
+  }
+  if (!gpio_get(gpmap[UP]))
+  {
+    hidInjectKey(up);
+  } else if (!gpio_get(gpmap[DOWN]))
+  {
+    hidInjectKey(down);
+  }
+  if (!gpio_get(gpmap[BUTTON]))
+  {
+    hidInjectKey(button);
+  }
+}
+#endif
+
 /********************************
  * Chroma
  ********************************/
 bool emu_chromaSupported(void)
 {
-    // Chroma supported for VGA and LCD
+    // Chroma supported for VGA, LCD and colour HDMI
 #ifdef DVI_MONOCHROME_TMDS
     return false;
 #else

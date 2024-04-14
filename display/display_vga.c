@@ -30,22 +30,22 @@ static uint16_t keyboard_y = 0;
 
 // Do not make const - as want to keep in RAM
 static uint16_t colour_table[16] = {
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0x00, 0x00),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0x00, 0xaa),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xaa, 0x00, 0x00),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xaa, 0x00, 0xaa),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0xaa, 0x00),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0xaa, 0xaa),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xaa, 0xaa, 0x00),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xaa, 0xaa, 0xaa),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0x00, 0x00),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0x00, 0xff),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xff, 0x00, 0x00),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xff, 0x00, 0xff),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0xff, 0x00),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0x00, 0xff, 0xff),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xff, 0xff, 0x00),
-    PICO_SCANVIDEO_PIXEL_FROM_RGB8(0xff, 0xff, 0xff)
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0x00, 0x00, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0x00, 0x00, 0xaa),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0xaa, 0x00, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0xaa, 0x00, 0xaa),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0x00, 0xaa, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0x00, 0xaa, 0xaa),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0xaa, 0xaa, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0xaa, 0xaa, 0xaa),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0x00, 0x00, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0x00, 0x00, 0xff),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0xff, 0x00, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0xff, 0x00, 0xff),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0x00, 0xff, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0x00, 0xff, 0xff),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0xff, 0xff, 0x00),
+    PICO_SCANVIDEO_PIXEL_FROM_RGB(0xff, 0xff, 0xff)
 };
 
 // Define timing here due to sdk issue with h_pulse length
@@ -58,7 +58,7 @@ const scanvideo_timing_t vga_timing_640x480_60_default1 =
     .h_front_porch = 16,
     .h_pulse = 96,
     .h_total = 800,
-#ifdef PICO_VGAMAKER222C_BOARD
+#if ((defined PICO_VGAMAKER222C_BOARD) || (defined PICO_PICOZX_BOARD))
     .h_sync_polarity = 5,
 #else
     .h_sync_polarity = 1,
@@ -93,7 +93,7 @@ const scanvideo_timing_t vga_timing_720x576_50 =
     .h_front_porch = 12,
     .h_pulse = 64,
     .h_total = 864,
-#ifdef PICO_VGAMAKER222C_BOARD
+#if ((defined PICO_VGAMAKER222C_BOARD) || (defined PICO_PICOZX_BOARD))
     .h_sync_polarity = 5,
 #else
     .h_sync_polarity = 1,
@@ -126,7 +126,7 @@ const scanvideo_timing_t vga_timing_720x576_51 =
     .h_front_porch = 12,
     .h_pulse = 64,
     .h_total = 864,
-#ifdef PICO_VGAMAKER222C_BOARD
+#if ((defined PICO_VGAMAKER222C_BOARD) || (defined PICO_PICOZX_BOARD))
     .h_sync_polarity = 5,
 #else
     .h_sync_polarity = 1,

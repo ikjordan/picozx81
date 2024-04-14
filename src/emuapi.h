@@ -33,6 +33,7 @@ typedef enum {
 extern void emu_init(void);
 extern bool emu_fsInitialised(void);
 
+extern void emu_initialiseNinePinJoystick(void);
 extern bool emu_UpdateKeyboard(uint8_t* special);
 
 extern bool emu_FileOpen(const char * filepath, const char * mode);
@@ -62,6 +63,7 @@ extern int emu_SoundRequested(void);
 extern bool emu_DoubleShiftRequested(void);
 extern bool emu_ExtendFileRequested(void);
 extern bool emu_AllFilesRequested(void);
+extern bool emu_NinePinJoystickRequested(void);
 extern int emu_MenuBorderRequested(void);
 extern uint16_t emu_VTol(void);
 extern bool emu_ACBRequested(void);

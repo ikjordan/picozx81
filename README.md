@@ -14,6 +14,7 @@
 + Provides an immersive full screen experience, with a very fast boot time and no operating system
 + Simultaneous USB keyboard and joystick support (using a powered USB hub)
 + Can be fully controlled from a ZX81 style 40 key keyboard
++ 1980s style 9-pin Atari joysticks can be connected to some board types
 + The small form factor makes the board easy to mount in period or reproduction cases. The low cost, relatively low performance and software generated display of the Pico is a 21st century analogue for the ZX80 and ZX81
 + Emulates pseudo and Hi-res graphics
 + Emulates ZonX and Quicksilva sound
@@ -175,7 +176,7 @@ The following can be configured:
 6. The Waveshare LCD 2.8 board has no sound capabilities
 
 ### Joystick
-In addition a USB joystick can be configured to generated key presses
+In addition a USB joystick,and on some boards a 9-pin joystick, can be configured to generated key presses
 
 | Item | Description | Default Value |
 | --- | --- | --- |
@@ -195,7 +196,8 @@ Six extra options apply across all programs and can only be set in the `[default
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81`, `.80` and `.p81` are initially displayed|Off|
-| MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 4| 1 |
+| MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2| 1 |
+| NinePinJoystick | When set to `on` Enables reading a 9 pin joystick, if supported in hardware | Off |
 
 **Notes:**
 1. By default the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
@@ -521,7 +523,7 @@ All options are set in the `[default]` section of the `config.ini` file in the r
  e.g. to set `LCDReflect` to true, add the following to the `[default]` section of the configuration file: `LCDReflect = True`
 
  **Notes:**
- 1. If the configuration appears correct for a display, but no image appears, it could be that the display cannot support the SPI bus speed required to display every frame. In this case set `LCDFrameSkip = True`
+ 1. If the configuration appears correct for a display, but no image appears, or the image is not stable, it could be that the display cannot support the SPI bus speed required to display every frame, or that cross talk is occuring between the wires connecting the display. In this case set `LCDFrameSkip = True`
  2. If `LCDFrameSkip` equals `True`, then if `FrameSync` is set to `Interlaced` it will be interpreted as `On`
 
 ### Configuration of Tested LCDs
@@ -534,8 +536,27 @@ All options are set in the `[default]` section of the `config.ini` file in the r
 | [Generic 3.2" LCD](http://www.lcdwiki.com/3.2inch_SPI_Module_ILI9341_SKU:MSP3218) | ILI9341 |False | False | False | True |
 
 Example `config.ini` settings for these LCDs can be seen [here](examples/config.ini). Uncomment the lines in the section matching the LCD you wish to use
-## Rotating the display on the Waveshare Pico-ResTouch-LCD-2.8
+### Rotating the display on the Waveshare Pico-ResTouch-LCD-2.8
 By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rotated, so that the usb connection and SD Card is at the bottom of the display. To undo the rotation, so that usb connection and SD Card is at the top, set `LCDRotate = False` in the default section of the config file
+
+## Using 9 pin "Atari" joysticks
+With boards with connectors supplied for enough free GPIO pins it is possible to attach a 9 pin connector and then plug-in and use "in period" 9-pin joysticks
+
+### Supported Boards
+The lcdmaker, vgamaker222c, picomitevga and pizero builds support the connection of a 9-pin joystick connector
+
+### Obtaining a 9-pin interface
+Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://www.amazon.co.uk/sourcing-map-Breakout-Connector-Solderless/dp/B07MMMGGXP)
+### Connections
+
+| pin number | 1 | 2 | 3 | 4 | 6 | 8 |
+| --- | --- | --- | --- | --- | --- | --- |
+| lcdmaker | GP20 | GP21 | GP22 | GP26 | GP27 | Ground |
+| vgamaker222c | GP20 | GP21 | GP22 | GP26 | GP27 | Ground |
+| picomitevga | GP3 | GP4 | GP5 | GP22 | GP26 | Ground |
+| pizero | GP11 | GP12 | GP10 | GP15 | GP13 | Ground |
+### Enabling the joystick
+To enable the nine pin joystick set `NinePinJoystick` to `On` in the `[default]` section of the `config.ini` file in the root directory
 
 # Extra Information
 + The original intention of the emulator was to provide an authentic '80s feel. It emulated the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. It has now been extended to provide emulation of some of the amazing ZX81 developments of recent years, such as [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm). It supports the loading and saving of memory blocks, using a syntax similar to ZXpand
@@ -548,6 +569,7 @@ By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rot
 + The Waveshare PiZero has two USB-C connectors. Use the connector closest to the HDMI connector to provide power. Connect a keyboard to the other USB port using an OTG cable. If necessary, a female micro USB to male USB C adaptor can be used
 + On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
 + The PicoMite VGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
++ Some verions of the PicoMiteVGA board have a jumper to select between RGB and GRN mode. Select RGB mode
 + The Waveshare Pico-ResTouch-LCD-2.8 board has a touch controller, but the emulator does not support its use
 + The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
 + The Cytron Maker Pi Pico has an onboard piezo buzzer. The audio quality is poor, but it can be used instead of speakers. If the buzzer is enabled (using the switch on the maker board) ensure that ACB Stereo is disabled 

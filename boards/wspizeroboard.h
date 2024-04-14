@@ -58,6 +58,14 @@
 #define PICO_AUDIO_PWM_R_PIN WSPIZEROBOARD_PWM_R_PIN
 #endif
 
+#define NINEPIN_JOYSTICK
+
+#define NINEPIN_UP      11
+#define NINEPIN_DOWN    12
+#define NINEPIN_LEFT    10
+#define NINEPIN_RIGHT   15
+#define NINEPIN_BUTTON  13
+
 #define PICO_WSPIZERO_BOARD
 
 // ws pizero has a Pico on it, so default anything we haven't set above

@@ -131,9 +131,16 @@ static void press(unsigned int line, unsigned int key)
     matrix[line] &= ~(1 << key);
 }
 
-static void injectKey(uint8_t code)
+// Public interface
+void hidInitialise(byte* keyboard)
 {
-    const HidKey_t* k = findKey(code);
+    matrix = keyboard;
+    sortHidKeys();
+}
+
+void hidInjectKey(uint8_t code)
+{
+    const HidKey_t* k = findKey(ascii2keycode[code][1]);
     if (k)
     {
         for (uint32_t c = 0; c < k->contacts; ++c)
@@ -142,13 +149,6 @@ static void injectKey(uint8_t code)
             press(contact->line, contact->key);
         }
     }
-}
-
-// Public interface
-void hidInitialise(byte* keyboard)
-{
-    matrix = keyboard;
-    sortHidKeys();
 }
 
 bool hidNavigateMenu(uint8_t* key)
@@ -528,21 +528,21 @@ void hidJoystickToKeyboard(int instance, byte up, byte down, byte left, byte rig
   {
     if (val & MASK_JOY_RIGHT)
     {
-      injectKey(ascii2keycode[right][1]);
+      hidInjectKey(right);
     } else if (val & MASK_JOY_LEFT)
     {
-      injectKey(ascii2keycode[left][1]);
+      hidInjectKey(left);
     }
     if (val & MASK_JOY_UP)
     {
-      injectKey(ascii2keycode[up][1]);
+      hidInjectKey(up);
     } else if (val & MASK_JOY_DOWN)
     {
-      injectKey(ascii2keycode[down][1]);
+      hidInjectKey(down);
     }
     if (val & MASK_JOY_BTN)
     {
-      injectKey(ascii2keycode[button][1]);
+      hidInjectKey(button);
     }
   }
 }

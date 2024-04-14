@@ -768,6 +768,7 @@ void z8x_Init(void)
 
   setEmulatedTV(!useNTSC, emu_VTol());
   hidInitialise(keyboard);
+  emu_initialiseNinePinJoystick();
 
   /* load rom with ghosting at 0x2000 */
   int siz=(zx80?4096:8192);

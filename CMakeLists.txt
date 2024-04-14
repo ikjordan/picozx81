@@ -26,10 +26,14 @@ endif()
 # e.g. cmake -DPICO_BOARD=olimexpcboard
 # Set to "lcdws28board" for Waveshare Pico-ResTouch-LCD-2.8
 # e.g. cmake -DPICO_BOARD=lcdws28board
+# Set to "wspizeroboard" for Waveshare PiZero
+# e.g. cmake -DPICO_BOARD=wspizeroboard
 # Set to "lcdmakerboard" for LCD connected to Cytron Maker board
 # e.g. cmake -DPICO_BOARD=lcdmakerboard
 # Set to "vgamaker222cboard" for vga 222 with csync based on Cytron Maker board
 # e.g. cmake -DPICO_BOARD=vgamaker222cboard
+# Set to "picozxboard" for vga 222 with csync based on picozx board
+# e.g. cmake -DPICO_BOARD=picozxboard
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
@@ -52,7 +56,7 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
     add_subdirectory(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/include)
-elseif (${PICO_BOARD} STREQUAL "vgamaker222cboard")
+elseif ((${PICO_BOARD} STREQUAL "vgamaker222cboard") OR (${PICO_BOARD} STREQUAL "picozxboard"))
     # Build local scanvideo, to use CSYNC
     add_subdirectory(scanvideo)
     include_directories(scanvideo/pico_scanvideo/include)
@@ -103,8 +107,8 @@ add_executable(${PROJECT}
                ${USB_SOURCES})
 
 # Determine sound system
-if (${HDMI_SOUND})
-    # HDMI
+if ((((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard")) AND ${HDMI_SOUND}) OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
+    # HDMI - The check also ensures that HDMI_SOUND is ignored if set for non HDMI boards
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_HDMI)
 else()
     if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
@@ -173,9 +177,11 @@ else()
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga332")
     elseif (${PICO_BOARD} STREQUAL "vgamaker222cboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vgamaker222c")
+    elseif (${PICO_BOARD} STREQUAL "picozxboard")
+        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picozx")
     endif()
 
-    if (${PICO_BOARD} STREQUAL "vgamaker222cboard")
+    if ((${PICO_BOARD} STREQUAL "vgamaker222cboard") OR (${PICO_BOARD} STREQUAL "picozxboard"))
         target_link_libraries(${PROJECT} mod_scanvideo_dpi)
     else ()
         target_link_libraries(${PROJECT} pico_scanvideo_dpi)
@@ -201,7 +207,7 @@ target_link_libraries(${PROJECT}
                       tinyusb_board)
 
 # Cannot use serial port with Pimoroni vga
-if (${PICO_BOARD} STREQUAL "vgaboard")
+if ((${PICO_BOARD} STREQUAL "vgaboard") OR (${PICO_BOARD} STREQUAL "picozxboard"))
     pico_enable_stdio_uart(${PROJECT} 0)
 else()
     pico_enable_stdio_uart(${PROJECT} 1)

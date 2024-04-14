@@ -508,9 +508,10 @@ bool statusMenu(void)
     writeString("Directory:", lhs, ++lcount);
     writeString(emu_GetDirectory(), rhs, lcount++);
 
-    writeString("All Files:", lhs, lcount);
-    writeString(emu_AllFilesRequested() ? "Yes" : "No", rhs, lcount++);
-
+#ifdef NINEPIN_JOYSTICK
+    writeString("Nine Pin JS:", lhs, lcount);
+    writeString(emu_NinePinJoystickRequested() ? "Yes" : "No", rhs, lcount++);
+#endif
     writeString("Menu Border:", lhs, lcount);
     sprintf(c,"%0d\n",emu_MenuBorderRequested());
     writeString(c, rhs, lcount++);

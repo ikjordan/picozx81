@@ -67,6 +67,14 @@
 #define PICO_LCD_CLK_PIN LCDMAKERBOARD_LCD_CLK_PIN
 #endif
 
+#define NINEPIN_JOYSTICK
+
+#define NINEPIN_UP      20
+#define NINEPIN_DOWN    21
+#define NINEPIN_LEFT    22
+#define NINEPIN_RIGHT   26
+#define NINEPIN_BUTTON  27
+
 #define PICO_LCDMAKER_BOARD
 
 // Cytron maker board has a Pico on it, so default anything we haven't set above
