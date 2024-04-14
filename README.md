@@ -539,8 +539,8 @@ Example `config.ini` settings for these LCDs can be seen [here](examples/config.
 ### Rotating the display on the Waveshare Pico-ResTouch-LCD-2.8
 By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rotated, so that the usb connection and SD Card is at the bottom of the display. To undo the rotation, so that usb connection and SD Card is at the top, set `LCDRotate = False` in the default section of the config file
 
-## Using 9 pin atari joysticks
-With boards with connectors supplied for enough free GPIO pins it is possible to connect a 9 pin connector and then connect and use "in period" 9-pin joysticks
+## Using 9 pin "Atari" joysticks
+With boards with connectors supplied for enough free GPIO pins it is possible to attach a 9 pin connector and then plug-in and use "in period" 9-pin joysticks
 
 ### Supported Boards
 The lcdmaker, vgamaker222c, picomitevga and pizero builds support the connection of a 9-pin joystick connector
@@ -556,6 +556,7 @@ Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://ww
 | picomitevga | GP3 | GP4 | GP5 | GP22 | GP26 | Ground |
 | pizero | GP11 | GP12 | GP10 | GP15 | GP13 | Ground |
 ### Enabling the joystick
+To enable the nine pin joystick set `NinePinJoystick` to `On` in the `[default]` section of the `config.ini` file in the root directory
 
 # Extra Information
 + The original intention of the emulator was to provide an authentic '80s feel. It emulated the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. It has now been extended to provide emulation of some of the amazing ZX81 developments of recent years, such as [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm). It supports the loading and saving of memory blocks, using a syntax similar to ZXpand
