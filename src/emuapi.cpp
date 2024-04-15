@@ -829,7 +829,7 @@ static int handler(void *user, const char *section, const char *name,
         // Defaults to off
         c->conf->ninePinJoystick = isEnabled(value);
       }
-#ifdef PICO_LCD_CS_PIN      
+#ifdef PICO_LCD_CS_PIN
       else if (!strcasecmp(name, "LCDInvertColour"))
       {
         // Defaults to off
@@ -1007,7 +1007,7 @@ void emu_ReadSpecificValues(const char *filename)
 }
 
 /********************************
- * Input and keyboard
+ * Joystick and file test
  ********************************/
 #ifdef NINEPIN_JOYSTICK
 enum joystick_t {
@@ -1019,10 +1019,10 @@ enum joystick_t {
 };
 
 static uint gpmap[5];
-static void ninePinJoystickToKeyboard(byte up, byte down, byte left, byte right, byte button);
+static void ninePinJoystickToKeyboard(void);
 #endif
 
-void emu_initialiseNinePinJoystick(void)
+void emu_JoystickInitialiseNinePin(void)
 {
   // Only initialise joystick if defined for build and selected in config
 #ifdef NINEPIN_JOYSTICK
@@ -1045,31 +1045,57 @@ void emu_initialiseNinePinJoystick(void)
 #endif
 }
 
-bool emu_UpdateKeyboard(uint8_t* special)
-{
-  bool ret = hidReadUsbKeyboard(special, specific.doubleShift);
 
-  if (!ret)
-  {
+void emu_JoystickParse(void)
+{
 #ifdef NINEPIN_JOYSTICK
-    if (emu_NinePinJoystickRequested())
-    {
-      ninePinJoystickToKeyboard(specific.up,
-                                specific.down,
-                                specific.left,
-                                specific.right,
-                                specific.button);
-    }
-#endif
-    hidJoystickToKeyboard(1,
-                          specific.up,
-                          specific.down,
-                          specific.left,
-                          specific.right,
-                          specific.button);
+  if (emu_NinePinJoystickRequested())
+  {
+    ninePinJoystickToKeyboard();
   }
-  return ret;
+#endif
+  hidJoystickToKeyboard(1,
+                        specific.up,
+                        specific.down,
+                        specific.left,
+                        specific.right,
+                        specific.button);
+
 }
+
+void emu_JoystickDeviceParse(bool up, bool down, bool left, bool right, bool button)
+{
+  // Handle device joystick
+  if (up) hidInjectKey(specific.up);
+  if (down) hidInjectKey(specific.down);
+  if (left) hidInjectKey(specific.left);
+  if (right) hidInjectKey(specific.right);
+  if (button) hidInjectKey(specific.button);
+}
+
+#ifdef NINEPIN_JOYSTICK
+static void ninePinJoystickToKeyboard(void)
+{
+  if (!gpio_get(gpmap[RIGHT]))
+  {
+    hidInjectKey(specific.right);
+  } else if (!gpio_get(gpmap[LEFT]))
+  {
+    hidInjectKey(specific.left);
+  }
+  if (!gpio_get(gpmap[UP]))
+  {
+    hidInjectKey(specific.up);
+  } else if (!gpio_get(gpmap[DOWN]))
+  {
+    hidInjectKey(specific.down);
+  }
+  if (!gpio_get(gpmap[BUTTON]))
+  {
+    hidInjectKey(specific.button);
+  }
+}
+#endif
 
 bool emu_EndsWith(const char * s, const char * suffix)
 {
@@ -1085,30 +1111,6 @@ bool emu_EndsWith(const char * s, const char * suffix)
   }
   return (retval);
 }
-
-#ifdef NINEPIN_JOYSTICK
-static void ninePinJoystickToKeyboard(byte up, byte down, byte left, byte right, byte button)
-{
-  if (!gpio_get(gpmap[RIGHT]))
-  {
-    hidInjectKey(right);
-  } else if (!gpio_get(gpmap[LEFT]))
-  {
-    hidInjectKey(left);
-  }
-  if (!gpio_get(gpmap[UP]))
-  {
-    hidInjectKey(up);
-  } else if (!gpio_get(gpmap[DOWN]))
-  {
-    hidInjectKey(down);
-  }
-  if (!gpio_get(gpmap[BUTTON]))
-  {
-    hidInjectKey(button);
-  }
-}
-#endif
 
 /********************************
  * Chroma

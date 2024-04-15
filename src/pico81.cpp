@@ -7,6 +7,7 @@
 #include "emuapi.h"
 #include "emusound.h"
 #include "emuvideo.h"
+#include "emukeyboard.h"
 #include "zx8x.h"
 #include "display.h"
 #include "menu.h"
@@ -56,7 +57,7 @@ static void mainLoop(void)
         uint8_t s;
         tuh_task();
 
-        if (emu_UpdateKeyboard(&s))
+        if (emu_KeyboardUpdate(&s))
         {
             if (s==HID_KEY_F5)
             {

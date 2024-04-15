@@ -69,6 +69,7 @@ set(ZX8X_SOURCES
     src/emuapi.cpp
     src/emusound.cpp
     src/emuvideo.cpp
+    src/emukeyboard.cpp
     src/pico81.cpp
     src/hid_usb.c
     src/sound.c

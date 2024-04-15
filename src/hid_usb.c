@@ -2,6 +2,7 @@
 #include "tusb.h"
 #include "hid_usb.h"
 #include "hid_app.h"
+#include "emukeyboard.h"
 
 typedef struct  {
     unsigned char line;
@@ -131,8 +132,17 @@ static void press(unsigned int line, unsigned int key)
     matrix[line] &= ~(1 << key);
 }
 
+static void get_latest_keyboard_scans(hid_keyboard_report_t* report)
+{
+  hid_app_get_latest_keyboard_report(report);
+
+#ifdef PICO_PICOZX_BOARD
+  emu_KeyboardScan((void*)report);
+#endif
+}
+
 // Public interface
-void hidInitialise(byte* keyboard)
+void hidInitialise(uint8_t* keyboard)
 {
     matrix = keyboard;
     sortHidKeys();
@@ -155,7 +165,7 @@ bool hidNavigateMenu(uint8_t* key)
 {
     hid_keyboard_report_t report;
 
-    hid_app_get_latest_keyboard_report(&report);
+    get_latest_keyboard_scans(&report);
     *key = 0;
 
     for(unsigned int i = 0; i < 6; ++i)
@@ -214,7 +224,7 @@ void hidSaveMenu(uint8_t* key)
 {
     hid_keyboard_report_t report;
 
-    hid_app_get_latest_keyboard_report(&report);
+    get_latest_keyboard_scans(&report);
     const unsigned char m = report.modifier;
     *key = 0;
 
@@ -390,9 +400,9 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
     hid_keyboard_report_t report;
     *special = 0;
 
-    hid_app_get_latest_keyboard_report(&report);
-
+    get_latest_keyboard_scans(&report);
     const unsigned char m = report.modifier;
+
     reset();
 
     // To generate a non Sinclair key from a Sinclair keyboard:
@@ -472,7 +482,7 @@ int16_t hidKeyboardToJoystick(void)
     hid_keyboard_report_t report;
     int16_t result = 0;
 
-    hid_app_get_latest_keyboard_report(&report);
+    get_latest_keyboard_scans(&report);
 
     // 5, 6, 7, 8 or direction key emulates joystick
     // Enter or 0 emulates joystick button

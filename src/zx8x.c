@@ -8,6 +8,7 @@
 #include "emuapi.h"
 #include "emusound.h"
 #include "emuvideo.h"
+#include "emukeyboard.h"
 #include "common.h"
 #include "hid_app.h"
 #include "hid_usb.h"
@@ -37,7 +38,7 @@ int signal_int_flag=0;
 int ramsize=16;
 
 /* the keyboard state and other */
-static byte keyboard[ 8 ] = {0xff,0xff,0xff,0xff, 0xff,0xff,0xff,0xff};;
+static uint8_t keyboard[ 8 ] = {0xff,0xff,0xff,0xff, 0xff,0xff,0xff,0xff};
 int zx80=0;
 int autoload=1;
 int chromamode=0;
@@ -767,8 +768,8 @@ void z8x_Init(void)
   UDGEnabled = false;
 
   setEmulatedTV(!useNTSC, emu_VTol());
-  hidInitialise(keyboard);
-  emu_initialiseNinePinJoystick();
+  emu_KeyboardInitialise(keyboard);
+  emu_JoystickInitialiseNinePin();
 
   /* load rom with ghosting at 0x2000 */
   int siz=(zx80?4096:8192);

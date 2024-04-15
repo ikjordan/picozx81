@@ -62,15 +62,13 @@
 #define PICO_SD_CS_PIN PICOZXBOARD_SD_CS_PIN
 #endif
 
-// Move UART
+#define CP 19, 20, 21, 22, 26, 27, 28
+#define RP 8, 9, 14, 15, 16, 17, 18
 
-//#define NINEPIN_JOYSTICK
-
-//#define NINEPIN_UP      20
-//#define NINEPIN_DOWN    21
-//#define NINEPIN_LEFT    22
-//#define NINEPIN_RIGHT   26
-//#define NINEPIN_BUTTON  27
+#define RN 7
+#define CN 7
+#define CP_SHIFT 19
+#define CP_JOIN(a) ((a & 0xF) | ((a >> 3) & (0x7 << 4)))
 
 #define PICO_PICOZX_BOARD
 
