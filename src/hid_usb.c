@@ -136,7 +136,7 @@ static void get_latest_keyboard_scans(hid_keyboard_report_t* report)
 {
   hid_app_get_latest_keyboard_report(report);
 
-#ifdef PICO_PICOZX_BOARD
+#if ((defined PICO_PICOZX_BOARD) || (defined PICO_PICOZXREAL_BOARD))
   emu_KeyboardScan((void*)report);
 #endif
 }

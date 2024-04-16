@@ -69,7 +69,7 @@
 #define CN 7
 #define CP_SHIFT 19
 #define CP_JOIN(a) ((a & 0xF) | ((a >> 3) & (0x7 << 4)))
-
+#define TP 2800
 #define PICO_PICOZX_BOARD
 
 // Maker board has a Pico on it, so default anything we haven't set above
