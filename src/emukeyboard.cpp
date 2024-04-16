@@ -227,9 +227,8 @@ bool emu_KeyboardUpdate(uint8_t* special)
                             ((rs[0] & 0x02) != 0),
                             ((rs[0] & 0x08) != 0),
                             ((rs[0] & 0x01) != 0));
-#else
-    emu_JoystickParse();
 #endif
+    emu_JoystickParse();
   }
   return ret;
 }
