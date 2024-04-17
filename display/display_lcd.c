@@ -484,7 +484,7 @@ static void core1_main()
     render_loop();
 }
 
-static bool timer_callback(repeating_timer_t *rt)
+static bool  __not_in_flash_func(timer_callback)(repeating_timer_t *rt)
 {
     // Trigger new frame
     sem_release(&frame_sync);

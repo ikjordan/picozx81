@@ -11,7 +11,7 @@
 #if ((defined PICO_PICOZX_BOARD) || (defined PICO_PICOZXREAL_BOARD))
 #include "hardware/clocks.h"
 
-static void device_keyscan_row(void);
+static inline void device_keyscan_row(void);
 static bool timer_callback(repeating_timer_t *rt);
 
 static repeating_timer_t timer;
@@ -47,7 +47,7 @@ static uint8_t kbits[2][RN][CN] =
 #else
     {
         {
-            { HID_KEY_ENTER, HID_KEY_ARROW_LEFT, HID_KEY_ARROW_UP, HID_KEY_ARROW_RIGHT, HID_KEY_ARROW_DOWN, HID_KEY_F2, HID_KEY_F3, HID_KEY_F5 },
+            { HID_KEY_ENTER, HID_KEY_ARROW_LEFT, HID_KEY_ARROW_UP, HID_KEY_ARROW_RIGHT, HID_KEY_ARROW_DOWN, HID_KEY_F2, HID_KEY_F3, HID_KEY_F4 },
             { HID_KEY_B, HID_KEY_H, HID_KEY_V, HID_KEY_Y, HID_KEY_6, HID_KEY_G, HID_KEY_T, HID_KEY_5 },
             { HID_KEY_N, HID_KEY_J, HID_KEY_C, HID_KEY_U, HID_KEY_7, HID_KEY_F, HID_KEY_R, HID_KEY_4 },
             { HID_KEY_M, HID_KEY_K, HID_KEY_X, HID_KEY_I, HID_KEY_8, HID_KEY_D, HID_KEY_E, HID_KEY_3 },
@@ -55,7 +55,7 @@ static uint8_t kbits[2][RN][CN] =
             { HID_KEY_SPACE, HID_KEY_ENTER, 0, HID_KEY_P, HID_KEY_0, HID_KEY_A, HID_KEY_Q, HID_KEY_1 }
         },
         {
-            { HID_KEY_ENTER, HID_KEY_ARROW_LEFT, HID_KEY_ARROW_UP, HID_KEY_ARROW_RIGHT, HID_KEY_ARROW_DOWN, HID_KEY_F4, HID_KEY_F6, HID_KEY_F7 },
+            { HID_KEY_ENTER, HID_KEY_ARROW_LEFT, HID_KEY_ARROW_UP, HID_KEY_ARROW_RIGHT, HID_KEY_ARROW_DOWN, HID_KEY_F5, HID_KEY_F6, HID_KEY_F7 },
             { HID_KEY_B, HID_KEY_H, HID_KEY_V, HID_KEY_Y, HID_KEY_6, HID_KEY_G, HID_KEY_T, HID_KEY_5 },
             { HID_KEY_N, HID_KEY_J, HID_KEY_C, HID_KEY_U, HID_KEY_7, HID_KEY_F, HID_KEY_R, HID_KEY_4 },
             { HID_KEY_M, HID_KEY_K, HID_KEY_X, HID_KEY_I, HID_KEY_8, HID_KEY_D, HID_KEY_E, HID_KEY_3 },
@@ -187,7 +187,7 @@ void emu_KeyboardScan(void* data)
 }
 
 #if ((defined PICO_PICOZX_BOARD) || (defined PICO_PICOZXREAL_BOARD))
-static void device_keyscan_row(void)
+static inline void  __not_in_flash_func(device_keyscan_row)(void)
 {
     static uint32_t ri = 0;
 
@@ -208,7 +208,7 @@ static void device_keyscan_row(void)
     gpio_put(rp[ri], 0);
 }
 
-static bool timer_callback(repeating_timer_t *rt)
+static bool  __not_in_flash_func(timer_callback)(repeating_timer_t *rt)
 {
     device_keyscan_row();
     return true;
