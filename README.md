@@ -39,7 +39,7 @@
 + [Waveshare RP2040-PiZero (HDMI)](https://www.waveshare.com/wiki/RP2040-PiZero)
 + [Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
 + [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with 320 by 240 LCD and RGB222 VGA displays
-+ [Picozx](https://hackaday.io/project/186039-pico-zx-spectrum-128k) (All in one board with build in keyboard and keystick)
++ [Picozx](https://hackaday.io/project/186039-pico-zx-spectrum-128k) All in one board with VGA output, built in keyboard and 9-pin joystick port
 ## Examples
 ### Installed in a reproduction case
 The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
