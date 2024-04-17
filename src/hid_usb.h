@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void hidInitialise(byte* keyboard);
+void hidInitialise(uint8_t* keyboard);
 bool hidReadUsbKeyboard(uint8_t* special, bool usedouble);
 int16_t hidKeyboardToJoystick(void);
 void hidInjectKey(uint8_t code);

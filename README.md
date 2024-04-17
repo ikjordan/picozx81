@@ -34,11 +34,12 @@
 ## Supported Hardware
 + [Pimoroni Pico VGA demo board](https://shop.pimoroni.com/products/pimoroni-pico-vga-demo-base)
 + [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base)
-+ [PicoMite VGA board](https://geoffg.net/picomitevga.html)
++ [PicoMiteVGA board](https://geoffg.net/picomitevga.html)
 + [Olimex RP2040-PICO-PC (HDMI)](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware)
 + [Waveshare RP2040-PiZero (HDMI)](https://www.waveshare.com/wiki/RP2040-PiZero)
 + [Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
 + [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with 320 by 240 LCD and RGB222 VGA displays
++ [PICOZX](https://hackaday.io/project/186039-pico-zx-spectrum-128k) All in one board with VGA output, built in keyboard and 9-pin joystick port
 ## Examples
 ### Installed in a reproduction case
 The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
@@ -104,14 +105,14 @@ Click on the uf2 name corresponding to your board in the table below to download
 | Pimoroni DVI | [`picozx81_dvi.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi.uf2)|
 | Pimoroni VGA | [`picozx81_vga.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vga.uf2)|
 | Olimex PICO DVI | [`picozx81_olimexpc.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc.uf2)|
-| PicoMite VGA | [`picozx81_picomitevga.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga.uf2)|
+| PicoMiteVGA | [`picozx81_picomitevga.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga.uf2)|
 | Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound.uf2)|
 | Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound.uf2)|
 | Waveshare PiZero with HDMI Sound| [`picozx81_wspizero_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/blob/main/uf2/picozx81_wspizero_hdmi_sound.uf2)|
 | Waveshare 2.8 LCD | [`picozx81_lcdws28.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28.uf2)|
 | Cytron Maker + 320x240 LCD | [`picozx81_lcdmaker.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdmaker.uf2)|
 | Cytron Maker + VGA 222 CSYNC | [`picozx81_vgamaker222c.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vgamaker222c.uf2)|
-
+| PICOZX | [`picozx81_picozx.uf2`](https://github.com/ikjordan/picozx81/blob/main/uf2/picozx81_picozx.uf2)|
 
 1. Connect your Board to your display using a VGA or HDMI cable, as appropriate for your board
 2. Connect the Pico to your PC using a USB cable, whilst pressing the **BOOTSEL** button on the Pico. Use the micro USB connector on the Pico, *not* the micro USB cable on your board
@@ -476,11 +477,12 @@ This will be named `picozx81_vga.uf2`
 | Board | CMake | uf2 name |
 | --- | --- | --- |
 | Pimoroni DVI |`cmake -DPICO_BOARD=dviboard ..` | `picozx81_dvi.uf2`|
-| PicoMite VGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga.uf2`|
+| PicoMiteVGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga.uf2`|
 | Olimex PICO DVI |`cmake -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc.uf2`|
 | Pimoroni VGA |`cmake -DPICO_BOARD=vgaboard ..` | `picozx81_vga.uf2`|
 | Custom 332 VGA (similar to MCUME)|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
 | Cytron Maker based 222 VGA with CSYNC (similar to PICOZX)|`cmake -DPICO_BOARD=vgamaker222cboard ..`| `picozx81_vgamaker222c.uf2`|
+| PICOZX |`cmake -DPICO_BOARD=picozxboard ..`| `picozx81_picozx.uf2`|
 | Pimoroni DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=dviboard ..` | `picozx81_dvi_hdmi_sound.uf2`|
 | Olimex PICO DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_hdmi_sound.uf2`|
 | Wavesare PiZero with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=wspizeroboard ..` | `picozx81_wspizero_hdmi_sound.uf2`|
@@ -543,7 +545,7 @@ By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rot
 With boards with connectors supplied for enough free GPIO pins it is possible to attach a 9 pin connector and then plug-in and use "in period" 9-pin joysticks
 
 ### Supported Boards
-The lcdmaker, vgamaker222c, picomitevga and pizero builds support the connection of a 9-pin joystick connector
+The lcdmaker, vgamaker222c, picomitevga, pizero and picozx builds support the connection of a 9-pin joystick connector
 
 ### Obtaining a 9-pin interface
 Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://www.amazon.co.uk/sourcing-map-Breakout-Connector-Solderless/dp/B07MMMGGXP)
@@ -555,8 +557,12 @@ Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://ww
 | vgamaker222c | GP20 | GP21 | GP22 | GP26 | GP27 | Ground |
 | picomitevga | GP3 | GP4 | GP5 | GP22 | GP26 | Ground |
 | pizero | GP11 | GP12 | GP10 | GP15 | GP13 | Ground |
+
+The picozx board has a 9-pin joystick port connector built in
 ### Enabling the joystick
 To enable the nine pin joystick set `NinePinJoystick` to `On` in the `[default]` section of the `config.ini` file in the root directory
+
+It is not necessary to create a `NinePinJoystick` entry to use the joystick port on the picozx board
 
 # Extra Information
 + The original intention of the emulator was to provide an authentic '80s feel. It emulated the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. It has now been extended to provide emulation of some of the amazing ZX81 developments of recent years, such as [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm). It supports the loading and saving of memory blocks, using a syntax similar to ZXpand
@@ -568,8 +574,9 @@ To enable the nine pin joystick set `NinePinJoystick` to `On` in the `[default]`
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
 + The Waveshare PiZero has two USB-C connectors. Use the connector closest to the HDMI connector to provide power. Connect a keyboard to the other USB port using an OTG cable. If necessary, a female micro USB to male USB C adaptor can be used
 + On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
-+ The PicoMite VGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
-+ Some verions of the PicoMiteVGA board have a jumper to select between RGB and GRN mode. Select RGB mode
++ The PicoMiteVGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
++ PicomiteVGA only supports 1 level of Red and Blue, so it cannot display the full range of colours that Chroma can generate
++ Some versions of the PicoMiteVGA board have a jumper to select between RGB and GRN mode. Select RGB mode
 + The Waveshare Pico-ResTouch-LCD-2.8 board has a touch controller, but the emulator does not support its use
 + The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
 + The Cytron Maker Pi Pico has an onboard piezo buzzer. The audio quality is poor, but it can be used instead of speakers. If the buzzer is enabled (using the switch on the maker board) ensure that ACB Stereo is disabled 
@@ -594,13 +601,15 @@ There are not enough unused GPIO pins on the Pimoroni demo boards to allow the d
 Code to convert a ZX8x keyboard to USB can be found at [ZX81_USB_KBD](https://github.com/ikjordan/ZX81_USB_KBD). This code has been used to successfully connect a ZX81 keyboard to this emulator. If the keyboard is the only peripheral, then it can be plugged straight into the USB port of the Pico on the emulator board with the power connected to the USB power socket of the Pimoroni board. If other USB peripherals (such as another keyboard, or a USB joystick) also need to be connected then the ZX80/81 keyboard can be connected via a USB hub
 
 To access the function menus from a ZX80/81 keyboard the `doubleshift` configuration option must be enabled
+
+The picozx board does support keyboard and joystick. This is achieved by using every available GPIO pin, and using VGA222 with CSYNC, together with mono audio
+
 ## Performance and constraints
 The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 90% of the available CPU clock cycles. An overclock to 250MHz is required
 
 Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n; set n,(hl); res n,(hl);`
 ## Possible Future Developments
 + Support for USB gamepads as well as joysticks
-+ Extend the Maker VGA222 board type to support original DB9 joysticks
 + Add vsync (TV) based sound
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 ## Comparison to MCUME

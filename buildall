@@ -34,6 +34,8 @@ build_uf2 vga332
 build_uf2 vgamaker222c
 build_uf2 lcdws28
 build_uf2 lcdmaker
+build_uf2 picozx
+build_uf2 picozxreal
 build_uf2_hdmi dvi
 build_uf2_hdmi olimexpc
 build_uf2_hdmi wspizero
