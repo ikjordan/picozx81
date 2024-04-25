@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "hardware/clocks.h"
 #include "hardware/irq.h"
+#include "hardware/structs/bus_ctrl.h"
 #include "pico/multicore.h"
 #include "dvi.h"
 #include "dvi_serialiser.h"
@@ -9,8 +10,7 @@
 #include "tmds_double.h"
 #include "tmds_chroma.h"
 #include "display.h"
-#include "zx80bmp.h"
-#include "zx81bmp.h"
+#include "display_priv.h"
 
 #define DVI_TIMING dvi_timing_720x576p_51hz
 #define __dvi_const(x) __not_in_flash_func(x)
@@ -46,11 +46,11 @@ static uint16_t PIXEL_WIDTH = 0;
 static uint16_t CHARACTER_WIDTH = 0;
 static uint16_t HEIGHT = 0;
 
-static const KEYBOARD_PIC* keyboard = &ZX81KYBD;
 static uint16_t keyboard_x = 0;
 static uint16_t keyboard_y = 0;
 static uint16_t keyboard_right = 0;
 static uint16_t keyboard_to_fill = 0;
+static uint16_t stride = 0;
 
 #ifdef SOUND_HDMI
 static const int hdmi_n[3] = {4096, 6272, 6144};
@@ -58,8 +58,6 @@ static uint16_t  rate  = 32000;     // Default audio rate
 #define AUDIO_BUFFER_SIZE   (0x1<<8) // Must be power of 2
 audio_sample_t      audio_buffer[AUDIO_BUFFER_SIZE];
 #endif
-
-#include "display_common.c"
 
 //
 // Private interface
@@ -96,29 +94,7 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     stride = minBuffByte + (PIXEL_WIDTH >> 3);
 
     // Allocate the buffers
-    for (int i=0; i<MAX_FREE; ++i)
-    {
-        free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
-                         + minBuffByte;
-
-        // Store original index, so that can map a chroma buffer, if necessary
-        index_to_display[i] = free_buff[i];
-    }
-
-    // Allocate chroma buffers
-    for (int i=0; i<MAX_FREE; ++i)
-    {
-        chroma[i].buff = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
-                        + minBuffByte;
-
-        if (!chroma[i].buff)
-        {
-            printf("Insufficient memory for chroma - aborting\n");
-            exit(-1);
-        }
-    }
-
-    free_count = MAX_FREE;
+    displayAllocateBuffers(minBuffByte, stride, HEIGHT);
 
     // Return the values
     *pixelWidth = PIXEL_WIDTH;
@@ -297,7 +273,7 @@ static void __not_in_flash_func(render_loop)()
     }
 }
 
-static void core1_main()
+void core1_main()
 {
     dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
     dvi_start(&dvi0);

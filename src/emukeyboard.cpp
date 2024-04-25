@@ -11,6 +11,7 @@
 #if ((defined PICO_PICOZX_BOARD) || (defined PICO_PICOZXREAL_BOARD))
 #include "hardware/clocks.h"
 
+static void gp_keyboard_initialise(void);
 static inline void device_keyscan_row(void);
 static bool timer_callback(repeating_timer_t *rt);
 
@@ -72,29 +73,14 @@ void emu_KeyboardInitialise(uint8_t* keyboard)
 
 #if ((defined PICO_PICOZX_BOARD) || (defined PICO_PICOZXREAL_BOARD))
     static bool first = true;
+
+    gp_keyboard_initialise();
+
     if (first)
     {
-        // Only initialise the device keyboard once
+        // Only initialise the device keyboard timer once
         first = false;
-        for(int i = 0; i < RN; ++i)
-        {
-            gpio_init(rp[i]);
-            gpio_set_dir(rp[i], GPIO_IN);
-            gpio_disable_pulls(rp[i]);
-        }
 
-        for(int i = 0; i < CN; ++i)
-        {
-            gpio_init(cp[i]);
-            gpio_set_dir(cp[i], GPIO_IN);
-            gpio_pull_up(cp[i]);
-        }
-
-        // Set the first row to output, ready for first read
-        gpio_set_dir(rp[0], GPIO_OUT);
-        gpio_put(rp[0], 0);
-
-        // Set a timer to read device keyboard
         // if a read is missed, no need to catch up, so use positive time
         if (!add_repeating_timer_us(period, timer_callback, NULL, &timer))
         {
@@ -126,7 +112,7 @@ void emu_KeyboardScan(void* data)
         if (++used == 6) return;
     }
 
-    // Check main keys attched to row 0
+    // Check main keys attached to row 0
     if (rs[0] & 0x40)
     {
         report->keycode[used] = HID_KEY_PERIOD;
@@ -187,6 +173,44 @@ void emu_KeyboardScan(void* data)
 }
 
 #if ((defined PICO_PICOZX_BOARD) || (defined PICO_PICOZXREAL_BOARD))
+bool emu_KeyboardFire(void)
+{
+    // Ensure keyboard and joypad is initialised
+    gp_keyboard_initialise();
+
+    // Read the first line, which contains the fire button
+    device_keyscan_row();
+
+    return ((rs[0] & 0x01) != 0);
+}
+
+static void gp_keyboard_initialise(void)
+{
+    static bool first = true;
+    if (first)
+    {
+        // Only initialise the device keyboard once
+        first = false;
+        for(int i = 0; i < RN; ++i)
+        {
+            gpio_init(rp[i]);
+            gpio_set_dir(rp[i], GPIO_IN);
+            gpio_disable_pulls(rp[i]);
+        }
+
+        for(int i = 0; i < CN; ++i)
+        {
+            gpio_init(cp[i]);
+            gpio_set_dir(cp[i], GPIO_IN);
+            gpio_pull_up(cp[i]);
+        }
+
+        // Set the first row to output, ready for first read
+        gpio_set_dir(rp[0], GPIO_OUT);
+        gpio_put(rp[0], 0);
+    }
+}
+
 static inline void  __not_in_flash_func(device_keyscan_row)(void)
 {
     static uint32_t ri = 0;

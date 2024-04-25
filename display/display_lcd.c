@@ -9,13 +9,11 @@
 #include "sdcard.h"
 
 #include "display.h"
-#include "zx80bmp.h"
-#include "zx81bmp.h"
+#include "display_priv.h"
 
 #define PIXEL_WIDTH 320
 #define HEIGHT      240
 
-static const KEYBOARD_PIC* keyboard = &ZX81KYBD;
 static uint16_t keyboard_x = 0;
 static uint16_t keyboard_y = 0;
 static uint16_t keyboard_right = 0;
@@ -41,6 +39,8 @@ static bool rotate = false;     // Rotate display by 180 degrees
 static bool reflect = false;    // Change horizontal scan direction
 static bool bgr = false;        // use bgr instead of rgb
 
+static uint16_t stride;
+
 // Do not make const - as want to keep in RAM
 static uint16_t colour_table[16] = {
     0x0000,
@@ -61,8 +61,6 @@ static uint16_t colour_table[16] = {
     0x0fff
 };
 
-#include "display_common.c"
-
 //
 // Private interface
 //
@@ -79,7 +77,13 @@ static inline void lcd_start_pixels(void);
 //
 #include <stdio.h>
 
-uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+#ifndef PICO_PICOZX_BOARD
+uint displayInitialise
+#else
+bool useLCD = false;
+uint displayInitialiseLCD
+#endif
+                      (bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
 {
     if (info)
@@ -113,29 +117,7 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     stride = minBuffByte + (PIXEL_WIDTH >> 3);
 
     // Allocate the buffers
-    for (int i=0; i<MAX_FREE; ++i)
-    {
-        free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
-                         + minBuffByte;
-
-        // Store original index, so that can map a chroma buffer, if necessary
-        index_to_display[i] = free_buff[i];
-    }
-
-    // Allocate chroma buffers
-    for (int i=0; i<MAX_FREE; ++i)
-    {
-        chroma[i].buff = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
-                        + minBuffByte;
-
-        if (!chroma[i].buff)
-        {
-            printf("Insufficient memory for chroma - aborting\n");
-            exit(-1);
-        }
-    }
-
-    free_count = MAX_FREE;
+    displayAllocateBuffers(minBuffByte, stride, HEIGHT);
 
     // Return the values
     *pixelWidth = PIXEL_WIDTH;
@@ -148,7 +130,11 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     return CLOCK_SPEED_KHZ;
 }
 
+#ifndef PICO_PICOZX_BOARD
 void displayStart(void)
+#else
+void displayStartLCD(void)
+#endif
 {
     printf("Invert %s\n", invert ? "True": "false");
     printf("Skip %s\n", skip ? "True": "false");
@@ -159,7 +145,11 @@ void displayStart(void)
     displayStartCommon();
 }
 
+#ifndef PICO_PICOZX_BOARD
 bool displayShowKeyboard(bool zx81)
+#else
+bool displayShowKeyboardLCD(bool zx81)
+#endif
 {
     bool previous = showKeyboard;
 
@@ -445,7 +435,11 @@ static void __not_in_flash_func(render_loop)()
     }
 }
 
-static void core1_main()
+#if (defined PICO_PICOZX_BOARD)
+void core1_main_lcd(void)
+#else
+void core1_main(void)
+#endif
 {
     sm = pio_claim_unused_sm(pio, true);    // Will panic if no sm available
 
@@ -469,13 +463,20 @@ static void core1_main()
     spi_lcd_program_init(pio, sm, offset, PICO_LCD_CMD_PIN, PICO_LCD_CLK_PIN, (SERIAL_CLK_DIV * (skip ? 2: 1)));
 #endif
     gpio_init(PICO_LCD_DC_PIN);
+#ifdef PICO_LCD_RS_PIN
     gpio_init(PICO_LCD_RS_PIN);
+#endif
     gpio_init(PICO_LCD_BL_PIN);
     gpio_set_dir(PICO_LCD_DC_PIN, GPIO_OUT);
+
+#ifdef PICO_LCD_RS_PIN
     gpio_set_dir(PICO_LCD_RS_PIN, GPIO_OUT);
+#endif
     gpio_set_dir(PICO_LCD_BL_PIN, GPIO_OUT);
 
+#ifdef PICO_LCD_RS_PIN
     gpio_put(PICO_LCD_RS_PIN, 1);
+#endif
     lcd_init();
     gpio_put(PICO_LCD_BL_PIN, 1);
 

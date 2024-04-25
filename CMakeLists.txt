@@ -80,16 +80,21 @@ set(ZX8X_SOURCES
 set(INI_SOURCES
     inih/ini.c)
 
+set(DISPLAY_COMMON_SOURCES
+    display/display_common.c)
+
 if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     set(DISPLAY_SOURCES
         display/display_dvi.c
         display/tmds_double.S
-        display/tmds_double.h
-        display/tmds_chroma.S
-        display/tmds_chroma.h)
+        display/tmds_chroma.S)
 elseif ((${PICO_BOARD} STREQUAL "lcdws28board") OR (${PICO_BOARD} STREQUAL "lcdmakerboard"))
     set(DISPLAY_SOURCES
         display/display_lcd.c)
+elseif (${PICO_BOARD} STREQUAL "picozxboard")
+    set(DISPLAY_SOURCES
+        display/display_lcd.c
+        display/display_vga.c)
 else ()
     set(DISPLAY_SOURCES
         display/display_vga.c)
@@ -106,6 +111,7 @@ set(USB_SOURCES
 add_executable(${PROJECT}
                ${ZX8X_SOURCES}
                ${INI_SOURCES}
+               ${DISPLAY_COMMON_SOURCES}
                ${DISPLAY_SOURCES}
                ${USB_SOURCES})
 
@@ -189,6 +195,9 @@ else()
 
     if ((${PICO_BOARD} STREQUAL "vgamaker222cboard") OR (${PICO_BOARD} STREQUAL "picozxboard") OR (${PICO_BOARD} STREQUAL "picozxrealboard"))
         target_link_libraries(${PROJECT} mod_scanvideo_dpi)
+        if (${PICO_BOARD} STREQUAL "picozxboard")
+            pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/spi_lcd.pio)
+        endif ()
     else ()
         target_link_libraries(${PROJECT} pico_scanvideo_dpi)
     endif()

@@ -7,8 +7,7 @@
 #include "pico/multicore.h"
 #include "pico/sync.h"
 #include "display.h"
-#include "zx80bmp.h"
-#include "zx81bmp.h"
+#include "display_priv.h"
 
 // Union to allow variable length data manipulation
 typedef union
@@ -24,9 +23,10 @@ static uint16_t HEIGHT = 0;
 
 static const uint16_t MIN_RUN = 3;
 
-static const KEYBOARD_PIC* keyboard = &ZX81KYBD;
 static uint16_t keyboard_x = 0;
 static uint16_t keyboard_y = 0;
+
+static uint16_t stride = 0;
 
 // Do not make const - as want to keep in RAM
 static uint16_t colour_table[16] = {
@@ -152,7 +152,6 @@ const scanvideo_mode_t vga_mode_360x288_51 =
 
 static const scanvideo_mode_t* video_mode = 0;
 
-#include "display_common.c"
 //
 // Private interface
 //
@@ -163,14 +162,18 @@ static int32_t populate_keyboard_line(int linenum, uint16_t bcolour, uint32_t* b
 static int32_t populate_mixed_line(uint8_t* display_line, uint8_t* colour_line, int linenum, uint32_t* buff);
 static void render_loop();
 static Fill_u expand_display(uint8_t disp, uint8_t colours);
-static void core1_main();
 
 //
 // Public functions
 //
 
     // Determine the video mode
-uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+#ifndef PICO_PICOZX_BOARD
+uint displayInitialise
+#else
+uint displayInitialiseVGA
+#endif
+                      (bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
 {
     (void)info;
@@ -188,29 +191,7 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     stride = minBuffByte + BYTE_WIDTH;
 
     // Allocate the buffers
-    for (int i=0; i<MAX_FREE; ++i)
-    {
-        free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
-                         + minBuffByte;
-
-        // Store original index, so that can map a chroma buffer, if necessary
-        index_to_display[i] = free_buff[i];
-    }
-
-    // Allocate chroma buffers
-    for (int i=0; i<MAX_FREE; ++i)
-    {
-        chroma[i].buff = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
-                        + minBuffByte;
-
-        if (!chroma[i].buff)
-        {
-            printf("Insufficient memory for chroma - aborting\n");
-            exit(-1);
-        }
-    }
-
-    free_count = MAX_FREE;
+    displayAllocateBuffers(minBuffByte, stride, HEIGHT);
 
     // Return the values
     *pixelWidth = PIXEL_WIDTH;
@@ -223,12 +204,20 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     return video_mode->default_timing->clock_freq / 100;
 }
 
+#ifndef PICO_PICOZX_BOARD
 void displayStart(void)
+#else
+void displayStartVGA(void)
+#endif
 {
     displayStartCommon();
 }
 
+#ifndef PICO_PICOZX_BOARD
 bool displayShowKeyboard(bool zx81)
+#else
+bool displayShowKeyboardVGA(bool zx81)
+#endif
 {
     bool previous = showKeyboard;
 
@@ -467,7 +456,11 @@ static Fill_u __not_in_flash_func(expand_display)(uint8_t disp, uint8_t colours)
     }
     return result;
 }
-static void core1_main()
+#if (defined PICO_PICOZX_BOARD)
+void core1_main_vga(void)
+#else
+void core1_main(void)
+#endif
 {
     scanvideo_setup(video_mode);
     scanvideo_timing_enable(true);

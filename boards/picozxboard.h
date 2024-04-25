@@ -70,6 +70,33 @@
 #define CP_SHIFT 19
 #define CP_JOIN(a) ((a & 0xF) | ((a >> 3) & (0x7 << 4)))
 #define TP 2800
+
+#define PICOZXBOARD_LCD_DC_PIN  6
+#define PICOZXBOARD_LCD_CS_PIN  5
+#define PICOZXBOARD_LCD_CMD_PIN 3     // MOSI
+#define PICOZXBOARD_LCD_BL_PIN  4
+#define PICOZXBOARD_LCD_CLK_PIN 2
+
+#ifndef PICO_LCD_DC_PIN
+#define PICO_LCD_DC_PIN PICOZXBOARD_LCD_DC_PIN
+#endif
+
+#ifndef PICO_LCD_CS_PIN
+#define PICO_LCD_CS_PIN PICOZXBOARD_LCD_CS_PIN
+#endif
+
+#ifndef PICO_LCD_BL_PIN
+#define PICO_LCD_BL_PIN PICOZXBOARD_LCD_BL_PIN
+#endif
+
+#ifndef PICO_LCD_CMD_PIN
+#define PICO_LCD_CMD_PIN PICOZXBOARD_LCD_CMD_PIN
+#endif
+
+#ifndef PICO_LCD_CLK_PIN
+#define PICO_LCD_CLK_PIN PICOZXBOARD_LCD_CLK_PIN
+#endif
+
 #define PICO_PICOZX_BOARD
 
 // Maker board has a Pico on it, so default anything we haven't set above
