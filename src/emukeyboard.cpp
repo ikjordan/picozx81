@@ -11,6 +11,10 @@
 #if ((defined PICO_PICOZX_BOARD) || (defined PICO_PICOZXREAL_BOARD))
 #include "hardware/clocks.h"
 
+#if (defined PICO_PICOZXREAL_BOARD)
+#include "pico/bootrom.h"
+#endif
+
 static void gp_keyboard_initialise(void);
 static inline void device_keyscan_row(void);
 static bool timer_callback(repeating_timer_t *rt);
@@ -153,6 +157,13 @@ void emu_KeyboardScan(void* data)
         {
             report->keycode[used] = kbits[set][0][j];
             if (++used == 6) return;
+        }
+
+        // Check to see if menu button has been pressed, together with R key
+        if ((rs[0] & 0x20) && (rs[2] & 0x40))
+        {
+            // Reset the board, so new firmware can be loaded
+            reset_usb_boot(0, 0);
         }
     }
 

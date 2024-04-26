@@ -188,8 +188,11 @@ else()
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vgamaker222c")
     elseif (${PICO_BOARD} STREQUAL "picozxboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picozx")
-        elseif (${PICO_BOARD} STREQUAL "picozxrealboard")
+    elseif (${PICO_BOARD} STREQUAL "picozxrealboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picozxreal")
+        # TO DO
+        # Remove after testing - can then use key combination to trigger BOOTSEL
+        target_link_libraries(${PROJECT} pico_bootsel_via_double_reset)
         target_compile_definitions(${PROJECT} PUBLIC -DPICO_BOOTSEL_VIA_DOUBLE_RESET_TIMEOUT_MS=2000)
     endif()
 
@@ -214,7 +217,6 @@ endif()
 target_compile_options(${PROJECT} PRIVATE -Wall)
 
 target_link_libraries(${PROJECT}
-                      pico_bootsel_via_double_reset
                       pico_multicore
                       pico_stdlib
                       sdcard
