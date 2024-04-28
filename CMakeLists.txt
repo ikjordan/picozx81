@@ -224,7 +224,7 @@ target_link_libraries(${PROJECT}
                       tinyusb_host
                       tinyusb_board)
 
-# Cannot use serial port with Pimoroni vga
+# Cannot use serial port with Pimoroni vga or picozx boards
 if ((${PICO_BOARD} STREQUAL "vgaboard") OR (${PICO_BOARD} STREQUAL "picozxboard") OR (${PICO_BOARD} STREQUAL "picozxrealboard"))
     pico_enable_stdio_uart(${PROJECT} 0)
 else()
