@@ -91,7 +91,7 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     CHARACTER_WIDTH = PIXEL_WIDTH >> 3;
 
     // Is padding requested? For DVI can pad a single byte
-    stride = minBuffByte + (PIXEL_WIDTH >> 3);
+    stride = minBuffByte + CHARACTER_WIDTH;
 
     // Allocate the buffers
     displayAllocateBuffers(minBuffByte, stride, HEIGHT);
