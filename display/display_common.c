@@ -457,6 +457,25 @@ static inline void __not_in_flash_func(swapCurrAndLast)(void)
 
 // Allow selection between VGA and LCD for ZXPICO board
 #ifdef PICO_PICOZX_BOARD
+#undef WHITE
+#undef BLUE
+#undef YELLOW
+#undef RED
+#undef BLACK
+
+#define WHITE  0xfff
+#define BLUE   0x00f
+#define YELLOW 0xff0
+#define RED    0xf00
+#define BLACK  0x000
+
+#undef ZX80_KEYBOARD
+#define ZX80_KEYBOARD ZX80KYBD_LCD
+#undef ZX81_KEYBOARD
+#define ZX81_KEYBOARD ZX81KYBD_LCD
+#include "zx80bmp.h"
+#include "zx81bmp.h"
+
 extern uint displayInitialiseLCD(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                                  uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
 extern void displayStartLCD(void);

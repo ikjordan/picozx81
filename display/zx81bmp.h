@@ -1,8 +1,12 @@
-#ifndef _ZX81BMP_H_
-#define _ZX81BMP_H_
+// No protection guard, as need to include twice from same file
 #include "display_priv.h"
 
-const KEYBOARD_PIC ZX81KYBD =
+// To allow multiple definitions
+#ifndef ZX81_KEYBOARD
+#define ZX81_KEYBOARD ZX81KYBD
+#endif
+
+const KEYBOARD_PIC ZX81_KEYBOARD =
 {
 256, 136, 2,
 {
@@ -1102,4 +1106,3 @@ const KEYBOARD_PIC ZX81KYBD =
 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff 
 }
 };
-#endif

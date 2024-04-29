@@ -17,6 +17,10 @@ typedef struct
 // Keyboard display
 extern const KEYBOARD_PIC ZX80KYBD;
 extern const KEYBOARD_PIC ZX81KYBD;
+#ifdef PICO_PICOZX_BOARD
+extern const KEYBOARD_PIC ZX80KYBD_LCD;
+extern const KEYBOARD_PIC ZX81KYBD_LCD;
+#endif
 extern const KEYBOARD_PIC* keyboard;
 extern bool showKeyboard;
 

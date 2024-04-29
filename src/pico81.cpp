@@ -25,7 +25,7 @@ int main(void)
 
 #ifdef PICO_PICOZX_BOARD
     // Determine which display type to use
-    useLCD = emu_KeyboardFire();
+    useLCD = !emu_KeyboardFire();
 #endif
 
     // Initialise display to get clock, using config
