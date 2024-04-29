@@ -52,7 +52,7 @@ static uint8_t kbits[2][RN][CN] =
 #else
     {
         {
-            { HID_KEY_ENTER, HID_KEY_ARROW_LEFT, HID_KEY_ARROW_UP, HID_KEY_ARROW_RIGHT, HID_KEY_ARROW_DOWN, HID_KEY_F2, HID_KEY_F3, HID_KEY_F4 },
+            { HID_KEY_ENTER, HID_KEY_ARROW_LEFT, HID_KEY_ARROW_UP, HID_KEY_ARROW_RIGHT, HID_KEY_ARROW_DOWN, HID_KEY_F5, HID_KEY_F2, 0 },
             { HID_KEY_B, HID_KEY_H, HID_KEY_V, HID_KEY_Y, HID_KEY_6, HID_KEY_G, HID_KEY_T, HID_KEY_5 },
             { HID_KEY_N, HID_KEY_J, HID_KEY_C, HID_KEY_U, HID_KEY_7, HID_KEY_F, HID_KEY_R, HID_KEY_4 },
             { HID_KEY_M, HID_KEY_K, HID_KEY_X, HID_KEY_I, HID_KEY_8, HID_KEY_D, HID_KEY_E, HID_KEY_3 },
@@ -60,7 +60,7 @@ static uint8_t kbits[2][RN][CN] =
             { HID_KEY_SPACE, HID_KEY_ENTER, 0, HID_KEY_P, HID_KEY_0, HID_KEY_A, HID_KEY_Q, HID_KEY_1 }
         },
         {
-            { HID_KEY_ENTER, HID_KEY_ARROW_LEFT, HID_KEY_ARROW_UP, HID_KEY_ARROW_RIGHT, HID_KEY_ARROW_DOWN, HID_KEY_F5, HID_KEY_F6, HID_KEY_F7 },
+            { HID_KEY_ENTER, HID_KEY_ARROW_LEFT, HID_KEY_ARROW_UP, HID_KEY_ARROW_RIGHT, HID_KEY_ARROW_DOWN, HID_KEY_F3, HID_KEY_F6, 0 },
             { HID_KEY_B, HID_KEY_H, HID_KEY_V, HID_KEY_Y, HID_KEY_6, HID_KEY_G, HID_KEY_T, HID_KEY_5 },
             { HID_KEY_N, HID_KEY_J, HID_KEY_C, HID_KEY_U, HID_KEY_7, HID_KEY_F, HID_KEY_R, HID_KEY_4 },
             { HID_KEY_M, HID_KEY_K, HID_KEY_X, HID_KEY_I, HID_KEY_8, HID_KEY_D, HID_KEY_E, HID_KEY_3 },
@@ -160,7 +160,7 @@ void emu_KeyboardScan(void* data)
         }
 
         // Check to see if menu button has been pressed, together with R key
-        if ((rs[0] & 0x20) && (rs[2] & 0x40))
+        if ((rs[0] & 0x40) && (rs[2] & 0x40))
         {
             // Reset the board, so new firmware can be loaded
             reset_usb_boot(0, 0);
@@ -172,7 +172,7 @@ void emu_KeyboardScan(void* data)
     {
         for (int j=0; j<CN; ++j)
         {
-            if (rs[i] & (0x1<<j) & kbits[set][i][j])
+            if ((rs[i] & (0x1<<j)) && (kbits[set][i][j] !=0))
             {
                 report->keycode[used] = kbits[set][i][j];
                 if (++used == 6) return;

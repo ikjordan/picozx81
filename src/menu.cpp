@@ -661,7 +661,8 @@ bool modifyMenu(void)
                     }
                     else if (field == PSTEREOACB)
                     {
-                        modify.stereo = ! modify.stereo;
+                        if (emu_ACBPossible())
+                            modify.stereo = ! modify.stereo;
                     }
 #endif
                     showModify(field, &modify);
@@ -1112,7 +1113,10 @@ static void showModify(PositionF6_T pos, ModifyF6_T* modify)
     writeString((modify->sound == AY_TYPE_QUICKSILVA) ? "QUICKSILVA" : (modify->sound == AY_TYPE_ZONX) ? "ZonX      " : "None      ", rhs , lcount + PositionF6_T::PSOUNDTYPE);
 
     writeInvertString("Stereo:", lhs, lcount + PositionF6_T::PSTEREOACB, pos == PositionF6_T::PSTEREOACB);
-    writeString(modify->stereo ? "ON-ACB" : "OFF   ", rhs , lcount + PositionF6_T::PSTEREOACB);
+    if (emu_ACBPossible())
+        writeString(modify->stereo ? "ON-ACB" : "OFF   ", rhs , lcount + PositionF6_T::PSTEREOACB);
+    else
+        writeString("N/A", rhs , lcount + PositionF6_T::PSTEREOACB);
 #endif
 }
 
@@ -1167,10 +1171,17 @@ static void showReboot(FiveSevenSix_T mode)
     writeString("      REBOOT THE PICO", lhs - 1, lcount + 6);
 
     writeInvertString("Resolution:", lhs, lcount + 12, true);
+#ifndef PICOZX_LCD
 #ifndef PICO_LCD_CS_PIN
     writeString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
 #else
     writeString((mode == OFF) ? "320x240x60  " : (mode == MATCH) ? "320x240x50.6" : "320x240x50  ", rhs, lcount + 12);
+#endif
+#else
+    if (useLCD)
+        writeString((mode == OFF) ? "320x240x60  " : (mode == MATCH) ? "320x240x50.6" : "320x240x50  ", rhs, lcount + 12);
+    else
+        writeString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
 #endif
 }
 

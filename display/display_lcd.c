@@ -84,7 +84,7 @@ static inline void lcd_start_pixels(void);
 //
 #include <stdio.h>
 
-#ifndef PICO_PICOZX_BOARD
+#ifndef PICOZX_LCD
 uint displayInitialise
 #else
 bool useLCD = false;
@@ -137,7 +137,7 @@ uint displayInitialiseLCD
     return CLOCK_SPEED_KHZ;
 }
 
-#ifndef PICO_PICOZX_BOARD
+#ifndef PICOZX_LCD
 void displayStart(void)
 #else
 void displayStartLCD(void)
@@ -152,7 +152,7 @@ void displayStartLCD(void)
     displayStartCommon();
 }
 
-#ifndef PICO_PICOZX_BOARD
+#ifndef PICOZX_LCD
 bool displayShowKeyboard(bool zx81)
 #else
 bool displayShowKeyboardLCD(bool zx81)
@@ -162,7 +162,7 @@ bool displayShowKeyboardLCD(bool zx81)
 
     if (!showKeyboard)
     {
-#ifdef PICO_PICOZX_BOARD
+#ifdef PICOZX_LCD
         if (useLCD)
         {
             keyboard = zx81 ? &ZX81KYBD_LCD : &ZX80KYBD_LCD;
@@ -310,7 +310,7 @@ static void __not_in_flash_func(render_loop)()
                     if (blank)
                     {
                         // 32 pixels of blank
-#ifndef PICO_PICOZX_BOARD
+#ifndef PICOZX_LCD
                         uint32_t twoblank = (blank_colour << 12) | blank_colour;
 #else
                         uint32_t twoblank = (blank_colour == WHITE) ? (WHITE_LCD << 12) | WHITE_LCD : (BLACK_LCD << 12) | BLACK_LCD;
@@ -409,7 +409,7 @@ static void __not_in_flash_func(render_loop)()
                 {
                     if (blank)
                     {
-#ifndef PICO_PICOZX_BOARD
+#ifndef PICOZX_LCD
                         uint32_t twobits = (blank_colour << 12) | blank_colour;
 #else
                         uint32_t twobits = (blank_colour == WHITE) ? (WHITE_LCD << 12) | WHITE_LCD : (BLACK_LCD << 12) | BLACK_LCD;
@@ -457,7 +457,7 @@ static void __not_in_flash_func(render_loop)()
     }
 }
 
-#if (defined PICO_PICOZX_BOARD)
+#if (defined PICOZX_LCD)
 void core1_main_lcd(void)
 #else
 void core1_main(void)

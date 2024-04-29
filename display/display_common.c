@@ -311,7 +311,7 @@ void displayStartCommon(void)
     sem_init(&display_initialised, 0, 1);
 
     // launch all the video on core 1, so it isn't affected by USB handling on core 0
-#ifdef PICO_PICOZX_BOARD
+#ifdef PICOZX_LCD
     if (useLCD)
     {
         multicore_launch_core1(core1_main_lcd);
@@ -456,7 +456,7 @@ static inline void __not_in_flash_func(swapCurrAndLast)(void)
 }
 
 // Allow selection between VGA and LCD for ZXPICO board
-#ifdef PICO_PICOZX_BOARD
+#ifdef PICOZX_LCD
 #undef WHITE
 #undef BLUE
 #undef YELLOW

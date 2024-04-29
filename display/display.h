@@ -32,7 +32,7 @@ typedef struct
     } info;
 } DisplayExtraInfo_T;
 
-#ifdef PICO_PICOZX_BOARD
+#ifdef PICOZX_LCD
 extern bool useLCD;
 #endif
 

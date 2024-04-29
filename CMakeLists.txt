@@ -9,6 +9,7 @@ project(${PROJECT} C CXX ASM)
 OPTION(TIME_SPARE "Set to true to measure idle time" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
 OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
+OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
 
 # Look for board file first in local board directory
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
@@ -36,6 +37,9 @@ endif()
 # e.g. cmake -DPICO_BOARD=picozxboard
 # Set to "picozxrealboard" for vga 222 with csync based on picozxreal board
 # e.g. cmake -DPICO_BOARD=picozxrealboard
+#
+# To enable HDMI sound add -DHDMI_SOUND
+# To enable LCD display in addition to VGA for picozx add -DPICOZX_LCD
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
@@ -91,7 +95,7 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
 elseif ((${PICO_BOARD} STREQUAL "lcdws28board") OR (${PICO_BOARD} STREQUAL "lcdmakerboard"))
     set(DISPLAY_SOURCES
         display/display_lcd.c)
-elseif (${PICO_BOARD} STREQUAL "picozxboard")
+elseif ((${PICO_BOARD} STREQUAL "picozxboard") AND (${PICOZX_LCD}))
     set(DISPLAY_SOURCES
         display/display_lcd.c
         display/display_vga.c)
@@ -187,20 +191,19 @@ else()
     elseif (${PICO_BOARD} STREQUAL "vgamaker222cboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vgamaker222c")
     elseif (${PICO_BOARD} STREQUAL "picozxboard")
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picozx")
+        if (${PICOZX_LCD})
+            pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/spi_lcd.pio)
+            target_compile_definitions(${PROJECT} PRIVATE -DPICOZX_LCD)
+            set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picozx_lcd")
+        else ()
+            set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picozx")
+        endif ()
     elseif (${PICO_BOARD} STREQUAL "picozxrealboard")
         set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picozxreal")
-        # TO DO
-        # Remove after testing - can then use key combination to trigger BOOTSEL
-        target_link_libraries(${PROJECT} pico_bootsel_via_double_reset)
-        target_compile_definitions(${PROJECT} PUBLIC -DPICO_BOOTSEL_VIA_DOUBLE_RESET_TIMEOUT_MS=2000)
     endif()
 
     if ((${PICO_BOARD} STREQUAL "vgamaker222cboard") OR (${PICO_BOARD} STREQUAL "picozxboard") OR (${PICO_BOARD} STREQUAL "picozxrealboard"))
         target_link_libraries(${PROJECT} mod_scanvideo_dpi)
-        if (${PICO_BOARD} STREQUAL "picozxboard")
-            pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/spi_lcd.pio)
-        endif ()
     else ()
         target_link_libraries(${PROJECT} pico_scanvideo_dpi)
     endif()

@@ -45,9 +45,10 @@
 #include "common.h"
 #include "sound.h"
 #include "Z80.h"
+#include "iopins.h"
 
 /* configuration */
-const int sound_stereo=1;
+const int sound_stereo=1;  /* Always generate two channels */
 
 int sound_enabled=0;
 int sound_freq=0;
@@ -166,7 +167,8 @@ if(!sound_stereo)
 }
 else
 {
-  sound_stereo_acb = acb;
+  // As stereo is hard coded to 1...
+  sound_stereo_acb = (AUDIO_PIN_L != AUDIO_PIN_R) ? acb : 0;
 }
 
 if (reset)
@@ -357,10 +359,15 @@ for(f=0,ptr=buff;f<sound_framesiz;f++,ptr+=channels)
     ptr[1]=*ptr;
 
 #if ((!defined (I2S)) && (!defined (SOUND_HDMI)))
+#ifdef PICO_PICOZXREAL_BOARD
+#define PWM_SOUND_REDUCE 3
+#else
+#define PWM_SOUND_REDUCE 4
+#endif
   // Correct to PWM
-  *ptr = (*ptr>>4) + ZEROSOUND;
+  *ptr = (*ptr>>PWM_SOUND_REDUCE) + ZEROSOUND;
   if (sound_stereo)
-    ptr[1] = (ptr[1]>>4) + ZEROSOUND;
+    ptr[1] = (ptr[1]>>PWM_SOUND_REDUCE) + ZEROSOUND;
 #endif
   /* update noise RNG/filter */
   ay_noise_tick+=ay_tick_incr;

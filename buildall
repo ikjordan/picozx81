@@ -20,6 +20,17 @@ build_uf2_hdmi()
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }
+
+build_uf2_lcd()
+{
+  board=$1"board .."
+  uf2="picozx81_"$1"_lcd.uf2"
+
+  cmake -DPICOZX_LCD=ON -DPICO_BOARD=${board}
+  make -j4
+  cp ./${uf2} ../uf2/${uf2}
+}
+
 # Create the directories
 mkdir -p build
 mkdir -p uf2
@@ -39,3 +50,4 @@ build_uf2 picozxreal
 build_uf2_hdmi dvi
 build_uf2_hdmi olimexpc
 build_uf2_hdmi wspizero
+build_uf2_lcd picozx

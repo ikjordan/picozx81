@@ -64,6 +64,7 @@ extern bool emu_NinePinJoystickRequested(void);
 extern int emu_MenuBorderRequested(void);
 extern uint16_t emu_VTol(void);
 extern bool emu_ACBRequested(void);
+extern bool emu_ACBPossible(void);
 extern bool emu_Centre(void);
 extern int emu_CentreX(void);
 extern int emu_CentreY(void);
@@ -74,6 +75,8 @@ extern bool emu_lcdSkipFrameRequested(void);
 extern bool emu_lcdRotateRequested(void);
 extern bool emu_lcdReflectRequested(void);
 extern bool emu_lcdBGRRequested(void);
+
+extern bool emu_vgaRequested(void);
 
 extern FrameSync_T emu_FrameSyncRequested(void);
 extern FiveSevenSix_T emu_576Requested(void);

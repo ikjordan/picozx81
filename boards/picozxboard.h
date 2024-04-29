@@ -71,6 +71,7 @@
 #define CP_JOIN(a) ((a & 0xF) | ((a >> 3) & (0x7 << 4)))
 #define TP 2800
 
+#ifdef PICOZX_LCD
 #define PICOZXBOARD_LCD_DC_PIN  6
 #define PICOZXBOARD_LCD_CS_PIN  5
 #define PICOZXBOARD_LCD_CMD_PIN 3     // MOSI
@@ -95,6 +96,7 @@
 
 #ifndef PICO_LCD_CLK_PIN
 #define PICO_LCD_CLK_PIN PICOZXBOARD_LCD_CLK_PIN
+#endif
 #endif
 
 #define PICO_PICOZX_BOARD

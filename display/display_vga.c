@@ -168,7 +168,7 @@ static Fill_u expand_display(uint8_t disp, uint8_t colours);
 //
 
     // Determine the video mode
-#ifndef PICO_PICOZX_BOARD
+#ifndef PICOZX_LCD
 uint displayInitialise
 #else
 uint displayInitialiseVGA
@@ -204,7 +204,7 @@ uint displayInitialiseVGA
     return video_mode->default_timing->clock_freq / 100;
 }
 
-#ifndef PICO_PICOZX_BOARD
+#ifndef PICOZX_LCD
 void displayStart(void)
 #else
 void displayStartVGA(void)
@@ -213,7 +213,7 @@ void displayStartVGA(void)
     displayStartCommon();
 }
 
-#ifndef PICO_PICOZX_BOARD
+#ifndef PICOZX_LCD
 bool displayShowKeyboard(bool zx81)
 #else
 bool displayShowKeyboardVGA(bool zx81)
@@ -456,7 +456,7 @@ static Fill_u __not_in_flash_func(expand_display)(uint8_t disp, uint8_t colours)
     }
     return result;
 }
-#if (defined PICO_PICOZX_BOARD)
+#if (defined PICOZX_LCD)
 void core1_main_vga(void)
 #else
 void core1_main(void)

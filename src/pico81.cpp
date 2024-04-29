@@ -23,9 +23,9 @@ int main(void)
     // Initialise sd card and read config
     emu_init();
 
-#ifdef PICO_PICOZX_BOARD
+#ifdef PICOZX_LCD
     // Determine which display type to use
-    useLCD = !emu_KeyboardFire();
+    useLCD = !(emu_KeyboardFire() || emu_vgaRequested());
 #endif
 
     // Initialise display to get clock, using config

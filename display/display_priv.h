@@ -17,7 +17,7 @@ typedef struct
 // Keyboard display
 extern const KEYBOARD_PIC ZX80KYBD;
 extern const KEYBOARD_PIC ZX81KYBD;
-#ifdef PICO_PICOZX_BOARD
+#ifdef PICOZX_LCD
 extern const KEYBOARD_PIC ZX80KYBD_LCD;
 extern const KEYBOARD_PIC ZX81KYBD_LCD;
 #endif
@@ -37,7 +37,7 @@ extern uint8_t* curr_buff;            // main display buffer being displayed
 extern uint8_t* cbuffer;              // chroma buffer being displayed
 
 // Functions used by display specific driver
-#if (defined PICO_PICOZX_BOARD)
+#if (defined PICOZX_LCD)
 extern void core1_main_vga(void);
 extern void core1_main_lcd(void);
 

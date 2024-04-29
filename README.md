@@ -40,6 +40,9 @@
 + [Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
 + [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with 320 by 240 LCD and RGB222 VGA displays
 + [PICOZX](https://hackaday.io/project/186039-pico-zx-spectrum-128k) All in one board with VGA output, built in keyboard and 9-pin joystick port
++ [PICOZX with LCD](https://hackaday.io/project/186039-pico-zx-spectrum-128k) All in one board with VGA and LCD output, built in keyboard and 9-pin joystick port
++ [PICOZX for ZX-Spectrum case](https://www.pcbway.com/project/shareproject/PICOZX_motherboard_for_ZX_Spectrum_original_case_5bbde8be.html) All in one board with VGA output, designed to be put in a ZX-Spectrum case with keyboard and 9-pin joystick port
+
 ## Examples
 ### Installed in a reproduction case
 The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
@@ -199,6 +202,7 @@ Six extra options apply across all programs and can only be set in the `[default
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81`, `.80` and `.p81` are initially displayed|Off|
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2| 1 |
 | NinePinJoystick | When set to `on` Enables reading a 9 pin joystick, if supported in hardware | Off |
+| VGA | When set to `on` enables VGA output for the PICOZX + LCD board | off |
 
 **Notes:**
 1. By default the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
@@ -482,7 +486,9 @@ This will be named `picozx81_vga.uf2`
 | Pimoroni VGA |`cmake -DPICO_BOARD=vgaboard ..` | `picozx81_vga.uf2`|
 | Custom 332 VGA (similar to MCUME)|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
 | Cytron Maker based 222 VGA with CSYNC (similar to PICOZX)|`cmake -DPICO_BOARD=vgamaker222cboard ..`| `picozx81_vgamaker222c.uf2`|
-| PICOZX |`cmake -DPICO_BOARD=picozxboard ..`| `picozx81_picozx.uf2`|
+| PICOZX without LCD |`cmake -DPICO_BOARD=picozxboard ..`| `picozx81_picozx.uf2`|
+| PICOZX with LCD |`cmake -DPICOZX_LCD=ON -DPICO_BOARD=picozxboard ..`| `picozx81_picozx_lcd.uf2`|
+| PICOZX in Spectrum case |`cmake -DPICO_BOARD=picozxrealboard ..`| `picozx81_picozxreal.uf2`|
 | Pimoroni DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=dviboard ..` | `picozx81_dvi_hdmi_sound.uf2`|
 | Olimex PICO DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_hdmi_sound.uf2`|
 | Wavesare PiZero with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=wspizeroboard ..` | `picozx81_wspizero_hdmi_sound.uf2`|
@@ -578,6 +584,11 @@ It is not necessary to create a `NinePinJoystick` entry to use the joystick port
 + PicomiteVGA only supports 1 level of Red and Blue, so it cannot display the full range of colours that Chroma can generate
 + Some versions of the PicoMiteVGA board have a jumper to select between RGB and GRN mode. Select RGB mode
 + PICOZX has a bank of 4 extra keys below the SD Card. These act as function keys. `Menu` maps to `F1`, `Reload` to `F2` etc. If shift is pressed 4 is added to the function number. e.g. `shift` + `Menu` gives `F5` (and so displays the keyboard)
++ The PICOZX + LCD code generates LCD outpur by default. To enable VGA output either hold down the the Fire button at start-up, or enable `VGA` in the config file
++ The PICOZX + LCD shares outputs with VGA. If the board is configured for VGA output, the intensity of the backlight of the LCD will vary with the contents of the VGA display
++ The PICOZX for the ZX-Spectrum case has two extra buttons on the back (in addition to a rest button). Without shift these two buttons will generate `F2` and `F5`. With shift they will generate `F3` and `F6`
++ Use the double shift mechanism to access all menus when using the PICOZX family
++ To enter BOOTSEL mode on the PICOZX for the ZX-Spectrum press and hold the `R` key then press the `F2` menu key. This allows new firmware to be loaded without needing to press the BOOTSEL key on the pico
 + The Waveshare Pico-ResTouch-LCD-2.8 board has a touch controller, but the emulator does not support its use
 + The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
 + The Cytron Maker Pi Pico has an onboard piezo buzzer. The audio quality is poor, but it can be used instead of speakers. If the buzzer is enabled (using the switch on the maker board) ensure that ACB Stereo is disabled 
