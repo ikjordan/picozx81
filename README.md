@@ -538,8 +538,9 @@ This will be named `picozx81_vga.uf2`
 <img src="images/rgb_222_vga.png" width="50%" />
 </p>
 
+#### Use of LCD displays
 The Maker board can be used with a range of 320 by 240 LCDs, controlled over the SPI bus, with controllers from either the ILI9341 or ST7789 families. The boards are configured using entries in the `default` section of the config file
-### Wiring
+
 The LCD should be connected to the Maker board as follows:
 | Function | Name |Pico GPIO Pin|
 | --- | --- | --- |
