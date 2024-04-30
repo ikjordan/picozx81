@@ -516,6 +516,7 @@ This will be named `picozx81_vga.uf2`
 ## Board Specific
 ### Waveshare PiZero
 + The Waveshare PiZero has two USB-C connectors. Use the connector closest to the HDMI connector to provide power. Connect a keyboard to the other USB port using an OTG cable. If necessary, a female micro USB to male USB C adaptor can be used
++ The board can be back powered by some TVs. This can cause the board to not start correctly. If this happens either connect the power before attaching the HDMI cable, or press the reset button on the board
 ### PicoMiteVGA
 + The PicoMiteVGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
 + PicomiteVGA only supports 1 level of Red and Blue, so it cannot display the full range of colours that Chroma can generate
@@ -524,13 +525,15 @@ This will be named `picozx81_vga.uf2`
 + PICOZX has a bank of 4 extra keys below the SD Card. These act as function keys. `Menu` maps to `F1`, `Reload` to `F2` etc. If shift is pressed 4 is added to the function number. e.g. `shift` + `Menu` gives `F5` (and so displays the keyboard)
 + The PICOZX + LCD code generates LCD outpur by default. To enable VGA output either hold down the the Fire button at start-up, or enable `VGA` in the config file
 + The PICOZX + LCD shares outputs with VGA. If the board is configured for VGA output, the intensity of the backlight of the LCD will vary with the contents of the VGA display
-+ The PICOZX for the ZX-Spectrum case has two extra buttons on the back (in addition to a rest button). Without shift these two buttons will generate `F2` and `F5`. With shift they will generate `F3` and `F6`
++ The PICOZX for the ZX-Spectrum case has two extra buttons on the back (in addition to a reset button). Without shift these two buttons will generate `F2` and `F5`. With shift they will generate `F3` and `F6`
 + Use the double shift mechanism to access all menus when using the PICOZX family
 + To enter BOOTSEL mode on the PICOZX for the ZX-Spectrum press and hold the `R` key then press the `F2` menu key. This allows new firmware to be loaded without needing to press the BOOTSEL key on the pico
 ### Waveshare Pico-ResTouch-LCD-2.8
 + The Waveshare Pico-ResTouch-LCD-2.8 board has a touch controller, but the emulator does not support its use
 ### Olimex RP2040-PICO-PC
 + The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
++ If SJ1 is shorted the board may be back powered by some TVs. This can cause the board to not start correctly. If this happens either connect the power before attaching the HDMI cable, or press the reset button on the board
+
 ### Cytron Maker
 + The Cytron Maker Pi Pico has an onboard piezo buzzer. The audio quality is poor, but it can be used instead of speakers. If the buzzer is enabled (using the switch on the maker board) ensure that ACB Stereo is disabled
 + The vgamaker222c build requires the following connections:
