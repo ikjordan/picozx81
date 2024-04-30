@@ -503,7 +503,41 @@ This will be named `picozx81_vga.uf2`
 6. Upload the `uf2` file to the pico
 7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
 
-## Using the Cytron Maker with a LCD
+# Extra Information
+## General
++ The original intention of the emulator was to provide an authentic '80s feel. It emulated the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. It has now been extended to provide emulation of some of the amazing ZX81 developments of recent years, such as [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm). It supports the loading and saving of memory blocks, using a syntax similar to ZXpand
++ The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
++ Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
++ To achieve a full speed emulation the Pico is overclocked to 250MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_CLOCK` to the cmake command
++ The Pico only has 1 USB port. The Pimoroni, Olimex and Waveshare PiZero boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
++ To connect more than one peripheral (e.g. a keyboard and joystick) at the same time, a powered USB OTG hub is required. These 3 hubs have been successfully tested. [1](https://www.amazon.co.uk/dp/B083WML1XB), [2](https://www.amazon.co.uk/dp/B078M3Z84Z), [3](https://www.amazon.co.uk/dp/B07Z4RHJ2D). Plug the hub directly into the USB port on the Pico. The USB-A connector on the PICOZX boards can also be used  
+**Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
++ On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
+## Board Specific
+### Waveshare PiZero
++ The Waveshare PiZero has two USB-C connectors. Use the connector closest to the HDMI connector to provide power. Connect a keyboard to the other USB port using an OTG cable. If necessary, a female micro USB to male USB C adaptor can be used
+### PicoMiteVGA
++ The PicoMiteVGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
++ PicomiteVGA only supports 1 level of Red and Blue, so it cannot display the full range of colours that Chroma can generate
++ Some versions of the PicoMiteVGA board have a jumper to select between RGB and GRN mode. Select RGB mode
+### PICOZX
++ PICOZX has a bank of 4 extra keys below the SD Card. These act as function keys. `Menu` maps to `F1`, `Reload` to `F2` etc. If shift is pressed 4 is added to the function number. e.g. `shift` + `Menu` gives `F5` (and so displays the keyboard)
++ The PICOZX + LCD code generates LCD outpur by default. To enable VGA output either hold down the the Fire button at start-up, or enable `VGA` in the config file
++ The PICOZX + LCD shares outputs with VGA. If the board is configured for VGA output, the intensity of the backlight of the LCD will vary with the contents of the VGA display
++ The PICOZX for the ZX-Spectrum case has two extra buttons on the back (in addition to a rest button). Without shift these two buttons will generate `F2` and `F5`. With shift they will generate `F3` and `F6`
++ Use the double shift mechanism to access all menus when using the PICOZX family
++ To enter BOOTSEL mode on the PICOZX for the ZX-Spectrum press and hold the `R` key then press the `F2` menu key. This allows new firmware to be loaded without needing to press the BOOTSEL key on the pico
+### Waveshare Pico-ResTouch-LCD-2.8
++ The Waveshare Pico-ResTouch-LCD-2.8 board has a touch controller, but the emulator does not support its use
+### Olimex RP2040-PICO-PC
++ The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
+### Cytron Maker
++ The Cytron Maker Pi Pico has an onboard piezo buzzer. The audio quality is poor, but it can be used instead of speakers. If the buzzer is enabled (using the switch on the maker board) ensure that ACB Stereo is disabled
++ The vgamaker222c build requires the following connections:
+<p align="middle">
+<img src="images/rgb_222_vga.png" width="50%" />
+</p>
+
 The Maker board can be used with a range of 320 by 240 LCDs, controlled over the SPI bus, with controllers from either the ILI9341 or ST7789 families. The boards are configured using entries in the `default` section of the config file
 ### Wiring
 The LCD should be connected to the Maker board as follows:
@@ -520,7 +554,7 @@ The LCD should be connected to the Maker board as follows:
 
 Touchscreen functionality is not supported. Any pins used for the touchscreen do not need to be connected
 
-### LCD Configuration Options
+## LCD Configuration Options
 All options are set in the `[default]` section of the `config.ini` file in the root directory of the SD Card.
 | Item | Description | Default Value |
 | --- | --- | --- |
@@ -571,41 +605,6 @@ The picozx board has a 9-pin joystick port connector built in
 To enable the nine pin joystick set `NinePinJoystick` to `On` in the `[default]` section of the `config.ini` file in the root directory
 
 It is not necessary to create a `NinePinJoystick` entry to use the joystick port on the picozx board
-
-# Extra Information
-## General
-+ The original intention of the emulator was to provide an authentic '80s feel. It emulated the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. It has now been extended to provide emulation of some of the amazing ZX81 developments of recent years, such as [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm). It supports the loading and saving of memory blocks, using a syntax similar to ZXpand
-+ The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
-+ Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
-+ To achieve a full speed emulation the Pico is overclocked to 250MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_CLOCK` to the cmake command
-+ The Pico only has 1 USB port. The Pimoroni, Olimex and Waveshare PiZero boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
-+ To connect more than one peripheral (e.g. a keyboard and joystick) at the same time, a powered USB OTG hub is required. These 3 hubs have been successfully tested. [1](https://www.amazon.co.uk/dp/B083WML1XB), [2](https://www.amazon.co.uk/dp/B078M3Z84Z), [3](https://www.amazon.co.uk/dp/B07Z4RHJ2D). Plug the hub directly into the USB port on the Pico. The USB-A connector on the PICOZX boards can also be used  
-**Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
-+ On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
-## Board Specific
-### Waveshare PiZero
-+ The Waveshare PiZero has two USB-C connectors. Use the connector closest to the HDMI connector to provide power. Connect a keyboard to the other USB port using an OTG cable. If necessary, a female micro USB to male USB C adaptor can be used
-### PicoMiteVGA
-+ The PicoMiteVGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
-+ PicomiteVGA only supports 1 level of Red and Blue, so it cannot display the full range of colours that Chroma can generate
-+ Some versions of the PicoMiteVGA board have a jumper to select between RGB and GRN mode. Select RGB mode
-### PICOZX
-+ PICOZX has a bank of 4 extra keys below the SD Card. These act as function keys. `Menu` maps to `F1`, `Reload` to `F2` etc. If shift is pressed 4 is added to the function number. e.g. `shift` + `Menu` gives `F5` (and so displays the keyboard)
-+ The PICOZX + LCD code generates LCD outpur by default. To enable VGA output either hold down the the Fire button at start-up, or enable `VGA` in the config file
-+ The PICOZX + LCD shares outputs with VGA. If the board is configured for VGA output, the intensity of the backlight of the LCD will vary with the contents of the VGA display
-+ The PICOZX for the ZX-Spectrum case has two extra buttons on the back (in addition to a rest button). Without shift these two buttons will generate `F2` and `F5`. With shift they will generate `F3` and `F6`
-+ Use the double shift mechanism to access all menus when using the PICOZX family
-+ To enter BOOTSEL mode on the PICOZX for the ZX-Spectrum press and hold the `R` key then press the `F2` menu key. This allows new firmware to be loaded without needing to press the BOOTSEL key on the pico
-### Waveshare Pico-ResTouch-LCD-2.8
-+ The Waveshare Pico-ResTouch-LCD-2.8 board has a touch controller, but the emulator does not support its use
-### Olimex RP2040-PICO-PC
-+ The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
-### Cytron Maker
-+ The Cytron Maker Pi Pico has an onboard piezo buzzer. The audio quality is poor, but it can be used instead of speakers. If the buzzer is enabled (using the switch on the maker board) ensure that ACB Stereo is disabled
-+ The vgamaker222c build requires the following connections:
-<p align="middle">
-<img src="images/rgb_222_vga.png" width="50%" />
-</p>
 
 # Developer Notes
 ## Acknowledgements
