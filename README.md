@@ -346,6 +346,8 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
   + Runs in the right number of frames (1863) when NTSC not selected
 + [Artic Galaxians](https://www.zx81stuff.org.uk/zx81/tape/Galaxians)
   + The one lo-res game that *had* to work correctly!
++ [3D Monster Maze](http://www.zx81stuff.org.uk/zx81/tape/3DMonsterMaze)
+  + An iconic ZX81 game
 + [ZXTEST2](https://sinclairzxworld.com/viewtopic.php?f=6&t=685&p=6120&hilit=zxtest.zip#p6120)
   + This creates an image that periodically moves up and down by 1 pixel on a real ZX81. The emulator replicates this behaviour
 + [Maxtxt](https://bodo4all.fortunecity.ws/zx/maxdemo.html)
@@ -412,13 +414,17 @@ Set `WRX` to `Off` and `CHR128` to `on`
 + [Hot-Z II 64K](http://www.pictureviewerpro.com/hosting/zx81/download/zx81/Hot-Z_II.zip)
     + Requires at least 32kB of RAM. Runs correctly with `M1NOT` set to `On`. As expected, the emulated ZX81 crashes if `M1NOT` is set to `off`
 ### Chroma 81
-+ To enable chroma support set LowRAM on, and Memory to 48kB
+To enable chroma support set LowRAM on, and Memory to 48kB
 + [Celebration](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/Celebration.htm)
 + [Against The Elements](http://www.fruitcake.plus.com/Sinclair/ZX81/NewSoftware/AgainstTheElements.htm)
++ [Colour 3D Monster Maze](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm)
 + [Attribute Mode Test Program](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm)
-+ [HiRes Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip). Ensure WRX RAM is disabled
-+ [Chroma Slideshow](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm). This works well with `FrameSync` set to `Interlaced`. Note that the program loads a series of image files. A config entry with `FrameSync` set to `Interlaced` needs to be created for each image file
-+ [ROCK CRUSH 80](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_RockCrush80.htm). This is a ZX80 game, but the `.p81` file will also run on the ZX81 
++ [HiRes Galaxians](http://zx81.eu5.org/files/soft/toddy/HR-Galax.zip)
+  + Ensure WRX RAM is disabled
++ [Chroma Slideshow](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm)
+  + This works well with `FrameSync` set to `Interlaced`. Note that the program loads a series of image files. A config entry with `FrameSync` set to `Interlaced` needs to be created for each image file
++ [ROCK CRUSH 80](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_RockCrush80.htm)
+  + This is a ZX80 game, but the `.p81` file will also run on the ZX81
 ### 16kB Demos
 These really show off the capabilities of the ZX81 and are a good test that the emulator is accurate
 #### Without WRX RAM
