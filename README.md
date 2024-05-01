@@ -84,9 +84,18 @@ To the right can be seen a status page, illustrating some of the configurable op
 </p>
 
 ### Dedicated hardware
-[PICOZX](https://hackaday.io/project/186039-pico-zx-spectrum-128k) running 3D Monster Maze
+[PICOZX with VGA and LCD output](https://hackaday.io/project/186039-pico-zx-spectrum-128k) running 3D Monster Maze
 <p align="middle">
-<img src="images/3dmonster.jpg" width="50%" />
+<img src="images/3dmonster.jpg" width="49%" />
+<img src="images/picozx_lcd.jpg" width="49%" />
+</p>
+
+
+[PICOZX in a Spectrum case](https://hackaday.io/project/186039-pico-zx-spectrum-128k)
+
+A ZX81 disguised as a Spectrum!
+<p align="middle">
+<img src="images/zx81_spectrum.jpg" width="60%" />
 </p>
 
 ### Chroma 80 and Chroma 81 Emulation
@@ -665,7 +674,7 @@ This emulator offers the following over MCUME:
 + Ability to load a program without reset
 + Support for Hi-res and pseudo Hi-res graphics
 + Support for multiple DVI, VGA and LCD boards
-+ Support for Chroma 80 and Chroma 81 
++ Support for Chroma 80 and Chroma 81
 + Support for programs which use more than 32 columns or 24 rows of characters
 + ZonX and QS Sound emulation
 + Emulated QS UDG
