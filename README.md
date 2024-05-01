@@ -90,8 +90,7 @@ To the right can be seen a status page, illustrating some of the configurable op
 <img src="images/picozx_lcd.jpg" width="49%" />
 </p>
 
-
-[PICOZX in a Spectrum case](https://hackaday.io/project/186039-pico-zx-spectrum-128k)
+[PICOZX in a Spectrum case](https://www.pcbway.com/project/shareproject/)
 
 A ZX81 disguised as a Spectrum!
 <p align="middle">
