@@ -85,6 +85,8 @@ To the right can be seen a status page, illustrating some of the configurable op
 
 ### Dedicated hardware
 [PICOZX with VGA and LCD output](https://hackaday.io/project/186039-pico-zx-spectrum-128k) running 3D Monster Maze
+
+Pictures supplied by [zzapmort](https://www.ebay.co.uk/usr/zzapmort)
 <p align="middle">
 <img src="images/3dmonster.jpg" width="49%" />
 <img src="images/picozx_lcd.jpg" width="49%" />
