@@ -594,7 +594,8 @@ All options are set in the `[default]` section of the `config.ini` file in the r
 
  **Notes:**
  1. If the configuration appears correct for a display, but no image appears, or the image is not stable, it could be that the display cannot support the SPI bus speed required to display every frame, or that cross talk is occuring between the wires connecting the display. In this case set `LCDFrameSkip = True`
- 2. If `LCDFrameSkip` equals `True`, then if `FrameSync` is set to `Interlaced` it will be interpreted as `On`
+ 2. It is recommended to use the Cytron maker board with the Pico pre-soldered, as this version can support higher bus speeds. If the version with a socket for a Pico is used, then the LCD display may not function correctly unless `LCDFrameSkip` is set to `True`
+ 3. If `LCDFrameSkip` equals `True`, then if `FrameSync` is set to `Interlaced` it will be interpreted as `On`
 
 ### Configuration of Tested LCDs
 
