@@ -1,58 +1,93 @@
 /*
- * Common display code for VGA and DVI
+ * Common display code for VGA, DVI and LCD
  */
 #include <stdio.h>
-#include "hardware/structs/bus_ctrl.h"
-#define MAX_FREE 4
-#define MAX_PEND 2
+#include <stdlib.h>
+#include "pico/multicore.h"
+#include "display.h"
+#include "display_priv.h"
+#include "zx80bmp.h"
+#include "zx81bmp.h"
 
+// Structure for chroma buffers
 typedef struct
 {
     uint8_t* buff;
     bool     used;
 } chroma_t;
 
+mutex_t next_frame_mutex;
+semaphore_t display_initialised;
+
+bool blank = true;
+uint16_t blank_colour = BLACK;
+
+uint8_t* curr_buff = 0;      // buffer being displayed
+uint8_t* cbuffer = 0;        // Chroma buffer
+
+const KEYBOARD_PIC* keyboard = &ZX81KYBD;
+bool showKeyboard = false;
+
+// Number of display buffers
+#define MAX_FREE 4
+#define MAX_PEND 2
+
 // Note: Need 4 buffers, as the ZX81 produces rates at greater than 50 Hz
 // so 2 frames can be created in one time slice, and 1 emulated time slice
 // may complete in 14ms, therefore a backlog of 2 frames is valid, no_skip
 // when nominally frame matched
-static  bool blank = true;
-static  uint16_t blank_colour = BLACK;
 
-static semaphore_t display_initialised;
-static mutex_t next_frame_mutex;
-
-static uint8_t* curr_buff = 0;      // buffer being displayed
-static uint8_t* last_buff = 0;      // previously displayed buffer (interlace mode only)
 static uint8_t* pend_buff[MAX_PEND] = {0, 0};           // Buffers queued for display
 static uint8_t* free_buff[MAX_FREE] = {0, 0, 0, 0};     // Buffers available to be claimed
-
-static uint8_t* cbuffer = 0;        // Chroma buffer
-
-static uint8_t* index_to_display[MAX_FREE] = {0, 0, 0, 0};
 static chroma_t chroma[MAX_FREE] = { {0, false}, {0, false}, {0,false}, {0,false} };
+static uint8_t* index_to_display[MAX_FREE] = {0, 0, 0, 0};
+static uint8_t* last_buff = 0;      // previously displayed buffer (interlace mode only)
+
 static uint8_t free_count = 0;
 static uint8_t pend_count = 0;
-static uint16_t stride = 0;
 static bool interlace = false;
 static bool no_skip = false;
-
-static bool showKeyboard = false;
 
 //
 // Private interface
 //
-static void core1_main();
 static inline void freeAllPending(void);
 static inline void freeLast(void);
 static inline void swapCurrAndLast(void);
-static inline void newFrame(void);
 static inline void displayGetChromaBufferUsed(uint8_t** chroma_buff, uint8_t* buff);
 static inline void set_chroma_used(uint8_t* buff, bool used);
 
 //
 // Public functions
 //
+
+void displayAllocateBuffers(uint16_t minBuffByte, uint16_t stride, uint16_t height)
+{
+    // Allocate the buffers
+    for (int i=0; i<MAX_FREE; ++i)
+    {
+        free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * height)
+                         + minBuffByte;
+
+        // Store original index, so that can map a chroma buffer, if necessary
+        index_to_display[i] = free_buff[i];
+    }
+
+    // Allocate chroma buffers
+    for (int i=0; i<MAX_FREE; ++i)
+    {
+        chroma[i].buff = (uint8_t*)malloc(minBuffByte + stride * height)
+                        + minBuffByte;
+
+        if (!chroma[i].buff)
+        {
+            printf("Insufficient memory for chroma - aborting\n");
+            exit(-1);
+        }
+    }
+    free_count = MAX_FREE;
+
+}
 
 /* Set the interlace state */
 void __not_in_flash_func(displaySetInterlace)(bool on)
@@ -270,21 +305,28 @@ bool displayHideKeyboard(void)
     return ret;
 }
 
-//
-// Private functions
-//
 void displayStartCommon(void)
 {
     // create a semaphore to be posted when video init is complete
     sem_init(&display_initialised, 0, 1);
 
     // launch all the video on core 1, so it isn't affected by USB handling on core 0
+#ifdef PICOZX_LCD
+    if (useLCD)
+    {
+        multicore_launch_core1(core1_main_lcd);
+    }
+    else
+    {
+        multicore_launch_core1(core1_main_vga);
+    }
+#else
     multicore_launch_core1(core1_main);
-
+#endif
     sem_acquire_blocking(&display_initialised);
 }
 
-static inline void __not_in_flash_func(newFrame)(void)
+void __not_in_flash_func(newFrame)(void)
 {
     mutex_enter_blocking(&next_frame_mutex);
     if (!blank)
@@ -367,6 +409,10 @@ static inline void __not_in_flash_func(newFrame)(void)
     mutex_exit(&next_frame_mutex);
 }
 
+//
+// Private functions
+//
+
 /* Indicate whether chroma is enabled for the supplied pixel buffer */
 static inline void set_chroma_used(uint8_t* buff, bool used)
 {
@@ -408,3 +454,75 @@ static inline void __not_in_flash_func(swapCurrAndLast)(void)
         last_buff = tmp_buff;
     }
 }
+
+// Allow selection between VGA and LCD for ZXPICO board
+#ifdef PICOZX_LCD
+#undef WHITE
+#undef BLUE
+#undef YELLOW
+#undef RED
+#undef BLACK
+
+#define WHITE  0xfff
+#define BLUE   0x00f
+#define YELLOW 0xff0
+#define RED    0xf00
+#define BLACK  0x000
+
+#undef ZX80_KEYBOARD
+#define ZX80_KEYBOARD ZX80KYBD_LCD
+#undef ZX81_KEYBOARD
+#define ZX81_KEYBOARD ZX81KYBD_LCD
+#include "zx80bmp.h"
+#include "zx81bmp.h"
+
+extern uint displayInitialiseLCD(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+                                 uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
+extern void displayStartLCD(void);
+extern bool displayShowKeyboardLCD(bool zx81);
+
+extern uint displayInitialiseVGA(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+                                 uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
+extern void displayStartVGA(void);
+extern bool displayShowKeyboardVGA(bool zx81);
+
+uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+                       uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
+{
+    if (useLCD)
+    {
+        return displayInitialiseLCD(fiveSevenSix, match, minBuffByte, pixelWidth,
+                                    pixelHeight, strideBit, info);
+    }
+    else
+    {
+        return displayInitialiseVGA(fiveSevenSix, match, minBuffByte, pixelWidth,
+                                    pixelHeight, strideBit, info);
+    }
+}
+
+void displayStart(void)
+{
+    if (useLCD)
+    {
+        return displayStartLCD();
+    }
+    else
+    {
+        return displayStartVGA();
+    }
+}
+
+bool displayShowKeyboard(bool zx81)
+{
+    if (useLCD)
+    {
+        return displayShowKeyboardLCD(zx81);
+    }
+    else
+    {
+        return displayShowKeyboardVGA(zx81);
+    }
+}
+
+#endif

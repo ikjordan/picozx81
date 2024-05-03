@@ -210,6 +210,7 @@ typedef struct
   bool lcdRotate;
   bool lcdReflect;
   bool lcdBGR;
+  bool vga;
   bool ninePinJoystick;
 } Configuration_T;
 
@@ -252,6 +253,11 @@ bool emu_ACBRequested(void)
 #else
   return specific.acb && (AUDIO_PIN_L != AUDIO_PIN_R);
 #endif
+}
+
+bool emu_ACBPossible(void)
+{
+    return (AUDIO_PIN_L != AUDIO_PIN_R);
 }
 
 bool emu_ZX80Requested(void)
@@ -401,6 +407,11 @@ bool emu_lcdReflectRequested(void)
 bool emu_lcdBGRRequested(void)
 {
   return specific.lcdBGR;
+}
+
+bool emu_vgaRequested(void)
+{
+  return specific.vga;
 }
 
 const char* emu_GetDirectory(void)
@@ -855,6 +866,11 @@ static int handler(void *user, const char *section, const char *name,
         // Defaults to off
         c->conf->lcdBGR = isEnabled(value);
       }
+      else if (!strcasecmp(name, "VGA"))
+      {
+        // Defaults to off
+        c->conf->vga = isEnabled(value);
+      }
 #endif
       else
       {
@@ -924,6 +940,7 @@ void emu_ReadDefaultValues(void)
     general.lcdRotate = false;
     general.lcdskipFrame = false;
     general.lcdBGR = false;
+    general.vga = false;
     general.ninePinJoystick = false;
 #ifdef PICO_LCDWS28_BOARD
     general.lcdInvertColour = true;

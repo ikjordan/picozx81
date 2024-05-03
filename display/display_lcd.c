@@ -9,13 +9,11 @@
 #include "sdcard.h"
 
 #include "display.h"
-#include "zx80bmp.h"
-#include "zx81bmp.h"
+#include "display_priv.h"
 
 #define PIXEL_WIDTH 320
 #define HEIGHT      240
 
-static const KEYBOARD_PIC* keyboard = &ZX81KYBD;
 static uint16_t keyboard_x = 0;
 static uint16_t keyboard_y = 0;
 static uint16_t keyboard_right = 0;
@@ -41,9 +39,18 @@ static bool rotate = false;     // Rotate display by 180 degrees
 static bool reflect = false;    // Change horizontal scan direction
 static bool bgr = false;        // use bgr instead of rgb
 
+static uint16_t stride;
+
+// Defined here to allow for case where VGA and LCD on same hardware
+#define BLACK_LCD  0x0000
+#define BLUE_LCD   0x000f
+#define RED_LCD    0x0f00
+#define YELLOW_LCD 0x0ff0
+#define WHITE_LCD  0x0fff
+
 // Do not make const - as want to keep in RAM
 static uint16_t colour_table[16] = {
-    0x0000,
+    BLACK_LCD,
     0x000a,
     0x0a00,
     0x0a0a,
@@ -51,17 +58,15 @@ static uint16_t colour_table[16] = {
     0x00aa,
     0x0aa0,
     0x0aaa,
-    0x0000,
-    0x000f,
-    0x0f00,
+    BLACK_LCD,
+    BLUE_LCD,
+    RED_LCD,
     0x0f0f,
     0x00f0,
     0x00ff,
-    0x0ff0,
-    0x0fff
+    YELLOW_LCD,
+    WHITE_LCD
 };
-
-#include "display_common.c"
 
 //
 // Private interface
@@ -79,7 +84,13 @@ static inline void lcd_start_pixels(void);
 //
 #include <stdio.h>
 
-uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+#ifndef PICOZX_LCD
+uint displayInitialise
+#else
+bool useLCD = false;
+uint displayInitialiseLCD
+#endif
+                      (bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
 {
     if (info)
@@ -113,29 +124,7 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     stride = minBuffByte + (PIXEL_WIDTH >> 3);
 
     // Allocate the buffers
-    for (int i=0; i<MAX_FREE; ++i)
-    {
-        free_buff[i] = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
-                         + minBuffByte;
-
-        // Store original index, so that can map a chroma buffer, if necessary
-        index_to_display[i] = free_buff[i];
-    }
-
-    // Allocate chroma buffers
-    for (int i=0; i<MAX_FREE; ++i)
-    {
-        chroma[i].buff = (uint8_t*)malloc(minBuffByte + stride * HEIGHT)
-                        + minBuffByte;
-
-        if (!chroma[i].buff)
-        {
-            printf("Insufficient memory for chroma - aborting\n");
-            exit(-1);
-        }
-    }
-
-    free_count = MAX_FREE;
+    displayAllocateBuffers(minBuffByte, stride, HEIGHT);
 
     // Return the values
     *pixelWidth = PIXEL_WIDTH;
@@ -148,7 +137,11 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     return CLOCK_SPEED_KHZ;
 }
 
+#ifndef PICOZX_LCD
 void displayStart(void)
+#else
+void displayStartLCD(void)
+#endif
 {
     printf("Invert %s\n", invert ? "True": "false");
     printf("Skip %s\n", skip ? "True": "false");
@@ -159,13 +152,26 @@ void displayStart(void)
     displayStartCommon();
 }
 
+#ifndef PICOZX_LCD
 bool displayShowKeyboard(bool zx81)
+#else
+bool displayShowKeyboardLCD(bool zx81)
+#endif
 {
     bool previous = showKeyboard;
 
     if (!showKeyboard)
     {
-        keyboard = zx81 ? &ZX81KYBD : &ZX80KYBD;
+#ifdef PICOZX_LCD
+        if (useLCD)
+        {
+            keyboard = zx81 ? &ZX81KYBD_LCD : &ZX80KYBD_LCD;
+        }
+        else
+#endif
+        {
+            keyboard = zx81 ? &ZX81KYBD : &ZX80KYBD;
+        }
         keyboard_x = (PIXEL_WIDTH - keyboard->width)>>1;
         keyboard_y = (HEIGHT - keyboard->height)>>1;
         keyboard_right = (keyboard_x & 0xffe0) + keyboard->width;
@@ -276,8 +282,6 @@ static inline void lcd_start_pixels(void)
 
 static void __not_in_flash_func(render_loop)()
 {
-    lcd_start_pixels();
-
     while (true)
     {
         sem_acquire_blocking(&frame_sync);
@@ -290,6 +294,8 @@ static void __not_in_flash_func(render_loop)()
             // Ensure LCD has bus
             gpio_put(PICO_LCD_CS_PIN, 0);
 #endif
+            lcd_start_pixels();
+
             // 1 pixel generates a 12 bit word - so 2 pixels are 3 bytes
             for (uint y = 0; y < HEIGHT; ++y)
             {
@@ -304,8 +310,11 @@ static void __not_in_flash_func(render_loop)()
                     if (blank)
                     {
                         // 32 pixels of blank
+#ifndef PICOZX_LCD
                         uint32_t twoblank = (blank_colour << 12) | blank_colour;
-
+#else
+                        uint32_t twoblank = (blank_colour == WHITE) ? (WHITE_LCD << 12) | WHITE_LCD : (BLACK_LCD << 12) | BLACK_LCD;
+#endif
                         for (int i=0; i<(keyboard_x>>1); ++i)
                         {
                             spi_lcd_put((twoblank >> 16) & 0xff);
@@ -342,8 +351,8 @@ static void __not_in_flash_func(render_loop)()
                         for (int x = 0; x < (keyboard_x >> 3); ++x)
                         {
                             uint8_t byte = linebuf[x];
-                            uint16_t foreground = cbuff ? colour_table[clinebuf[x] & 0xf] : BLACK;
-                            uint16_t background = cbuff ? colour_table[clinebuf[x] >> 4] : WHITE;
+                            uint16_t foreground = cbuff ? colour_table[clinebuf[x] & 0xf] : BLACK_LCD;
+                            uint16_t background = cbuff ? colour_table[clinebuf[x] >> 4] : WHITE_LCD;
 
                             int count = 7;
 
@@ -378,8 +387,8 @@ static void __not_in_flash_func(render_loop)()
                         for (int x=((PIXEL_WIDTH - keyboard_x) >> 3); x<(PIXEL_WIDTH >> 3); ++x)
                         {
                             uint8_t byte = linebuf[x];
-                            uint16_t foreground = cbuff ? colour_table[clinebuf[x] & 0xf] : BLACK;
-                            uint16_t background = cbuff ? colour_table[clinebuf[x] >> 4] : WHITE;
+                            uint16_t foreground = cbuff ? colour_table[clinebuf[x] & 0xf] : BLACK_LCD;
+                            uint16_t background = cbuff ? colour_table[clinebuf[x] >> 4] : WHITE_LCD;
 
                             int count = 7;
 
@@ -400,8 +409,11 @@ static void __not_in_flash_func(render_loop)()
                 {
                     if (blank)
                     {
+#ifndef PICOZX_LCD
                         uint32_t twobits = (blank_colour << 12) | blank_colour;
-
+#else
+                        uint32_t twobits = (blank_colour == WHITE) ? (WHITE_LCD << 12) | WHITE_LCD : (BLACK_LCD << 12) | BLACK_LCD;
+#endif
                         for (int x=0; (x<PIXEL_WIDTH>>1); x++)
                         {
                             spi_lcd_put((twobits >> 16) & 0xff);
@@ -415,8 +427,8 @@ static void __not_in_flash_func(render_loop)()
                         for (int x = 0; x < (PIXEL_WIDTH >> 3); ++x)
                         {
                             uint8_t byte = linebuf[x];
-                            uint16_t foreground = cbuff ? colour_table[clinebuf[x] & 0xf] : BLACK;
-                            uint16_t background = cbuff ? colour_table[clinebuf[x] >> 4] : WHITE;
+                            uint16_t foreground = cbuff ? colour_table[clinebuf[x] & 0xf] : BLACK_LCD;
+                            uint16_t background = cbuff ? colour_table[clinebuf[x] >> 4] : WHITE_LCD;
                             int count = 7;
 
                             for (int j=0; j<4; j++)
@@ -445,7 +457,11 @@ static void __not_in_flash_func(render_loop)()
     }
 }
 
-static void core1_main()
+#if (defined PICOZX_LCD)
+void core1_main_lcd(void)
+#else
+void core1_main(void)
+#endif
 {
     sm = pio_claim_unused_sm(pio, true);    // Will panic if no sm available
 
@@ -469,13 +485,20 @@ static void core1_main()
     spi_lcd_program_init(pio, sm, offset, PICO_LCD_CMD_PIN, PICO_LCD_CLK_PIN, (SERIAL_CLK_DIV * (skip ? 2: 1)));
 #endif
     gpio_init(PICO_LCD_DC_PIN);
+#ifdef PICO_LCD_RS_PIN
     gpio_init(PICO_LCD_RS_PIN);
+#endif
     gpio_init(PICO_LCD_BL_PIN);
     gpio_set_dir(PICO_LCD_DC_PIN, GPIO_OUT);
+
+#ifdef PICO_LCD_RS_PIN
     gpio_set_dir(PICO_LCD_RS_PIN, GPIO_OUT);
+#endif
     gpio_set_dir(PICO_LCD_BL_PIN, GPIO_OUT);
 
+#ifdef PICO_LCD_RS_PIN
     gpio_put(PICO_LCD_RS_PIN, 1);
+#endif
     lcd_init();
     gpio_put(PICO_LCD_BL_PIN, 1);
 
