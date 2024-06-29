@@ -19,14 +19,31 @@
 #include "common.h"
 #include "sound.h"
 
+/* Last instruction type */
+#define LASTINSTNONE  0
+#define LASTINSTINFE  1
+#define LASTINSTOUTFE 2
+#define LASTINSTOUTFD 3
+#define LASTINSTOUTFF 4
+
 extern unsigned long tstates,tsmax,frames;
 extern int ay_reg;
+extern int LastInstruction;
+extern bool frameNotSync;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern void ResetZ80(void);
-extern void ExecZ80(void);
+extern void resetZ80(void);
+extern void execZX81(void);
+extern void execZX80(void);
+
+extern void setDisplayBoundaries(void);
+extern void setEmulatedTV(bool fiftyHz, uint16_t vtol);
+#ifdef SUPPORT_CHROMA
+void adjustChroma(bool start);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
@@ -36,7 +53,7 @@ extern void ExecZ80(void);
 #define fetchm(x) (pc<0xC000 ? fetch(pc) : fetch(pc&0x7fff))
 
 #define AY_STORE_CHECK(x,y) \
-         if(sound_ay==AY_TYPE_QUICKSILVA) {\
+         if(sound_type==SOUND_TYPE_QUICKSILVA) {\
             switch(x){\
                case 0x7fff:\
                   ay_reg=((y)&0x0F); break;\

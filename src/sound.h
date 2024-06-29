@@ -33,10 +33,13 @@ extern "C" {
 #define RANGE     1000
 #endif
 
-extern bool sound_create(int freq, int framesize);
+#define SAMPLE_FREQ   32000
+
+extern bool sound_create(int framesize);
 extern void sound_init(bool acb, bool reset);
 extern void sound_ay_write(int reg,int val);
 extern void sound_frame(uint16_t* buff);
+extern void sound_beeper(int on);
 
 #ifdef __cplusplus
 }

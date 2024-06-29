@@ -17,10 +17,12 @@
 + 1980s style 9-pin Atari joysticks can be connected to some board types
 + The small form factor makes the board easy to mount in period or reproduction cases. The low cost, relatively low performance and software generated display of the Pico is a 21st century analogue for the ZX80 and ZX81
 + Emulates pseudo and Hi-res graphics
-+ Emulates ZonX and Quicksilva sound
++ Emulates ZX81 and ZX80 (with either 4K or 8K ROM) hardware
++ Emulates ZonX, Quicksilva and TV (vsync) sound
 + Emulates user defined graphics, including CHR$128 and QS User Defined Graphics
-+ Emulates the [Chroma 80](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface.htm) and [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm) interfaces to allow a colour display
++ Emulates the [Chroma 80](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface.htm) and [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm) interfaces to allow a colour display. Also supports the enhanced TV sound provided by Chroma
 + Emulation runs at accurate speed of a 3.25MHz ZX81
++ Optionally emulates real-time ZX81/80 program load and save with realistic sound and graphics
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
 + Load `.p`, `.81`, `.o`, `.80` and `.p81` files from micro SD Card. Save `.p` and `.o` files
@@ -152,7 +154,7 @@ Read on for more information. The [Applications Tested](#applications-tested) se
 + If the emulator is started with no SD Card, or with an empty SD Card, then it will emulate a 16K ZX81
 + To switch to always starting emulating a ZX80, a populated SD Card is required. If it is present, the machine that is emulated is specified by the `config.ini` file in the root directory, see [configuring the emulator](#configuring-the-emulator)
 + If the contents of the [examples](examples) directory have been copied to the SD Card, then the included programs can be loaded. Press `F2` to see files in the current directory that can be loaded
-+ To make picozx81 emulate a ZX80, without changing `config.ini`, either a ZX80 program can be loaded, or the computer type `ZX80` can be selected from the Modify menu. Press F6 to bring up the Modify menu
++ To make picozx81 emulate a an original 4K ZX80, without changing `config.ini`, either a ZX80 program can be loaded, or the computer type `ZX80-4K` can be selected from the Modify menu. Press F6 to bring up the Modify menu. To emaulate a ZX80 upgraded with a 8K ROM , select `ZX80-8K` from the modify menu
 + The current settings used by the emulator can be viewed by pressing `F3`
 + The following sections describe how to configure the emulator and provide links to programs that can be downloaded, copied to the SD Card and then run using the emulator
 
@@ -174,7 +176,7 @@ The order for configuring an item for a given program (e.g. `prog.p`) is as foll
 The following can be configured:
 | Item | Description | Default Value | Notes |
 | --- | --- | --- | --- |
-| Computer | Selects either ZX81, ZX81x2 or ZX80 | ZX81 | ZX80 assumes 4kB ROM. ZX81x2 selects a ZX81 with the ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM for faster BASIC |
+| Computer | Selects ZX81, ZX81x2, ZX80-4K or ZX80-8K | ZX81 | ZX80-4K selects ZX80 with the original 4kB ROM. ZX80-8K selects a ZX80 that has been upgraded with an 8K ROM. ZX81x2 selects a ZX81 with the ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM for faster BASIC |
 | Memory | In kB. Starting at 0x4000 | 16 | 1, 2, 3, 4, 16, 32 and 48 allowed |
 | WRX | Selects if RAM supports Hi-res graphics | Off | Automatically set to on if Memory is 2kB or less |
 | LowRAM | Selects if RAM populated between 0x2000 and 0x3fff| Off | Typically used in conjunction with WRX to create a hires display file in low memory, can also be used for UDG graphics emulation if WRX off|
@@ -184,18 +186,19 @@ The following can be configured:
 | FrameSync | Synchronises screen updates to the start of the display frame. Option to synchronise frame pairs for programs that display interlaced images| Off |`On` reduces "tearing" in programs with horizontal scrolling, at the expense of a possible small lag. `Interlaced` reduces flickering in programs that display interlaced images|
 | CHR128 | Enables emulation of a 128 character user defined graphics board (CHR$128) in Low memory. | Off|When enabled LowRAM is forced to On, WRX and QSUDG are forced to off|
 | QSUDG | Enables emulation of the QS user defined graphics board| Off |Memory automatically limited to 16 when selected |
-| Sound | Selects sound card (if any) | Off | Quicksilva and ZonX supported |
+| Sound | Selects sound card (if any) | Off | Valid options are `QUICKSILVA`, `ZONX`, `TV`, `CHROMA` and `OFF` |
 | ACB | Enables ACB stereo if sound card enabled | Off |  |
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
-| VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 100 | See notes below|
+| VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 25 | See notes below|
 
 **Notes:**
 1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if `QSUDG` is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400 to 0x87ff)
 2. To emulate other standard UDG graphics cards that reside between 0x2000 and 0x3fff set `LowRAM` to `On` and `WRX` to `Off`. This setting is needed to run e.g. [Galaxians with user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388). If emulation of CHR128 UDG graphics is required set `CHR128` to `On`. This setting is needed to run e.g. [zedgragon](https://github.com/charlierobson/zedragon)
 3. If `NTSC` is set to `On` and `Centre` is set to `Off` then a black vsync bar will be seen at the bottom of the display for programs that generate a typical 192 line display
-4. A higher tolerance value set for `VTOL` results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). The default value of 100 emulates a TV that very quickly regains vertical lock. Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
+4. A higher tolerance value set for `VTOL` results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
 5. The "Big Bang" ROM can double the speed of BASIC programs
 6. The Waveshare LCD 2.8 board has no sound capabilities
+7. The `TV` sound option emulates the sound generated through the TV speaker by VSYNC pulses. The `CHROMA` sound option emulates the sound generated through the TV speaker by the Chroma interface when VSYNC pulses are not frame synchronised
 
 ### Joystick
 In addition a USB joystick,and on some boards a 9-pin joystick, can be configured to generated key presses
@@ -210,7 +213,7 @@ In addition a USB joystick,and on some boards a 9-pin joystick, can be configure
 
 Notes: ENTER and SPACE can be used to represent the New Line and Space keys, respectively
 ### Extra configuration options
-Six extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
+Eight extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
 | Item | Description | Default Value |
 | --- | --- | --- |
 | FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz `On` , or 720x576p display @ 50.65Hz `Match`. If set to `Off` a 640x480 display @ 60Hz is produced | Off |
@@ -219,12 +222,15 @@ Six extra options apply across all programs and can only be set in the `[default
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81`, `.80` and `.p81` are initially displayed|Off|
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2| 1 |
+| LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated | OFF |
+| SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated | OFF |
 | NinePinJoystick | When set to `on` Enables reading a 9 pin joystick, if supported in hardware | Off |
 | VGA | When set to `on` enables VGA output for the PICOZX + LCD board | off |
 
 **Notes:**
 1. By default the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
 2. The LCD supported displays all have a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for these displays (50 Hz, 50.65 Hz or 60 Hz)
+3. Due to the low speed of the ZX8x cassette interface, files can take many minutes to load and save when `LoadUsingROM` and `SaveUsingROM` is enabled
 
 ### Examples
 Examples of the `config.ini` files used to test the programs listed in this [section](#applications-tested) can be found [here](examples)
@@ -235,7 +241,7 @@ After replacing the SD Card into the emulator, the pico *must* be restarted, eit
 ### Need for reset of emulated machine
 The emulated machine is always reset if any of the following options are changed:
 
-`Computer` `Memory` `LowRAM` `M1NOT` `QSUDG` `CHR128`
+`Computer` `Memory` `LowRAM` `M1NOT` `QSUDG` `CHR128` `LoadUsingROM` `SaveUsingROM`
 
 **Note:** Changing the virtual sound card, or the `FrameSync` or `NTSC` settings, does *not* trigger a reset
 ## File Storage
@@ -319,7 +325,7 @@ Press `ENTER` to exit the screen and use the filename, `.o` is appended if not s
 The program is saved to the current directory. If no valid file name is supplied a default filename of `"zx80prog.o"` is used. Any existing file with the same name is overwritten
 
 ### Loading and Saving Memory Blocks
-When emulating a ZX81, extensions are provided to `LOAD` and `SAVE` to support the loading and saving of memory blocks. The syntax is similar to that used by [ZXpand](https://github-wiki-see.page/m/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual)
+When emulating a ZX81, extensions are provided to `LOAD` and `SAVE` to support the loading and saving of memory blocks. The syntax is similar to that used by [ZXpand](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual)
 
 **Note:** There are differences in failure modes and error reporting compared to the ZXpand. Also `.p` is *not* appended when loading and saving memory blocks
 
@@ -353,6 +359,16 @@ The original ZX81 used tape as a storage media, with no concept of a directory s
 #### Examples
 + `LOAD "../HIGHER"` will attempt to load the file `HIGHER.P` from the parent directory of the current directory
 + `LOAD "ABC/LOWER"` will attempt to load the file `LOWER.P` from the child directory with the name `ABC`
+
+### Using the ROM routines
+The `LoadUsingROM` and `SaveUsingROM` configuration options allow the ROM code to be executed. This emulates the loading and saving of program files (but not data blocks) in the same time that it would take on a real ZX80/ZX81
+
+The ROM is used for program loading if either the filename is specified on the command line, e.g. `LOAD "FILENAME.P"` or (for the ZX81) an empty filename is supplied e.g. `LOAD ""`. If a file fextension exists (`.p`, `.o` etc) then it must be supplied. Directories can be specified as part of the filename e.g. `LOAD "SUBDIR/FILENAM.P"`
+
+#### Limitations
+The config file is read prior to loading. If the configuration file requires the emulator to be reconfigured so that it requires a reboot (e.g. the computer type or memory size changes) then the ROM will not be used for loading, and the file will be loaded immediately, as if `LoadUsingROM` was set to `OFF`. The ROM is also not used for loading if the file to be loaded is selected by pressing `F2`
+
+PicoZX81 generates realistic load and save sounds and graphics for the 8K ROM. The 4K ROM generates sounds and graphics when saving, which PicoZX81 emulates. The 4K ROM does not generate a load screen. PicoZX81 will show a black screen when the 4K ROM is loading a program
 
 # Applications Tested
 Testing the emulator has been a great way to experience some classic ZX81 games and demos, including many that stretch the ZX81 and ZX80 well beyond what Sinclair may have originally expected. The following have been successfully tested:
@@ -440,7 +456,12 @@ To enable chroma support set LowRAM on, and Memory to 48kB
 + [Chroma Slideshow](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_NativeColour.htm)
   + This works well with `FrameSync` set to `Interlaced`. Note that the program loads a series of image files. A config entry with `FrameSync` set to `Interlaced` needs to be created for each image file
 + [ROCK CRUSH 80](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_RockCrush80.htm)
-  + This is a ZX80 game, but the `.p81` file will also run on the ZX81
+  + This is a ZX80 game, but the `.p81` file will also run on the ZX81. If `SOUND` is set to `CHROMA` notes played at start-up can be heard
+### TV (VSYNC) Sound
+Set `SOUND` to either `TV` or `CHROMA`. If `TV` is selected a background tone will be generated during normal operation. If `CHROMA` is selected a tone is only generated when vertical sync is lost
++ [Beatles](https://sinclairzxworld.com/download/file.php?id=1600&sid=0c88b58f81635c384508d040b05ffa70)
++ [Anogaia](https://sinclairzxworld.com/download/file.php?id=11084)
++ [Follin3ch](https://sinclairzxworld.com/download/file.php?id=11084)
 ### 16kB Demos
 These really show off the capabilities of the ZX81 and are a good test that the emulator is accurate
 #### Without WRX RAM
@@ -450,7 +471,7 @@ These really show off the capabilities of the ZX81 and are a good test that the 
 #### With WRX RAM
 Both generate a display more than 320 pixels wide, so some information is not displayed in 640 by 480 mode (i.e. `FiveSevenSix` is set to `off`)
 + [25thanni](https://bodo4all.fortunecity.ws/zx/25thanni.html)
-  + The scrolling "ticker" is more than 320 pixels wide, so all of it is not visible in 640 by 480 mode.
+  + The scrolling "ticker" is more than 320 pixels wide, so all of it is not visible in 640 by 480 mode
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
   + The initial fast horizontal scrolling highlights the non-synchronised screen drawing of the emulator when running in 640 by 480 mode with `FrameSync` set to `Off`, leading to visible tearing
 ### Interlaced Images
@@ -458,20 +479,22 @@ Both generate a display more than 320 pixels wide, so some information is not di
   + Best viewed with `FrameSync` set to `Interlaced`
 ## ZX80
 + [ZX80 3K QS DEFENDER](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Defender.htm)
-  + This game generates 32 lines of text. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` so that the score, which is towards the top of the display, is visible. The game is still playable without the bottom of the display being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated
+  + This game generates 32 lines of text. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` so that the score, which is towards the top of the display, is visible. The game is still playable without the bottom of the display being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated. `VTOL` has to be increased to display a stable image. This replicates the behaviour of this program of a "real" ZX80
 + [Breakout](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Breakout.htm)
 + [Double Breakout](http://www.fruitcake.plus.com/Sinclair/ZX80/SoftwareArchive4K/BeamSoftware.htm)
 + [Kong](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Kong.htm)
 + [Pacman](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_Pacman.htm)
++ [Metropolis](https://www.sinclairzxworld.com/viewtopic.php?t=2707)
+  + This demo was a driver for adding a more accurate ZX80 emulation. It runs correctly for 4K and 8K ROMs with the latest version of picozx81
 ### Chroma 80
-+ To enable chroma support set LowRAM on, and Memory to 48kB
+To enable chroma support set LowRAM on, and Memory to 48kB
 + [Colour Mode 1 Demo](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface_Software_NativeColour.htm)
 + [ROCK CRUSH 80](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_RockCrush80.htm)
 + [Demo display drivers](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface_Software_ExampleHiResDrivers.htm)
 
 ## Programs with limitations or artefacts
 + [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda)
-  + This game generates 31 lines of text, one less than ZX80 QS DEFENDER. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` to display the top lines, which include the score. The game is still playable without the bottom line being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated correctly
+  + This game generates 31 lines of text, one less than ZX80 QS DEFENDER. In 640 by 480 mode the emulator only displays 30 line of text. Set `Centre` to `off` to display the top lines, which include the score. The game is still playable without the bottom line being visible. The full display is visible in 720x576 mode (i.e.`FixSevenSix` set to `On`). The QS sound board is emulated correctly. `VTOL` has to be increased to display a stable image. This replicates the behaviour of this program of a "real" ZX81
 + [Wa-Tor](http://www.pictureviewerpro.com/hosting/zx81/download/zx81/fred/wator.zip)
   + This has a pseudo hi-res introduction screen. Towards the bottom of the screen is the text: "Experiment with predators and prey". On a "real" ZX81 the text is distorted, due to a variation in the time of the horizontal sync pulse. This emulator does not show the distortion
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
@@ -498,7 +521,7 @@ This will be named `picozx81_vga.uf2`
 
     `mkdir build`  
     `cd build`  
-    `cmake ..`  
+    `cmake -DCMAKE_BUILD_TYPE=Release ..`  
     `make`
 5. To build for other boards, pass the board type as part of the cmake command. e.g.
 
@@ -658,13 +681,13 @@ The picozx board does support keyboard and joystick. This is achieved by using e
 ## Performance and constraints
 In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
-The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [MaxDemo](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 90% of the available CPU clock cycles. An overclock to 250MHz is required
+The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 92% of the available CPU clock cycles with sound disabled and 96% with Zonx sound enabled when picozx81 is running with a 640x460 display
+
+The 640x480 display mode uses an overclock to 252MHz. The 720x576 display mode uses an overclock to 270MHz
 
 Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n; set n,(hl); res n,(hl);`
 ## Possible Future Developments
 + Support for USB gamepads as well as joysticks
-+ Add vsync (TV) based sound
-+ Emulate `Real-time` loading and saving from tape, with sound and graphic effects
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 ## Comparison to MCUME
 [MCUME](https://github.com/Jean-MarcHarvengt/MCUME/) demonstrated that a Raspberry Pi Pico based ZX80/81 emulator was feasible. The custom VGA RGB 332 board type is similar to the hardware required for MCUME
@@ -678,7 +701,7 @@ This emulator offers the following over MCUME:
 + Support for multiple DVI, VGA and LCD boards
 + Support for Chroma 80 and Chroma 81
 + Support for programs which use more than 32 columns or 24 rows of characters
-+ ZonX and QS Sound emulation
++ ZonX, QS and TV Sound emulation
 + Emulated QS UDG
 + 50Hz and 60Hz emulation
 + Emulator display refresh decoupled from Pico display rate

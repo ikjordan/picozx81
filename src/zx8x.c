@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
-#include "Z80.h"
+#include "z80.h"
 #include "zx80rom.h"
 #include "zx81x2rom.h"
 #include "zx81rom.h"
@@ -14,6 +14,7 @@
 #include "hid_usb.h"
 #include "menu.h"
 #include "display.h"
+#include "loadp.h"
 
 char *strzx80_to_ascii(int memaddr);
 bool parseNumber(const char* input,
@@ -21,8 +22,6 @@ bool parseNumber(const char* input,
                  unsigned int max,
                  char term,
                  unsigned int* out);
-
-static void adjustChroma(bool start);
 
 #define ERROR_D() mem[16384] = 12;
 #define ERROR_INV1() mem[16384] = 128;
@@ -33,17 +32,21 @@ byte mem[MEMORYRAM_SIZE];
 unsigned char *memptr[64];
 int memattr[64];
 int nmigen=0,hsyncgen=0,vsync=0;
-int vsync_visuals=1;
 int signal_int_flag=0;
 int ramsize=16;
 
 /* the keyboard state and other */
 static uint8_t keyboard[ 8 ] = {0xff,0xff,0xff,0xff, 0xff,0xff,0xff,0xff};
 int zx80=0;
+int rom4k=0;
 int autoload=1;
 int chromamode=0;
+#ifdef SUPPORT_CHROMA
 unsigned char bordercolour=0x0f;
 unsigned char bordercolournew=0x0f;
+unsigned char fullcolour=0xff;
+unsigned char chroma_set=0;
+#endif
 
 static bool resetRequired = false;
 
@@ -63,38 +66,15 @@ static char zx2ascii[64]={
 /* 60-63 */ 'w', 'x', 'y', 'z'
 };
 
-
-#if 0
-const byte map_qw[8][5] = {
-    {25, 6,27,29,224},// vcxz<caps shift=Lshift>
-    {10, 9, 7,22, 4}, // gfdsa
-    {23,21, 8,26,20}, // trewq
-    {34,33,32,31,30}, // 54321
-    {35,36,37,38,39}, // 67890
-    {28,24,12,18,19}, // yuiop
-    {11,13,14,15,40}, // hjkl<enter>
-    { 5,17,16,1,44},  // bnm. <space>
-};
-static const int kBuf[]={13,25,19,25,19,40}; //,21,40}; // LOAD "" (J shift p shift p, R ENTER)
-static const int tBuf[]={2,0,2,0,2,2};//200!,2,2};
-static int kcount=0;
-static int timeout=100;
-#endif
-
 static char tapename[64]={0};
 
-unsigned int in(int h, int l)
+unsigned int __not_in_flash_func(in)(int h, int l)
 {
-  int ts=0;               /* additional cycles*256 */
-  static int tapemask=0;
-  int data=0;             /* = 0x80 if no tape noise (?) */
-
-  tapemask++;
-  data |= (tapemask & 0x0100) ? 0x80 : 0;
-  if (useNTSC) data|=64;
+  int data=0x80;
 
   if ((h == 0x7f) && (l == 0xef))
   {
+#ifdef SUPPORT_CHROMA
     if ((ramsize < 48) || (!LowRAM))
     {
 #ifdef DEBUG_CHROMA
@@ -110,24 +90,32 @@ unsigned int in(int h, int l)
       return 0xFF;
     }
     return 0x02; /* chroma 80 and 81 available*/
+#else
+    return 0xFF;
+#endif
   }
 
   if (!(l&1))
   {
     LastInstruction=LASTINSTINFE;
-
-    if (l==0x7e) return 0; // for Lambda
+#ifdef LOAD_AND_SAVE
+    if (running_rom)
+    {
+      data = useNTSC ? 0x40 : 0;
+      data |= loadPGetBit() ? 0x0 : 0x80; // Reversed as use xor below
+    }
+#endif
 
     switch(h)
     {
-      case 0xfe:        return(ts|(keyboard[0]^data));
-      case 0xfd:        return(ts|(keyboard[1]^data));
-      case 0xfb:        return(ts|(keyboard[2]^data));
-      case 0xf7:        return(ts|(keyboard[3]^data));
-      case 0xef:        return(ts|(keyboard[4]^data));
-      case 0xdf:        return(ts|(keyboard[5]^data));
-      case 0xbf:        return(ts|(keyboard[6]^data));
-      case 0x7f:        return(ts|(keyboard[7]^data));
+      case 0xfe:        return(keyboard[0]^data);
+      case 0xfd:        return(keyboard[1]^data);
+      case 0xfb:        return(keyboard[2]^data);
+      case 0xf7:        return(keyboard[3]^data);
+      case 0xef:        return(keyboard[4]^data);
+      case 0xdf:        return(keyboard[5]^data);
+      case 0xbf:        return(keyboard[6]^data);
+      case 0x7f:        return(keyboard[7]^data);
 
       default:
       {
@@ -140,17 +128,21 @@ unsigned int in(int h, int l)
         for(i=0,mask=1;i<8;i++,mask<<=1)
           if(!(h&mask))
             retval&=keyboard[i];
-        return(ts|(retval^data));
+        return(retval^data);
       }
     }
   }
   return(255);
 }
 
-unsigned int out(int h,int l,int a)
+unsigned int __not_in_flash_func(out)(int h, int l, int a)
 {
+  if ((sound_type == SOUND_TYPE_VSYNC) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
+    sound_beeper(0);
+
+#ifdef SUPPORT_CHROMA
   if ((h==0x7f) && (l==0xef))
-  {	/* chroma */
+  { /* chroma */
     if (emu_chromaSupported())
     {
       chromamode = a&0x30;
@@ -162,6 +154,7 @@ unsigned int out(int h,int l,int a)
         if ((ramsize < 48) || (!LowRAM))
         {
           chromamode = 0;
+          chroma_set = 0;
           printf("Insufficient RAM Size for Chroma!\n");
         }
         else
@@ -187,36 +180,29 @@ unsigned int out(int h,int l,int a)
     LastInstruction=LASTINSTOUTFF;
     return 0;
   }
+#endif
 
   switch(l)
   {
     case 0x0f:
     case 0x1f:
-      if(sound_ay == AY_TYPE_ZONX)
+      if(sound_type == SOUND_TYPE_ZONX)
         sound_ay_write(ay_reg,a);
     break;
 
     case 0xbf:
     case 0xcf:
     case 0xdf:
-      if(sound_ay == AY_TYPE_ZONX)
+      if(sound_type == SOUND_TYPE_ZONX)
         ay_reg=(a&15);
     break;
 
     case 0xfd:
-      if (zx80) break;
       LastInstruction = LASTINSTOUTFD;
     break;
 
     case 0xfe:
-      if (zx80) break;
       LastInstruction = LASTINSTOUTFE;
-    break;
-
-    case 0xff: // default out handled below
-    break;
-
-    default:
     break;
   }
   if (LastInstruction == LASTINSTNONE)
@@ -227,20 +213,23 @@ unsigned int out(int h,int l,int a)
 
 static char fname[256];
 
-void load_p(int a)
+bool load_p(int name_addr, bool defer_rom)
 {
   int max_read;
-  char *ptr=(char*)mem+(a&32767),*dptr=fname;
-  char *extend = 0;
+  char* ptr=(char*)mem + (name_addr & 0x7fff);
+  char* dptr=fname;
+  char* extend = 0;
   int start = -1;
   int offset = 0;
+  bool from_menu = false;
+
+  bool defer = false;
 
   memset(fname, 0, sizeof(fname));
 
   strcpy(fname, emu_GetDirectory());
-  int nameSrt = strlen(fname);
 
-  if ((a<32768) && (!zx80))
+  if ((name_addr < 0x8000) && (!rom4k))
   {
     // Try to open the name provided
     dptr += strlen(fname);
@@ -249,7 +238,7 @@ void load_p(int a)
     {
       *dptr++=zx2ascii[(*ptr)&63];
     }
-    while((*ptr++)<128 && dptr<fname+sizeof(fname)-3);
+    while((*ptr++) < 128 && dptr< (fname + sizeof(fname) - 3));
 
     *dptr = 0;
 
@@ -263,11 +252,11 @@ void load_p(int a)
         *extend++ = '\0';
 
         // Attempt to read the start address
-        if (!parseNumber(extend, 0, 65535, 0, (unsigned int*)&start))
+        if (!parseNumber(extend, 0, 0xffff, 0, (unsigned int*)&start))
         {
           printf("Mem load address parse error, generating error 1\n");
           ERROR_INV1();
-          return;
+          return defer;
         }
 
         // Series of checks to ensure start is in the right area
@@ -316,8 +305,9 @@ void load_p(int a)
 
       if (loadMenu())
       {
-          strcpy(fname, emu_GetDirectory());
-          strcat(fname, emu_GetLoadName());
+        strcpy(fname, emu_GetDirectory());
+        strcat(fname, emu_GetLoadName());
+        from_menu = true;
       }
     }
   }
@@ -331,12 +321,12 @@ void load_p(int a)
   {
     // Report error D
     printf("File does not exist, or zero length. Generating error D\n");
-    if (!zx80)
+    if (!rom4k)
     {
       ERROR_D();
     }
     EMU_UNLOCK_SDCARD
-    return;
+    return defer;
   }
   else if (size <= offset)
   {
@@ -344,22 +334,36 @@ void load_p(int a)
     printf("No data to write to RAM, generating error 3\n");
     ERROR_INV3();
     EMU_UNLOCK_SDCARD
-    return;
+    return defer;
   }
 
-  if ((!autoload) && start >= 0) /* if start address is given then don't search for settings */
+  if ((!autoload) && (start < 0)) /* if start address is given then don't search for settings */
   {
+    // Already know that the file exists, but user may have specified a different directory
+    // so adjust, if file was not picked from menu
+    if (!from_menu)
+    {
+      char* nameStrt = strrchr(fname, '/');
+      if (nameStrt)  *nameStrt = 0;
+      emu_SetDirectory(nameStrt ? fname : "/");
+      if (nameStrt) *nameStrt = '/';
+    }
     // Load the settings for this file
     emu_ReadSpecificValues(fname);
 
     if (emu_ResetNeeded())
     {
       // Have to schedule an autoload, which will trigger the reset
-      emu_SetLoadName(&fname[nameSrt]);
+
+      // Extract the file name from the full path
+      char* nameStrt = strrchr(fname, '/');
+      nameStrt = (nameStrt == NULL) ? fname : nameStrt + 1;
+
+      emu_SetLoadName(nameStrt);
       z8x_Start(emu_GetLoadName());
       resetRequired = true;
       EMU_UNLOCK_SDCARD
-      return;
+      return defer;
     }
   }
 
@@ -398,12 +402,15 @@ void load_p(int a)
         ERROR_INV3();
         emu_FileClose();
         EMU_UNLOCK_SDCARD
-        return;
+        return defer;
       }
     }
     else
     {
-      if (zx80)
+      // A plain load
+      defer = defer_rom;
+
+      if (rom4k)
       {
         start = 0x4000;
       }
@@ -414,8 +421,8 @@ void load_p(int a)
       }
     }
 
-    // A ZX81 loading a .p81 file should skip the filename
-    if (!zx80)
+    // An 8k ROM loading a .p81 file should skip the filename
+    if (!rom4k)
     {
       if (emu_EndsWith(fname, ".p81"))
       {
@@ -433,39 +440,51 @@ void load_p(int a)
     // Finally load the file
     size  = (size < max_read) ? size : max_read;
     printf("start=%i size=%i\n", start, size);
-    emu_FileRead(mem + start, size, offset);
-    emu_FileClose();
+    if (!defer)
+    {
+      emu_FileRead(mem + start, size, offset);
+      emu_FileClose();
+    }
+    else
+    {
+      // Close the open file and defer loading to ROM routine
+      emu_FileClose();
+      loadPInitialise(fname, name_addr, rom4k);
+    }
   }
   else
   {
     // Report error D
     printf("File open failed, generating error D\n");
-    if (!zx80)
+    if (!rom4k)
     {
       ERROR_D();
     }
     EMU_UNLOCK_SDCARD
-    return;
+    return defer;
   }
   EMU_UNLOCK_SDCARD
+  return defer;
 }
 
-void save_p(int a)
+bool save_p(int name_addr, bool defer_rom)
 {
-  char *ptr=(char*)(mem+a),*dptr=fname;
-  char *extend = 0;
-  char *comma = 0;
+  char* ptr=(char*)(mem+name_addr);
+  char* dptr=fname;
+  char* extend = 0;
+  char* comma = 0;
   int start = 0;
   int length = 0;
   bool found = false;
+  bool defer = false;
 
   memset(fname,0,sizeof(fname));
   strcat(fname, emu_GetDirectory());
 
-  if(zx80)
+  if(rom4k)
   {
-    int index = 0x4028;	/* Start of user program area */
-    int vars = mem[0x4009] << 8 | mem[0x4008];	/* VARS */
+    int index = 0x4028;                         /* Start of user program area */
+    int vars = mem[0x4009] << 8 | mem[0x4008];  /* VARS */
     int idxend;
 
     while (index < vars)
@@ -474,7 +493,7 @@ void save_p(int a)
       if (mem[index] == 0xfe && mem[index + 1] == 0xea &&
           mem[index + 2] == 0x01)
       {
-        idxend = index = index + 3; /* Position on first char */
+        idxend = index = index + 3;             /* Position on first char */
 
         while (mem[idxend] != 0x01 &&
                mem[idxend] < 0x80 &&
@@ -486,14 +505,14 @@ void save_p(int a)
 
         if (index < idxend)
         {
-          mem[--idxend] |= 0x80;  /* +80h marks last char */
+          mem[--idxend] |= 0x80;                /* +80h marks last char */
           strcat(fname, strzx80_to_ascii(index));
-          mem[idxend] &= ~0x80;   /* Remove +80h */
-          index = vars;           /* Exit loop */
+          mem[idxend] &= ~0x80;                 /* Remove +80h */
+          index = vars;                         /* Exit loop */
         }
       }
       index++;
-		}
+    }
 
     if (index == vars)
     {
@@ -548,14 +567,14 @@ void save_p(int a)
           {
             printf("Illegal start address, generating error 1\n");
             ERROR_INV1();
-            return;
+            return defer;
           }
 
           if (!parseNumber(comma, 1, 0x10000, 0, (unsigned int*)&length))
           {
             printf("Illegal length, generating error 2\n");
             ERROR_INV2();
-            return;
+            return defer;
           }
 
           // Check that the end address is within 64kB
@@ -563,7 +582,7 @@ void save_p(int a)
           {
             printf("Start %i + length %i too large, generating error 3\n", start, length);
             ERROR_INV3();
-            return;
+            return defer;
           }
         }
       }
@@ -581,11 +600,11 @@ void save_p(int a)
     // Saving a program, append suffix if needed
     if(!strrchr(fname, '.'))
     {
-      strcat(fname, zx80 ? ".o" : ".p");
+      strcat(fname, rom4k ? ".o" : ".p");
     }
 
     // Set start and length
-    if(zx80)
+    if(rom4k)
     {
       start = 0x4000;
       length = fetch2(16394)-0x4000;
@@ -595,22 +614,37 @@ void save_p(int a)
       start = 0x4009;
       length = fetch2(16404)-0x4009;
     }
+    defer = defer_rom;
   }
 
   EMU_LOCK_SDCARD
 
   if (!emu_SaveFile(fname, &mem[start], length))
   {
-    if (!zx80)
+    if (!rom4k)
     {
       ERROR_D();
     }
+    defer = false;
   }
   EMU_UNLOCK_SDCARD
+  return defer;
 }
 
-void zx81hacks()
+#ifdef LOAD_AND_SAVE
+RomPatches_T rom_patches;
+#endif
+
+void rom8kPatches()
 {
+#ifdef LOAD_AND_SAVE
+  rom_patches.save.start = SAVE_START_8K;
+  rom_patches.save.use_rom = emu_saveUsingROMRequested();
+  rom_patches.load.start = LOAD_START_8K;
+  rom_patches.load.use_rom = emu_loadUsingROMRequested();
+  rom_patches.retAddr = LOAD_SAVE_RET_8K;
+  rom_patches.rstrtAddr = LOAD_SAVE_RSTRT_8K;
+#else
   /* patch save routine */
   mem[0x2fc]=0xed; mem[0x2fd]=0xfd;
   mem[0x2fe]=0xc3; mem[0x2ff]=0x07; mem[0x300]=0x02;
@@ -619,10 +653,19 @@ void zx81hacks()
   mem[0x347]=0xeb;
   mem[0x348]=0xed; mem[0x349]=0xfc;
   mem[0x34a]=0xc3; mem[0x34b]=0x07; mem[0x34c]=0x02;
+#endif
 }
 
-void zx80hacks()
+void rom4kPatches()
 {
+#ifdef LOAD_AND_SAVE
+  rom_patches.save.start = SAVE_START_4K;
+  rom_patches.save.use_rom = emu_saveUsingROMRequested();
+  rom_patches.load.start = LOAD_START_4K;
+  rom_patches.load.use_rom = emu_loadUsingROMRequested();
+  rom_patches.retAddr = LOAD_SAVE_RET_4K;
+  rom_patches.rstrtAddr = LOAD_SAVE_RSTRT_4K;
+#else
   /* patch save routine */
   mem[0x1b6]=0xed; mem[0x1b7]=0xfd;
   mem[0x1b8]=0xc3; mem[0x1b9]=0x83; mem[0x1ba]=0x02;
@@ -630,6 +673,7 @@ void zx80hacks()
   /* patch load routine */
   mem[0x206]=0xed; mem[0x207]=0xfc;
   mem[0x208]=0xc3; mem[0x209]=0x83; mem[0x20a]=0x02;
+#endif
 }
 
 static void initmem()
@@ -639,7 +683,7 @@ static void initmem()
   int ramtmp = ramsize;
   bool odd=false;
 
-  if(zx80)
+  if(rom4k)
   {
     memset(mem+0x1000,0,0xf000);
   }
@@ -655,7 +699,7 @@ static void initmem()
     memattr[f]=memattr[32+f]=0;
     memptr[f]=memptr[32+f]=mem+1024*count;
     count++;
-    if(count>=(zx80?4:8)) count=0;
+    if(count>=(rom4k?4:8)) count=0;
   }
 
   // Handle the 3K case
@@ -744,52 +788,54 @@ static void initmem()
       }
   }
 
-  if(zx80)
-    zx80hacks();
+  if(rom4k)
+    rom4kPatches();
   else
-    zx81hacks();
+    rom8kPatches();
 }
+
+#define ZX80_PIXEL_OFFSET       6
 
 void z8x_Init(void)
 {
   // Get machine type and memory
   zx80 = emu_ZX80Requested();
+  rom4k = emu_ROM4KRequested();
   ramsize = emu_MemoryRequested();
-  sound_ay = emu_SoundRequested();
+  sound_type = emu_SoundRequested();
   m1not = emu_M1NOTRequested();
   chr128 = emu_CHR128Requested();
   LowRAM = emu_LowRAMRequested();
   useQSUDG = emu_QSUDGRequested();
   useWRX = emu_WRXRequested();
   useNTSC = emu_NTSCRequested();
-  adjustStartX = emu_CentreX();
-  adjustStartY = emu_CentreY();
   frameSync = (emu_FrameSyncRequested() != SYNC_OFF);
   UDGEnabled = false;
 
   setEmulatedTV(!useNTSC, emu_VTol());
+  setDisplayBoundaries();
   emu_KeyboardInitialise(keyboard);
   emu_JoystickInitialiseNinePin();
 
   /* load rom with ghosting at 0x2000 */
-  int siz=(zx80?4096:8192);
-  if(zx80)
+  int siz=(rom4k?4096:8192);
+  if(rom4k)
   {
     memcpy( mem + 0x0000, zx80rom, siz );
   }
   else
   {
-    if (emu_ComputerRequested() == ZX81)
-    {
-      memcpy( mem + 0x0000, zx81rom, siz );
-    }
-    else
+    if (emu_ComputerRequested() == ZX81X2)
     {
       memcpy( mem + 0x0000, zx81x2rom, siz );
     }
+    else
+    {
+      memcpy( mem + 0x0000, zx81rom, siz );
+    }
   }
   memcpy(mem+siz,mem,siz);
-  if(zx80)
+  if(rom4k)
     memcpy(mem+siz*2,mem,siz*2);
 
   initmem();
@@ -797,33 +843,34 @@ void z8x_Init(void)
   /* reset the keyboard state */
   memset( keyboard, 255, sizeof( keyboard ) );
 
-  ResetZ80();
-  emu_sndInit(sound_ay != AY_TYPE_NONE, true);
+  resetZ80();
+  emu_sndInit(sound_type != SOUND_TYPE_NONE, true);
 }
 
 void z8x_updateValues(void)
 {
-  sound_ay = emu_SoundRequested();
-  emu_sndInit(sound_ay != AY_TYPE_NONE, false);
+  sound_type = emu_SoundRequested();
+  emu_sndInit(sound_type != SOUND_TYPE_NONE, false);
+
   useWRX = emu_WRXRequested();
   useNTSC = emu_NTSCRequested();
-  adjustStartX = emu_CentreX();
-  adjustStartY = emu_CentreY();
   frameSync = (emu_FrameSyncRequested() != SYNC_OFF);
   setEmulatedTV(!useNTSC, emu_VTol());
+  setDisplayBoundaries();
   emu_VideoSetInterlace();
 }
 
 bool z8x_Step(void)
 {
-  ExecZ80();
+  zx80 ? execZX80() : execZX81();
+
   if (resetRequired)
   {
     resetRequired = false;
     return false;
   }
 
-  if (sound_ay != AY_TYPE_NONE)
+  if (sound_type != SOUND_TYPE_NONE)
   {
     emu_generateSoundSamples();
   }
@@ -854,7 +901,7 @@ void z8x_Start(const char * filename)
       int fsize = emu_FileRead(&c, 1, 0);
       if (!fsize)
       {
-        printf("z81 Open %s failed. No autoload\n", filename);
+        printf("Read %s failed. No autoload\n", filename);
       }
       else
       {
@@ -866,7 +913,7 @@ void z8x_Start(const char * filename)
         // Determine the computer type from the ending - do not change for .p81
         if (!emu_EndsWith(fname, ".p81"))
         {
-          emu_SetZX80(emu_EndsWith(fname, ".o") || emu_EndsWith(fname, ".80"));
+          emu_SetRom4K(emu_EndsWith(fname, ".o") || emu_EndsWith(fname, ".80"));
         }
       }
       emu_FileClose();
@@ -942,10 +989,4 @@ char *strzx80_to_ascii(int memaddr)
   } while (mem[memaddr++] < 0x80);
 
   return translated;
-}
-
-/* Ensure that chroma and pixels are byte aligned */
-static void adjustChroma(bool start)
-{
-    adjustStartX = start ? disp.adjust_x : emu_CentreX();
 }

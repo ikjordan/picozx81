@@ -9,12 +9,14 @@
 #include "zx80bmp.h"
 #include "zx81bmp.h"
 
+#ifdef SUPPORT_CHROMA
 // Structure for chroma buffers
 typedef struct
 {
     uint8_t* buff;
     bool     used;
 } chroma_t;
+#endif
 
 mutex_t next_frame_mutex;
 semaphore_t display_initialised;
@@ -23,8 +25,9 @@ bool blank = true;
 uint16_t blank_colour = BLACK;
 
 uint8_t* curr_buff = 0;      // buffer being displayed
+#ifdef SUPPORT_CHROMA
 uint8_t* cbuffer = 0;        // Chroma buffer
-
+#endif
 const KEYBOARD_PIC* keyboard = &ZX81KYBD;
 bool showKeyboard = false;
 
@@ -39,7 +42,9 @@ bool showKeyboard = false;
 
 static uint8_t* pend_buff[MAX_PEND] = {0, 0};           // Buffers queued for display
 static uint8_t* free_buff[MAX_FREE] = {0, 0, 0, 0};     // Buffers available to be claimed
+#ifdef SUPPORT_CHROMA
 static chroma_t chroma[MAX_FREE] = { {0, false}, {0, false}, {0,false}, {0,false} };
+#endif
 static uint8_t* index_to_display[MAX_FREE] = {0, 0, 0, 0};
 static uint8_t* last_buff = 0;      // previously displayed buffer (interlace mode only)
 
@@ -54,9 +59,10 @@ static bool no_skip = false;
 static inline void freeAllPending(void);
 static inline void freeLast(void);
 static inline void swapCurrAndLast(void);
+#ifdef SUPPORT_CHROMA
 static inline void displayGetChromaBufferUsed(uint8_t** chroma_buff, uint8_t* buff);
 static inline void set_chroma_used(uint8_t* buff, bool used);
-
+#endif
 //
 // Public functions
 //
@@ -73,6 +79,7 @@ void displayAllocateBuffers(uint16_t minBuffByte, uint16_t stride, uint16_t heig
         index_to_display[i] = free_buff[i];
     }
 
+#ifdef SUPPORT_CHROMA
     // Allocate chroma buffers
     for (int i=0; i<MAX_FREE; ++i)
     {
@@ -85,8 +92,8 @@ void displayAllocateBuffers(uint16_t minBuffByte, uint16_t stride, uint16_t heig
             exit(-1);
         }
     }
+#endif
     free_count = MAX_FREE;
-
 }
 
 /* Set the interlace state */
@@ -156,7 +163,9 @@ void __not_in_flash_func(displayBuffer)(uint8_t* buff, bool sync, bool free, boo
     // Obtain lock
     mutex_enter_blocking(&next_frame_mutex);
 
+#ifdef SUPPORT_CHROMA
     set_chroma_used(buff, chroma);
+#endif
     if (sync && !blank)
     {
         // Store in next, unless next is full
@@ -231,6 +240,7 @@ void __not_in_flash_func(displayGetCurrentBuffer)(uint8_t** buff)
     mutex_exit(&next_frame_mutex);
 }
 
+#ifdef SUPPORT_CHROMA
 /* Get the chroma buffer associated with a display buffer */
 void __not_in_flash_func(displayGetChromaBuffer)(uint8_t** chroma_buff, uint8_t* buff)
 {
@@ -268,6 +278,7 @@ static inline void displayGetChromaBufferUsed(uint8_t** chroma_buff, uint8_t* bu
     }
     *chroma_buff = 0;
 }
+#endif
 
 /* Blank the display */
 void __not_in_flash_func(displayBlank)(bool black)
@@ -328,31 +339,67 @@ void displayStartCommon(void)
 
 void __not_in_flash_func(newFrame)(void)
 {
-    mutex_enter_blocking(&next_frame_mutex);
-    if (!blank)
+    // Do not wait for long as we can always use the last frame, which is
+    // preferrable to an underrun
+    if (mutex_enter_timeout_us(&next_frame_mutex, 20))
     {
-        if (pend_count)
+        if (!blank)
         {
-            if (interlace)
+            if (pend_count)
             {
-                if (no_skip)
+                if (interlace)
                 {
-                    // Free the last frame
-                    if (last_buff)
+                    if (no_skip)
                     {
-                        free_buff[free_count++] = last_buff;
-                    }
+                        // Free the last frame
+                        if (last_buff)
+                        {
+                            free_buff[free_count++] = last_buff;
+                        }
 
-                    // Store a new last frame, unless we have another pending buffer
-                    if (pend_count == MAX_PEND)
-                    {
-                        last_buff = 0;
-                        free_buff[free_count++] = curr_buff;
+                        // Store a new last frame, unless we have another pending buffer
+                        if (pend_count == MAX_PEND)
+                        {
+                            last_buff = 0;
+                            free_buff[free_count++] = curr_buff;
+                        }
+                        else
+                        {
+                            last_buff = curr_buff;
+                        }
+                        curr_buff = pend_buff[0];
+                        --pend_count;
+                        if (pend_count)
+                        {
+                            pend_buff[0] = pend_buff[1];
+                        }
                     }
                     else
                     {
-                        last_buff = curr_buff;
+                        // We are displaying the last_buffer, because we
+                        // missed earlier, so either swap, or jump forward if we have
+                        // the buffers to do it
+                        if (pend_count == MAX_PEND)
+                        {
+                            // Free the current and last buffers
+                            freeLast();
+                            free_buff[free_count++] = curr_buff;
+
+                            curr_buff = pend_buff[1];
+                            last_buff = pend_buff[0];
+                            pend_count = 0;
+                        }
+                        else
+                        {
+                            swapCurrAndLast();
+                        }
+                        no_skip = !no_skip;
                     }
+                }
+                else
+                {
+                    // Just display next frame
+                    free_buff[free_count++] = curr_buff;
                     curr_buff = pend_buff[0];
                     --pend_count;
                     if (pend_count)
@@ -360,59 +407,30 @@ void __not_in_flash_func(newFrame)(void)
                         pend_buff[0] = pend_buff[1];
                     }
                 }
-                else
-                {
-                    // We are displaying the last_buffer, because we
-                    // missed earlier, so either swap, or jump forward if we have
-                    // the buffers to do it
-                    if (pend_count == MAX_PEND)
-                    {
-                        // Free the current and last buffers
-                        freeLast();
-                        free_buff[free_count++] = curr_buff;
-
-                        curr_buff = pend_buff[1];
-                        last_buff = pend_buff[0];
-                        pend_count = 0;
-                    }
-                    else
-                    {
-                        swapCurrAndLast();
-                    }
-                    no_skip = !no_skip;
-                }
             }
             else
             {
-                // Just display next frame
-                free_buff[free_count++] = curr_buff;
-                curr_buff = pend_buff[0];
-                --pend_count;
-                if (pend_count)
+                if (interlace)
                 {
-                    pend_buff[0] = pend_buff[1];
+                    // Have to swap back to previous, if there is one
+                    swapCurrAndLast();
+                    no_skip = !no_skip;
                 }
             }
         }
-        else
-        {
-            if (interlace)
-            {
-                // Have to swap back to previous, if there is one
-                swapCurrAndLast();
-                no_skip = !no_skip;
-            }
-        }
+    #ifdef SUPPORT_CHROMA
+        // Obtain the associated chroma buffer iff chroma enabled
+        displayGetChromaBufferUsed(&cbuffer, curr_buff);
+    #endif
+        mutex_exit(&next_frame_mutex);
     }
-    // Obtain the associated chroma buffer iff chroma enabled
-    displayGetChromaBufferUsed(&cbuffer, curr_buff);
-    mutex_exit(&next_frame_mutex);
 }
 
 //
 // Private functions
 //
 
+#ifdef SUPPORT_CHROMA
 /* Indicate whether chroma is enabled for the supplied pixel buffer */
 static inline void set_chroma_used(uint8_t* buff, bool used)
 {
@@ -426,6 +444,7 @@ static inline void set_chroma_used(uint8_t* buff, bool used)
         }
     }
 }
+#endif
 
 static inline void __not_in_flash_func(freeAllPending)(void)
 {
@@ -479,12 +498,12 @@ static inline void __not_in_flash_func(swapCurrAndLast)(void)
 extern uint displayInitialiseLCD(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                                  uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
 extern void displayStartLCD(void);
-extern bool displayShowKeyboardLCD(bool zx81);
+extern bool displayShowKeyboardLCD(bool ROM8K);
 
 extern uint displayInitialiseVGA(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                                  uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
 extern void displayStartVGA(void);
-extern bool displayShowKeyboardVGA(bool zx81);
+extern bool displayShowKeyboardVGA(bool ROM8K);
 
 uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
@@ -513,15 +532,15 @@ void displayStart(void)
     }
 }
 
-bool displayShowKeyboard(bool zx81)
+bool displayShowKeyboard(bool ROM8K)
 {
     if (useLCD)
     {
-        return displayShowKeyboardLCD(zx81);
+        return displayShowKeyboardLCD(ROM8K);
     }
     else
     {
-        return displayShowKeyboardVGA(zx81);
+        return displayShowKeyboardVGA(ROM8K);
     }
 }
 

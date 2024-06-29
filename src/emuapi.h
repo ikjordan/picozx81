@@ -7,13 +7,15 @@
 #define MAX_FILENAME_LEN 64
 #define MAX_DIRECTORY_LEN 128
 #define MAX_FULLPATH_LEN (MAX_FILENAME_LEN + MAX_DIRECTORY_LEN)
+#define VTOL 25       // Default TV Vertical tolerance in scanlines
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef enum {
-    ZX80 = 0,
+    ZX80_4K = 0,
+    ZX80_8K,
     ZX81,
     ZX81X2 // Big bang ROM
 } ComputerType_T;
@@ -49,6 +51,7 @@ extern void emu_ReadDefaultValues(void);
 extern void emu_ReadSpecificValues(const char* filename);
 extern int emu_MemoryRequested(void);
 extern bool emu_ZX80Requested(void);
+extern bool emu_ROM4KRequested(void);
 extern ComputerType_T emu_ComputerRequested(void);
 extern bool emu_M1NOTRequested(void);
 extern bool emu_LowRAMRequested(void);
@@ -61,6 +64,8 @@ extern bool emu_DoubleShiftRequested(void);
 extern bool emu_ExtendFileRequested(void);
 extern bool emu_AllFilesRequested(void);
 extern bool emu_NinePinJoystickRequested(void);
+extern bool emu_loadUsingROMRequested(void);
+extern bool emu_saveUsingROMRequested(void);
 extern int emu_MenuBorderRequested(void);
 extern uint16_t emu_VTol(void);
 extern bool emu_ACBRequested(void);
@@ -83,7 +88,7 @@ extern FiveSevenSix_T emu_576Requested(void);
 
 extern bool emu_chromaSupported(void);
 
-extern void emu_SetZX80(bool zx80);
+extern void emu_SetRom4K(bool Rom4k);
 extern void emu_SetFrameSync(FrameSync_T fsync);
 extern void emu_SetNTSC(bool ntsc);
 extern void emu_SetVTol(uint16_t vTol);
@@ -95,6 +100,8 @@ extern void emu_SetComputer(ComputerType_T computer);
 extern void emu_SetMemory(int memory);
 extern void emu_SetLowRAM(bool lowRAM);
 extern void emu_SetM1NOT(bool m1NOT);
+extern void emu_SetLoadROM(bool loadROM);
+extern void emu_SetSaveROM(bool saveROM);
 extern void emu_SetQSUDG(bool qsudg);
 extern void emu_SetCHR128(bool chr128);
 

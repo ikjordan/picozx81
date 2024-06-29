@@ -33,8 +33,6 @@
 
 semaphore_t timer_sem;
 
-#define SAMPLE_FREQ   32000
-
 static const uint16_t NUMSAMPLES = (SAMPLE_FREQ / 50); // samples in 50th of second
 
 static uint16_t soundBuffer16[NUMSAMPLES << 2]; // Effectively two stereo buffers
@@ -89,7 +87,7 @@ void emu_sndInit(bool playSound, bool reset)
   // This can be called multiple times...
   if (!soundCreated)
   {
-    soundCreated = sound_create(SAMPLE_FREQ, NUMSAMPLES);
+    soundCreated = sound_create(NUMSAMPLES);
   }
 
   // Call each time, as sound type may have changed
