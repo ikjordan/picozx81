@@ -300,7 +300,7 @@ bool load_p(int name_addr, bool defer_rom)
     }
     else
     {
-      emu_silenceSound();
+      emu_sndSilence();
       displayHideKeyboard();
 
       if (loadMenu())
@@ -517,7 +517,7 @@ bool save_p(int name_addr, bool defer_rom)
     if (index == vars)
     {
       // Stop any sound
-      emu_silenceSound();
+      emu_sndSilence();
       bool displayed = displayShowKeyboard(false);
 
       // Display the ZX80 save screen
@@ -872,7 +872,7 @@ bool z8x_Step(void)
 
   if (sound_type != SOUND_TYPE_NONE)
   {
-    emu_generateSoundSamples();
+    emu_sndGenerateSamples();
   }
   return true;
 }

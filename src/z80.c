@@ -409,8 +409,7 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
       // Restore the sound mode
       if (sound_cache != sound_type)
       {
-        sound_type = sound_cache;
-        emu_sndInit(sound_type != SOUND_TYPE_NONE, false);
+        emu_sndQueueChange(sound_cache != SOUND_TYPE_NONE, sound_cache);
       }
       running_rom = false;
     }

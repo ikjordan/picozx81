@@ -177,11 +177,11 @@ static void sound_ay_overlay(int16_t* buff);
  * a 1/500th.
  *
  * The true behaviour is awkward to model accurately, but a compromise
- * emulation (doing a linear fadeout over 1/150th) seems to work quite
+ * emulation (doing a linear fadeout over 1/1500th) seems to work quite
  * well and returns to a zero reset position
  */
 
-#define BEEPER_FADEOUT  (((1<<24)/150)/AMPL_BEEPER)
+#define BEEPER_FADEOUT  (((1<<24)/1500)/AMPL_BEEPER)
 
 #define BEEPER_OLDVAL_ADJUST      \
   beeper_tick+=beeper_tick_incr;  \
@@ -237,6 +237,11 @@ void sound_init(bool acb, bool reset)
 void sound_end(void)
 {
   sound_enabled=0;
+}
+
+void sound_change_type(int new_sound_type)
+{
+    sound_type = new_sound_type;
 }
 
 void __not_in_flash_func(sound_frame)(uint16_t* buff)

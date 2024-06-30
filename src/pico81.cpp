@@ -72,7 +72,7 @@ static void mainLoop(void)
             {
                 if (s!=HID_KEY_ESCAPE)
                 {
-                    emu_silenceSound();
+                    emu_sndSilence();
                 }
                 displayHideKeyboard();
 

@@ -38,7 +38,7 @@ uint emu_VideoInit(void)
     extra.info.lcd.reflect = emu_lcdReflectRequested();
     extra.info.lcd.bgr = emu_lcdBGRRequested();
 #else
-    extra.info.hdmi.audioRate = emu_SoundSampleRate();
+    extra.info.hdmi.audioRate = emu_sndGetSampleRate();
 #endif
 
     uint clock = displayInitialise(five, match, 1, &disp.width,

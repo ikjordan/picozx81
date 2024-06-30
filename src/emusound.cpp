@@ -42,6 +42,10 @@ static bool soundCreated = false;
 static volatile bool first = true;   // True if the first buffer is playing
 static bool genSound = false;
 
+static int queued_sound_type;           // new sound type requested
+static int change_count;                // count down to frame to change sound type
+static bool queued_play;
+
 static void beginAudio(void);
 
 #ifdef SOUND_DMA
@@ -75,7 +79,7 @@ int32_t sound_count = 0;
 int64_t int_count = 0;
 #endif
 
-uint16_t emu_SoundSampleRate(void)
+uint16_t emu_sndGetSampleRate(void)
 {
   return SAMPLE_FREQ;
 }
@@ -83,6 +87,7 @@ uint16_t emu_SoundSampleRate(void)
 void emu_sndInit(bool playSound, bool reset)
 {
   genSound = playSound;
+  change_count = 0;   // in case a changed was queued
 
   // This can be called multiple times...
   if (!soundCreated)
@@ -100,8 +105,15 @@ void emu_sndInit(bool playSound, bool reset)
   beginAudio();
 }
 
+void emu_sndQueueChange(bool playSound, int new_sound_type)
+{
+  queued_sound_type = new_sound_type;
+  queued_play = playSound;
+  change_count = 3; // Allow final save bytes to propagate
+}
+
 // Calls to this function are synchronised to 50Hz through main timer interrupt
-void emu_generateSoundSamples(void)
+void emu_sndGenerateSamples(void)
 {
   if (genSound && soundCreated)
   {
@@ -109,6 +121,16 @@ void emu_generateSoundSamples(void)
 #ifdef TIME_SPARE
     sound_count++;
 #endif
+
+    // process any queued sound change
+    if (change_count)
+    {
+      if (--change_count == 0)
+      {
+        sound_change_type(queued_sound_type);
+        emu_sndInit(queued_play, false);
+      }
+    }
   }
 }
 
@@ -386,7 +408,7 @@ static void beginAudio(void)
     pwm_config_set_wrap(&config, RANGE - 1);
 
     // Set buffer and initial pwm to silence
-    emu_silenceSound();
+    emu_sndSilence();
 
     pwm_set_gpio_level(AUDIO_PIN_R, ZEROSOUND);   // mid point to wrap
     pwm_init(audio_pin_slice_r, &config, false);
@@ -421,11 +443,11 @@ static void beginAudio(void)
   }
   else
   {
-    emu_silenceSound();
+    emu_sndSilence();
   }
 }
 
-void emu_silenceSound(void)
+void emu_sndSilence(void)
 {
   // Set buffers to silence
   for (int i = 0; i < (NUMSAMPLES<<2); ++i)
