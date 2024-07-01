@@ -177,15 +177,15 @@ static void sound_ay_overlay(int16_t* buff);
  * a 1/500th.
  *
  * The true behaviour is awkward to model accurately, but a compromise
- * emulation (doing a linear fadeout over 1/1500th) seems to work quite
+ * emulation (doing a linear fadeout over 250 us) seems to work quite
  * well and returns to a zero reset position
  */
 
-#define BEEPER_FADEOUT  (((1<<24)/1500)/AMPL_BEEPER)
+#define BEEPER_FADEOUT  (((1<<24)/4000)/AMPL_BEEPER)
 
 #define BEEPER_OLDVAL_ADJUST      \
   beeper_tick+=beeper_tick_incr;  \
-  if(beeper_tick>=BEEPER_FADEOUT) \
+  while(beeper_tick>=BEEPER_FADEOUT) \
   {                               \
     beeper_tick-=BEEPER_FADEOUT;  \
     if(sound_oldval>0)            \
@@ -254,23 +254,26 @@ void __not_in_flash_func(sound_frame)(uint16_t* buff)
   else if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CHROMA))
   {
     // Propagate to end of file
-    int16_t* ptr = change.vsync+sound_fillpos;
-    int16_t* ibuff = (int16_t*)buff;
+    int16_t* restrict ptr = change.vsync+sound_fillpos;
+    int16_t* restrict ibuff = (int16_t*)buff;
+    int16_t val;
 
-    for(int f=sound_fillpos; f<FRAME_SIZE; ++f)
+    for(int f = sound_fillpos; f < FRAME_SIZE; ++f)
     {
       BEEPER_OLDVAL_ADJUST;
-      *ptr++=sound_oldval;
+      *ptr ++= sound_oldval;
     }
-    sound_oldpos=-1;
-    sound_fillpos=0;
+    sound_oldpos = -1;
+    sound_fillpos = 0;
 
     // Copy data to buffer and convert to stereo
     ptr = change.vsync;
-    for (int f=0; f<FRAME_SIZE; ++f)
+    for (int f = 0; f < FRAME_SIZE; ++f)
     {
-      *ibuff++ = (*ptr << VSYNC_SHIFT_INCREASE) + ZEROSOUND;
-      *ibuff++ = (*ptr++ << VSYNC_SHIFT_INCREASE) + ZEROSOUND;
+      val = (*ptr << VSYNC_SHIFT_INCREASE) + ZEROSOUND;
+      *ibuff++ = val;
+      *ibuff++ = val;
+      *ptr++ = 0;
     }
   }
 }

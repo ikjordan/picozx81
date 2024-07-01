@@ -702,10 +702,6 @@ void __not_in_flash_func(execZX81)(void)
             vsync_raise();
           }
         }
-        if (((sound_type == SOUND_TYPE_VSYNC) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync)))
-        {
-          sound_beeper(1);
-        }
       break;
 
       case LASTINSTOUTFF:
@@ -1009,8 +1005,8 @@ void __not_in_flash_func(execZX80)(void)
     if (prevVideoFlipFlop3Q != videoFlipFlop3Q)
     {
       videoFlipFlop3Q ? vsync_lower() : vsync_raise();
-      if ((sound_type == SOUND_TYPE_VSYNC) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
-        sound_beeper(videoFlipFlop3Q);
+      // ZX80 HSYNC sound - excluded if Chroma
+      if (sound_type == SOUND_TYPE_VSYNC) sound_beeper(videoFlipFlop3Q);
     }
 
     if (videoFlipFlop3Q && (sync_len > 0))

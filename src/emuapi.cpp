@@ -92,7 +92,7 @@ unsigned int emu_FileSize(const char *filepath)
 
 bool emu_SaveFile(const char *filepath, void *buf, int size)
 {
-  printf("SaveFile %s\n", filepath);
+  printf("SaveFile %s Length %i\n", filepath, size);
   if (!(f_open(&file, filepath, FA_CREATE_ALWAYS | FA_WRITE)))
   {
     unsigned int retval = 0;

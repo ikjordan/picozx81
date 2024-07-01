@@ -18,7 +18,7 @@
 + The small form factor makes the board easy to mount in period or reproduction cases. The low cost, relatively low performance and software generated display of the Pico is a 21st century analogue for the ZX80 and ZX81
 + Emulates pseudo and Hi-res graphics
 + Emulates ZX81 and ZX80 (with either 4K or 8K ROM) hardware
-+ Emulates ZonX, Quicksilva and TV (vsync) sound
++ Emulates ZonX, Quicksilva and TV (sync) sound
 + Emulates user defined graphics, including CHR$128 and QS User Defined Graphics
 + Emulates the [Chroma 80](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface.htm) and [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm) interfaces to allow a colour display. Also supports the enhanced TV sound provided by Chroma
 + Emulation runs at accurate speed of a 3.25MHz ZX81
@@ -363,12 +363,17 @@ The original ZX81 used tape as a storage media, with no concept of a directory s
 ### Using the ROM routines
 The `LoadUsingROM` and `SaveUsingROM` configuration options allow the ROM code to be executed. This emulates the loading and saving of program files (but not data blocks) in the same time that it would take on a real ZX80/ZX81
 
-The ROM is used for program loading if either the filename is specified on the command line, e.g. `LOAD "FILENAME.P"` or (for the ZX81) an empty filename is supplied e.g. `LOAD ""`. If a file fextension exists (`.p`, `.o` etc) then it must be supplied. Directories can be specified as part of the filename e.g. `LOAD "SUBDIR/FILENAM.P"`
+PicoZX81 generates realistic load and save sounds and graphics for the 8K ROM. The 4K ROM generates sounds and graphics when saving, which PicoZX81 emulates. The 4K ROM does not generate a load screen. PicoZX81 will show a black screen when the 4K ROM is loading a program
+
+The save sounds generated for both the 4K and 8K ROMs have been recorded as wav files and then successfully loaded into the EightyOne emulator
+
+The ROM is used for program loading if either the filename is specified on the command line, e.g. `LOAD "FILENAME.P"` or (for the ZX81) an empty filename is supplied e.g. `LOAD ""`. If a file extension exists (`.p`, `.o` etc) then it must be supplied. Directories can be specified as part of the filename e.g. `LOAD "SUBDIR/FILENAME.P"`
 
 #### Limitations
 The config file is read prior to loading. If the configuration file requires the emulator to be reconfigured so that it requires a reboot (e.g. the computer type or memory size changes) then the ROM will not be used for loading, and the file will be loaded immediately, as if `LoadUsingROM` was set to `OFF`. The ROM is also not used for loading if the file to be loaded is selected by pressing `F2`
 
-PicoZX81 generates realistic load and save sounds and graphics for the 8K ROM. The 4K ROM generates sounds and graphics when saving, which PicoZX81 emulates. The 4K ROM does not generate a load screen. PicoZX81 will show a black screen when the 4K ROM is loading a program
+When loading, picozx81 will read a `.p`, `.o` or `.p81` file and generate values which the ROM reads through IN statements  
+**Note**: A program cannot be loaded directly from a wav file
 
 # Applications Tested
 Testing the emulator has been a great way to experience some classic ZX81 games and demos, including many that stretch the ZX81 and ZX80 well beyond what Sinclair may have originally expected. The following have been successfully tested:
@@ -458,7 +463,7 @@ To enable chroma support set LowRAM on, and Memory to 48kB
 + [ROCK CRUSH 80](http://www.fruitcake.plus.com/Sinclair/ZX80/FlickerFree/ZX80_RockCrush80.htm)
   + This is a ZX80 game, but the `.p81` file will also run on the ZX81. If `SOUND` is set to `CHROMA` notes played at start-up can be heard
 ### TV (VSYNC) Sound
-Set `SOUND` to either `TV` or `CHROMA`. If `TV` is selected a background tone will be generated during normal operation. If `CHROMA` is selected a tone is only generated when vertical sync is lost
+Set `SOUND` to either `TV` or `CHROMA`. If `TV` is selected a background tone will be generated during normal operation. This tone is created by VSYNC (ZX81) or VSYNC and HSYNC (ZX80). If `CHROMA` is selected a tone is only generated when vertical sync is lost
 + [Beatles](https://sinclairzxworld.com/download/file.php?id=1600&sid=0c88b58f81635c384508d040b05ffa70)
 + [Anogaia](https://sinclairzxworld.com/download/file.php?id=11084)
 + [Follin3ch](https://sinclairzxworld.com/download/file.php?id=11084)
@@ -568,7 +573,7 @@ This will be named `picozx81_vga.uf2`
 + Some versions of the PicoMiteVGA board have a jumper to select between RGB and GRN mode. Select RGB mode
 ### PICOZX
 + PICOZX has a bank of 4 extra keys below the SD Card. These act as function keys. `Menu` maps to `F1`, `Reload` to `F2` etc. If shift is pressed 4 is added to the function number. e.g. `shift` + `Menu` gives `F5` (and so displays the keyboard)
-+ The PICOZX + LCD code generates LCD outpur by default. To enable VGA output either hold down the the Fire button at start-up, or enable `VGA` in the config file
++ The PICOZX + LCD code generates LCD output by default. To enable VGA output either hold down the the Fire button at start-up, or enable `VGA` in the config file
 + The PICOZX + LCD shares outputs with VGA. If the board is configured for VGA output, the intensity of the backlight of the LCD will vary with the contents of the VGA display
 + The PICOZX for the ZX-Spectrum case has two extra buttons on the back (in addition to a reset button). Without shift these two buttons will generate `F2` and `F5`. With shift they will generate `F3` and `F6`
 + Use the double shift mechanism to access all menus when using the PICOZX family
