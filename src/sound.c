@@ -216,10 +216,13 @@ void sound_init(bool acb, bool reset)
   ay_tick_incr=(int)(65536.*clock/SAMPLE_FREQ);
 
   // If TV sound reset the ay change count
-  if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CHROMA))
+  if (sound_type != SOUND_TYPE_NONE)
   {
     ay_change_count = 0;
   }
+
+  if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CHROMA))
+    memset(change.vsync, 0x0, FRAME_SIZE * sizeof(int16_t));
 
   if(reset)
   {
