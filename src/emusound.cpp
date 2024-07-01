@@ -432,7 +432,7 @@ static void beginAudio(void)
 #endif // I2S
 #else // SOUND_HDMI
     // Create the timer callback
-    emu_silenceSound();
+    emu_sndSilence();
     getAudioRing(&ring);
     hdmi_buffer = ring->buffer;
     hdmi_buffer_size = ring->size;
