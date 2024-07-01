@@ -337,10 +337,8 @@ void displayStartCommon(void)
     sem_acquire_blocking(&display_initialised);
 }
 
-bool __not_in_flash_func(newFrame)(void)
+void __not_in_flash_func(newFrame)(void)
 {
-    bool ret = false;
-
     mutex_enter_blocking(&next_frame_mutex);
 
     if (!blank)
