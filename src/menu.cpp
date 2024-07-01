@@ -34,12 +34,18 @@ typedef enum
 typedef enum
 {
     PINCF7 = 2,
-    PTOPF7 = 12,
+    PTOPF7 = 10,
     PCOMPUTER = PTOPF7,
     PMSIZE = PCOMPUTER + PINCF7,
     PLOWRAM = PMSIZE + PINCF7,
     PM1NOT = PLOWRAM + PINCF7,
+#ifdef LOAD_AND_SAVE
+    PLOADROM = PM1NOT + PINCF7,
+    PSAVEROM = PLOADROM + PINCF7,
+    PQSUDG = PSAVEROM + PINCF7,
+#else
     PQSUDG = PM1NOT + PINCF7,
+#endif
     PCHR128 = PQSUDG + PINCF7,
     PBOTTOMF7 = PCHR128
 } PositionF7_T;
@@ -61,6 +67,8 @@ typedef struct
     uint16_t    msize;
     bool        lowRAM;
     bool        m1not;
+    bool        loadROM;
+    bool        saveROM;
     bool        qsudg;
     bool        chr128;
 } RestartF7_T;
@@ -429,7 +437,7 @@ bool saveMenu(uint8_t* save, uint length)
 bool statusMenu(void)
 {
     uint8_t key = 0;
-    uint lcount = (disp.height >> 4) - 13;
+    uint lcount = (disp.height >> 4) - 14;
 
     char c[20];
     int lhs = (disp.width >> 4) - 10;
@@ -442,7 +450,26 @@ bool statusMenu(void)
     writeString("======", lhs + 7, lcount++);
 
     writeString("Computer:", lhs, ++lcount);
-    writeString((emu_ComputerRequested() == ZX80) ? "ZX80" : (emu_ComputerRequested() == ZX81X2) ? "ZX81X2" : "ZX81", rhs, lcount++);
+    switch (emu_ComputerRequested())
+    {
+        case ZX80_4K:
+            strcpy(c, "ZX80-4K");
+        break;
+
+        case ZX80_8K:
+            strcpy(c, "ZX80-8K");
+        break;
+
+        case ZX81X2:
+            strcpy(c, "ZX81X2");
+        break;
+
+        default:
+            strcpy(c, "ZX81");
+        break;
+    }
+
+    writeString(c, rhs, lcount++);
     writeString("Memory:", lhs, lcount);
     sprintf(c,"%0d KB\n",emu_MemoryRequested());
     writeString(c, rhs, lcount++);
@@ -475,12 +502,20 @@ bool statusMenu(void)
     writeString("Sound:", lhs, ++lcount);
     switch (emu_SoundRequested())
     {
-        case AY_TYPE_QUICKSILVA:
+        case SOUND_TYPE_QUICKSILVA:
             strcpy(c,"QUICKSILVA");
         break;
 
-        case AY_TYPE_ZONX:
+        case SOUND_TYPE_ZONX:
             strcpy(c,"ZonX");
+        break;
+
+        case SOUND_TYPE_VSYNC:
+            strcpy(c,"TV");
+        break;
+
+        case SOUND_TYPE_CHROMA:
+            strcpy(c,"CHROMA");
         break;
 
         default:
@@ -488,21 +523,30 @@ bool statusMenu(void)
         break;
     }
     writeString(c, rhs, lcount++);
-    if (emu_SoundRequested() != AY_TYPE_NONE)
+    if ((emu_SoundRequested() == SOUND_TYPE_QUICKSILVA) ||
+        (emu_SoundRequested() == SOUND_TYPE_ZONX))
     {
         writeString("ACB Stereo:", lhs, lcount);
         writeString(emu_ACBRequested() ? "ON" : "OFF", rhs, lcount++);
     }
 
+#ifdef LOAD_AND_SAVE
+    writeString("LOAD ROM:",lhs, ++lcount);
+    writeString(emu_loadUsingROMRequested() ? "ON" : "OFF", rhs, lcount++);
+
+    writeString("SAVE ROM:",lhs, lcount);
+    writeString(emu_saveUsingROMRequested() ? "ON" : "OFF", rhs, lcount++);
+#endif
+
     writeString("CHAR$128:", lhs, ++lcount);
-    writeString(emu_CHR128Requested() ? "Yes" : "No", rhs, lcount++);
+    writeString(emu_CHR128Requested() ? "ON" : "OFF", rhs, lcount++);
 
     writeString("QS UDG:", lhs, lcount);
-    writeString(emu_QSUDGRequested() ? "Yes" : "No", rhs, lcount++);
+    writeString(emu_QSUDGRequested() ? "ON" : "OFF", rhs, lcount++);
     if (emu_QSUDGRequested())
     {
         writeString("QS UDG On:", lhs, lcount);
-        writeString(UDGEnabled ? "Yes" : "No", rhs, lcount++);
+        writeString(UDGEnabled ? "YES" : "NO", rhs, lcount++);
     }
 
     writeString("Directory:", lhs, ++lcount);
@@ -512,9 +556,9 @@ bool statusMenu(void)
     writeString("Nine Pin JS:", lhs, lcount);
     writeString(emu_NinePinJoystickRequested() ? "Yes" : "No", rhs, lcount++);
 #endif
-    writeString("Menu Border:", lhs, lcount);
-    sprintf(c,"%0d\n",emu_MenuBorderRequested());
-    writeString(c, rhs, lcount++);
+    //writeString("Menu Border:", lhs, lcount);
+    //sprintf(c,"%0d\n",emu_MenuBorderRequested());
+    //writeString(c, rhs, lcount++);
 
     //writeString("Fn Key Map:", lhs, ++lcount);
     //writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
@@ -657,7 +701,7 @@ bool modifyMenu(void)
 #ifndef PICO_NO_SOUND
                     else if (field == PSOUNDTYPE)
                     {
-                        modify.sound = (modify.sound + 1) % 3;
+                        modify.sound = (modify.sound + 1) % 5;
                     }
                     else if (field == PSTEREOACB)
                     {
@@ -698,7 +742,7 @@ bool modifyMenu(void)
 #ifndef PICO_NO_SOUND
                     else if (field == PSOUNDTYPE)
                     {
-                        modify.sound = (modify.sound + 2) % 3;
+                        modify.sound = (modify.sound + 4) % 5;
                     }
                     else if (field == PSTEREOACB)
                     {
@@ -734,7 +778,7 @@ bool modifyMenu(void)
 
 static const int allowedMem[] {1, 2, 3, 4, 16, 32, 48};
 
-// Entries that can be modified without rebooting the emulator (f6)
+// Entries that trigger the emulated machine to reboot (f7)
 bool restartMenu(void)
 {
     uint8_t key = 0;
@@ -746,6 +790,8 @@ bool restartMenu(void)
     restart.lowRAM = emu_LowRAMRequested();
     restart.m1not = emu_M1NOTRequested();
     restart.computer = emu_ComputerRequested();
+    restart.loadROM = emu_loadUsingROMRequested();
+    restart.saveROM = emu_saveUsingROMRequested();
     restart.qsudg = emu_QSUDGRequested();
     restart.chr128 = emu_CHR128Requested();
 
@@ -806,7 +852,7 @@ bool restartMenu(void)
                     {
                         if (restart.computer == ZX81X2)
                         {
-                            restart.computer = ZX80;
+                            restart.computer = ZX80_4K;
                         }
                         else
                         {
@@ -833,6 +879,16 @@ bool restartMenu(void)
                     {
                         restart.m1not = !restart.m1not;
                     }
+#ifdef LOAD_AND_SAVE
+                    else if (field == PLOADROM)
+                    {
+                        restart.loadROM = !restart.loadROM;
+                    }
+                    else if (field == PSAVEROM)
+                    {
+                        restart.saveROM = !restart.saveROM;
+                    }
+#endif
                     else if (field == PQSUDG)
                     {
                         restart.qsudg = !restart.qsudg;
@@ -847,7 +903,7 @@ bool restartMenu(void)
                 case HID_KEY_ARROW_LEFT:
                     if (field == PCOMPUTER)
                     {
-                        if (restart.computer == ZX80)
+                        if (restart.computer == ZX80_4K)
                         {
                             restart.computer = ZX81X2;
                         }
@@ -876,6 +932,16 @@ bool restartMenu(void)
                     {
                         restart.m1not = !restart.m1not;
                     }
+#ifdef LOAD_AND_SAVE
+                    else if (field == PLOADROM)
+                    {
+                        restart.loadROM = !restart.loadROM;
+                    }
+                    else if (field == PSAVEROM)
+                    {
+                        restart.saveROM = !restart.saveROM;
+                    }
+#endif
                     else if (field == PQSUDG)
                     {
                         restart.qsudg = !restart.qsudg;
@@ -897,11 +963,13 @@ bool restartMenu(void)
 
     if (update)
     {
-        // Validate the something was changed
+        // Validate that something was changed
         if ((restart.computer != emu_ComputerRequested()) ||
             (restart.m1not != emu_M1NOTRequested()) ||
             (restart.msize != emu_MemoryRequested()) ||
             (restart.lowRAM != emu_LowRAMRequested()) ||
+            (restart.loadROM != emu_loadUsingROMRequested()) ||
+            (restart.saveROM != emu_saveUsingROMRequested()) ||
             (restart.qsudg != emu_QSUDGRequested()) ||
             (restart.chr128 != emu_CHR128Requested()))
         {
@@ -909,6 +977,8 @@ bool restartMenu(void)
             emu_SetMemory(restart.msize);
             emu_SetLowRAM(restart.lowRAM);
             emu_SetM1NOT(restart.m1not);
+            emu_SetLoadROM(restart.loadROM);
+            emu_SetSaveROM(restart.saveROM);
             emu_SetQSUDG(restart.qsudg);
             emu_SetCHR128(restart.chr128);
         }
@@ -998,7 +1068,9 @@ void rebootMenu(void)
 /* Build the menu. If clone is true, then copy the current menu, including any possible chroma buffer */
 static bool buildMenu(bool clone)
 {
+#ifdef SUPPORT_CHROMA
     uint8_t* chroma_curr = 0;
+#endif
 
     // Obtain a display buffer
     displayGetFreeBuffer(&menuscreen);
@@ -1009,14 +1081,16 @@ static bool buildMenu(bool clone)
 
     border = emu_MenuBorderRequested();
 
-    zx80font = (emu_ComputerRequested() == ZX80);
+    zx80font = (emu_ComputerRequested() == ZX80_4K);
     setConvert(zx80font);
 
     if (!wasBlank)
     {
         // Get the current displayed buffer
         displayGetCurrentBuffer(&currBuff);
+#ifdef SUPPORT_CHROMA
         displayGetChromaBuffer(&chroma_curr, currBuff);
+#endif
     }
 
     if (clone)
@@ -1035,7 +1109,7 @@ static bool buildMenu(bool clone)
                 d += disp.stride_byte;
                 s += disp.stride_byte;
             }
-
+#ifdef SUPPORT_CHROMA
             // Clone chroma is required
             if (chroma_curr && (chromamode != 0))
             {
@@ -1053,6 +1127,7 @@ static bool buildMenu(bool clone)
                     }
                 }
             }
+#endif
         }
     }
     else
@@ -1110,7 +1185,29 @@ static void showModify(PositionF6_T pos, ModifyF6_T* modify)
 
 #ifndef PICO_NO_SOUND
     writeInvertString("Sound:", lhs, lcount + PositionF6_T::PSOUNDTYPE, pos == PositionF6_T::PSOUNDTYPE);
-    writeString((modify->sound == AY_TYPE_QUICKSILVA) ? "QUICKSILVA" : (modify->sound == AY_TYPE_ZONX) ? "ZonX      " : "None      ", rhs , lcount + PositionF6_T::PSOUNDTYPE);
+    switch (modify->sound)
+    {
+        case SOUND_TYPE_QUICKSILVA:
+            strcpy(c,"QUICKSILVA");
+        break;
+
+        case SOUND_TYPE_ZONX:
+            strcpy(c,"ZonX      ");
+        break;
+
+        case SOUND_TYPE_VSYNC:
+            strcpy(c,"TV        ");
+        break;
+
+        case SOUND_TYPE_CHROMA:
+            strcpy(c,"CHROMA    ");
+        break;
+
+        default:
+            strcpy(c,"NONE      ");
+        break;
+    }
+    writeString(c, rhs , lcount + PositionF6_T::PSOUNDTYPE);
 
     writeInvertString("Stereo:", lhs, lcount + PositionF6_T::PSTEREOACB, pos == PositionF6_T::PSTEREOACB);
     if (emu_ACBPossible())
@@ -1136,7 +1233,26 @@ static void showRestart(PositionF7_T pos, RestartF7_T* restart)
     writeString("      EMULATED MACHINE", lhs - 1, lcount + 6);
 
     writeInvertString("Computer:", lhs, lcount + PositionF7_T::PCOMPUTER, pos == PositionF7_T::PCOMPUTER);
-    writeString((restart->computer == ZX80) ? "ZX80  " : (restart->computer == ZX81X2) ? "ZX81X2" : "ZX81  ", rhs , lcount + PositionF7_T::PCOMPUTER);
+    switch (restart->computer)
+    {
+        case ZX80_4K:
+            strcpy(c, "ZX80-4K");
+        break;
+
+        case ZX80_8K:
+            strcpy(c, "ZX80-8K");
+        break;
+
+        case ZX81X2:
+            strcpy(c, "ZX81X2 ");
+        break;
+
+        default:
+            strcpy(c, "ZX81   ");
+        break;
+    }
+
+    writeString(c, rhs , lcount + PositionF7_T::PCOMPUTER);
 
     writeInvertString("Memory:", lhs, lcount + PositionF7_T::PMSIZE, pos == PositionF7_T::PMSIZE);
     sprintf(c,"%0d KB\n",restart->msize);
@@ -1147,6 +1263,14 @@ static void showRestart(PositionF7_T pos, RestartF7_T* restart)
 
     writeInvertString("MINOT:", lhs, lcount + PositionF7_T::PM1NOT, pos == PositionF7_T::PM1NOT);
     writeString((restart->m1not) ? "On " : "Off", rhs , lcount + PositionF7_T::PM1NOT);
+
+#ifdef LOAD_AND_SAVE
+    writeInvertString("LOAD ROM", lhs, lcount + PositionF7_T::PLOADROM, pos == PositionF7_T::PLOADROM);
+    writeString((restart->loadROM) ? "On " : "Off", rhs , lcount + PositionF7_T::PLOADROM);
+
+    writeInvertString("SAVE ROM", lhs, lcount + PositionF7_T::PSAVEROM, pos == PositionF7_T::PSAVEROM);
+    writeString((restart->saveROM) ? "On " : "Off", rhs , lcount + PositionF7_T::PSAVEROM);
+#endif
 
     writeInvertString("CHAR$128:", lhs, lcount + PositionF7_T::PCHR128, pos == PositionF7_T::PCHR128);
     writeString((restart->chr128) ? "On " : "Off", rhs , lcount + PositionF7_T::PCHR128);

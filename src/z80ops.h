@@ -194,6 +194,9 @@ endinstr;
 instr(17,10);
    e=fetch(pc),pc++;
    d=fetch(pc),pc++;
+#ifdef LOAD_AND_SAVE
+   if ((pc == SAVE_START_8K) && (!rom4k)) loadAndSaveROM();
+#endif
 endinstr;
 
 instr(18,7);
@@ -267,6 +270,9 @@ instr(33,10);
    if(!ixoriy){
       l=fetch(pc),pc++;
       h=fetch(pc),pc++;
+#ifdef LOAD_AND_SAVE
+      if ((pc == LOAD_SAVE_RET_8K) && (!rom4k)) loadAndSaveROM();
+#endif
    }
    else {
       if(ixoriy==1)
@@ -686,7 +692,7 @@ HLinstr(0x75,7,8);
 endinstr;
 
 instr(0x76,4);
-pc--;		/* keep executing nop until int */
+pc--;       /* keep executing nop until int */
 endinstr;
 
 HLinstr(0x77,7,8);
@@ -1031,6 +1037,7 @@ instr(0xca,10);
 endinstr;
 
 instr(0xcb,4);
+   m1cycles++;
 #include "cbops.h"
 endinstr;
 
@@ -1059,6 +1066,9 @@ endinstr;
 
 instr(0xd1,10);
    pop1(d,e);
+#if (defined LOAD_AND_SAVE)
+   if (((pc == LOAD_START_4K) || (pc == SAVE_START_4K)) && rom4k) loadAndSaveROM();
+#endif
 endinstr;
 
 instr(0xd2,10);
@@ -1122,6 +1132,7 @@ instr(0xdc,10);
 endinstr;
 
 instr(0xdd,4);
+   m1cycles++;
    new_ixoriy=1;
    //intsample=0;
 endinstr;
@@ -1141,7 +1152,12 @@ instr(0xe0,5);
 endinstr;
 
 instr(0xe1,10);
-   if(!ixoriy)pop1(h,l);
+   if(!ixoriy)
+   {pop1(h,l);
+#if (defined LOAD_AND_SAVE)
+   if ((pc == LOAD_SAVE_RET_4K) && rom4k) loadAndSaveROM();
+#endif
+   }
    else if(ixoriy==1)pop2(ix);
    else pop2(iy);
 endinstr;
@@ -1215,6 +1231,7 @@ instr(0xec,10);
 endinstr;
 
 instr(0xed,4);
+   m1cycles++;
 #include"edops.h"
 endinstr;
 

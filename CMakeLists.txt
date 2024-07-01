@@ -70,12 +70,13 @@ elseif ((${PICO_BOARD} STREQUAL "vgamaker222cboard") OR (${PICO_BOARD} STREQUAL 
 endif()
 
 set(ZX8X_SOURCES
-    src/Z80.c
+    src/z80.c
     src/zx8x.c
     src/emuapi.cpp
     src/emusound.cpp
     src/emuvideo.cpp
     src/emukeyboard.cpp
+    src/loadp.c
     src/pico81.cpp
     src/hid_usb.c
     src/sound.c
@@ -216,6 +217,9 @@ endif()
 if (${OVER_VOLT})
     target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
 endif()
+
+# always support Chroma
+target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA -DLOAD_AND_SAVE)
 
 target_compile_options(${PROJECT} PRIVATE -Wall)
 

@@ -92,7 +92,7 @@ unsigned int emu_FileSize(const char *filepath)
 
 bool emu_SaveFile(const char *filepath, void *buf, int size)
 {
-  printf("SaveFile %s\n", filepath);
+  printf("SaveFile %s Length %i\n", filepath, size);
   if (!(f_open(&file, filepath, FA_CREATE_ALWAYS | FA_WRITE)))
   {
     unsigned int retval = 0;
@@ -178,7 +178,6 @@ void emu_unlockSDCard(void)
  ********************************/
 #define CONFIG_FILE "config.ini"
 #define REBOOT_FILE "reboot.ini"
-#define VTOL 100        // Default TV Vertical tolerance in scanlines
 
 typedef struct
 {
@@ -212,20 +211,23 @@ typedef struct
   bool lcdBGR;
   bool vga;
   bool ninePinJoystick;
+  bool loadUsingROM;
+  bool saveUsingROM;
 } Configuration_T;
 
 typedef struct
 {
   const char *section;
   Configuration_T *conf;
+  bool root;
 } ConfHandler_T;
 
 static char selection[MAX_FILENAME_LEN] = "";
 static char dirPath[MAX_DIRECTORY_LEN] = "";
 
 static Configuration_T specific;    // The specific settings for the file to be loaded
-static Configuration_T general;     // The settings specified in the default section
-static Configuration_T root_config; // The settings specified in the default section
+static Configuration_T general;     // The settings specified in the default section of directory config file
+static Configuration_T root_config; // The settings specified in the default section of the root config file
 
 static bool resetNeeded = false;
 
@@ -241,7 +243,7 @@ int emu_SoundRequested(void)
 #ifndef PICO_NO_SOUND
   return specific.sound;
 #else
-  return AY_TYPE_NONE;
+  return SOUND_TYPE_NONE;
 #endif
 }
 
@@ -262,7 +264,12 @@ bool emu_ACBPossible(void)
 
 bool emu_ZX80Requested(void)
 {
-  return (specific.computer == ZX80);
+  return ((specific.computer == ZX80_4K) ||((specific.computer == ZX80_8K)));
+}
+
+bool emu_ROM4KRequested(void)
+{
+  return (specific.computer == ZX80_4K);
 }
 
 ComputerType_T emu_ComputerRequested(void)
@@ -286,10 +293,12 @@ bool emu_Centre(void)
   return specific.centre;
 }
 
+#define ZX80_PIXEL_OFFSET 6
+
 int emu_CentreX(void)
 {
   if (specific.centre)
-      return disp.adjust_x;
+      return (disp.adjust_x + (zx80 ? ZX80_PIXEL_OFFSET : 0));
   else
     return 0;
 }
@@ -355,6 +364,16 @@ bool emu_NinePinJoystickRequested(void)
 #else
   return false;
 #endif
+}
+
+bool emu_loadUsingROMRequested(void)
+{
+  return specific.loadUsingROM;
+}
+
+bool emu_saveUsingROMRequested(void)
+{
+  return specific.saveUsingROM;
 }
 
 int emu_MenuBorderRequested(void)
@@ -479,14 +498,14 @@ static bool setDirectory(const char* dir)
   return retVal;
 }
 
-void emu_SetZX80(bool zx80)
+void emu_SetRom4K(bool Rom4k)
 {
-  if (zx80)
+  if (Rom4k)
   {
-    general.computer = ZX80;
-    specific.computer = ZX80;
+    general.computer = ZX80_4K;
+    specific.computer = ZX80_4K;
   }
-  else if (general.computer == ZX80)
+  else if (general.computer == ZX80_4K)
   {
     general.computer = ZX81;
     specific.computer = ZX81;
@@ -535,8 +554,8 @@ void emu_SetSound(int soundType)
   general.sound = soundType;
   specific.sound = soundType;
 #else
-  general.sound = AY_TYPE_NONE;
-  specific.sound = AY_TYPE_NONE;
+  general.sound = SOUND_TYPE_NONE;
+  specific.sound = SOUND_TYPE_NONE;
 #endif
 }
 
@@ -562,6 +581,18 @@ void emu_SetM1NOT(bool m1NOT)
 {
   general.M1NOT = m1NOT;
   specific.M1NOT = m1NOT;
+}
+
+void emu_SetLoadROM(bool loadROM)
+{
+  general.loadUsingROM = loadROM;
+  specific.loadUsingROM = loadROM;
+}
+
+void emu_SetSaveROM(bool saveROM)
+{
+  general.saveUsingROM = saveROM;
+  specific.saveUsingROM = saveROM;
 }
 
 void emu_SetQSUDG(bool qsudg)
@@ -650,18 +681,26 @@ static int handler(void *user, const char *section, const char *name,
     }
     else if (!strcasecmp(name, "SOUND"))
     {
-      // Sound enabled if entry exists and is not "OFF" or 0
-      if ((strcasecmp(value, "OFF") == 0) || (strcasecmp(value, "0") == 0))
+      // Sound enabled to ZonX if entry exists and is not "OFF", "NONE" or 0
+      if ((strcasecmp(value, "OFF") == 0) || (strcasecmp(value, "0") == 0) || (strcasecmp(value, "NONE") == 0))
       {
-        c->conf->sound = AY_TYPE_NONE;
+        c->conf->sound = SOUND_TYPE_NONE;
       }
-      else if ((strcasecmp(value, "QUICKSILVA") == 0))
+      else if ((strcasecmp(value, "QUICKSILVA") == 0) || (strcasecmp(value, "QS") == 0))
       {
-        c->conf->sound = AY_TYPE_QUICKSILVA;
+        c->conf->sound = SOUND_TYPE_QUICKSILVA;
+      }
+      else if ((strcasecmp(value, "TV") == 0) || (strcasecmp(value, "VSYNC") == 0))
+      {
+        c->conf->sound = SOUND_TYPE_VSYNC;
+      }
+      else if (strcasecmp(value, "CHROMA") == 0)
+      {
+        c->conf->sound = SOUND_TYPE_CHROMA;
       }
       else
       {
-        c->conf->sound = AY_TYPE_ZONX;
+        c->conf->sound = SOUND_TYPE_ZONX;
       }
     }
     else if (!strcasecmp(name, "ACB"))
@@ -672,9 +711,13 @@ static int handler(void *user, const char *section, const char *name,
     else if (!strcasecmp(name, "COMPUTER"))
     {
       // ZX81 enabled unless entry exists and is set to "ZX80" or "ZX81x2"
-      if (strcasecmp(value, "ZX80") == 0)
+      if ((strcasecmp(value, "ZX804K") == 0) || (strcasecmp(value, "ZX80-4K") == 0) || (strcasecmp(value, "ZX80") == 0))
       {
-        c->conf->computer = ZX80;
+        c->conf->computer = ZX80_4K;
+      }
+      else if ((strcasecmp(value, "ZX808K") == 0) || (strcasecmp(value, "ZX80-8K") == 0))
+      {
+        c->conf->computer = ZX80_8K;
       }
       else if (strcasecmp(value, "ZX81x2") == 0)
       {
@@ -783,9 +826,9 @@ static int handler(void *user, const char *section, const char *name,
         // Defaults to off
         c->conf->extendFile = isEnabled(value);
     }
-    else if ((!strcasecmp(section, "default")))
+    else if ((!strcasecmp(section, "default")) && c->root)
     {
-      // Following only allowed in default section
+      // Following only allowed in default section of root config
       if (!strcasecmp(name, "Load"))
       {
         strcpy(selection, value);
@@ -839,6 +882,16 @@ static int handler(void *user, const char *section, const char *name,
       {
         // Defaults to off
         c->conf->ninePinJoystick = isEnabled(value);
+      }
+      else if ((!strcasecmp(name, "LoadUsingROM")))
+      {
+        // Defaults to off
+        c->conf->loadUsingROM = isEnabled(value);
+      }
+      else if ((!strcasecmp(name, "SaveUsingROM")))
+      {
+        // Defaults to off
+        c->conf->saveUsingROM = isEnabled(value);
       }
 #ifdef PICO_LCD_CS_PIN
       else if (!strcasecmp(name, "LCDInvertColour"))
@@ -917,7 +970,7 @@ void emu_ReadDefaultValues(void)
     general.left = '5';
     general.right = '8';
     general.button = '0';
-    general.sound = AY_TYPE_NONE;
+    general.sound = SOUND_TYPE_NONE;
     general.acb = false;
     general.computer = ZX81;
     general.M1NOT = false;
@@ -942,6 +995,9 @@ void emu_ReadDefaultValues(void)
     general.lcdBGR = false;
     general.vga = false;
     general.ninePinJoystick = false;
+    general.loadUsingROM = false;
+    general.saveUsingROM = false;
+
 #ifdef PICO_LCDWS28_BOARD
     general.lcdInvertColour = true;
     general.lcdReflect = true;
@@ -957,6 +1013,7 @@ void emu_ReadDefaultValues(void)
 
   hand.conf = &general;
   hand.section = name;
+  hand.root = first;
 
   // Read the config file from the current directory as the file
   char config[MAX_FULLPATH_LEN];
@@ -1005,6 +1062,7 @@ void emu_ReadSpecificValues(const char *filename)
   if (filename)
   {
     hand.conf = &specific;
+    hand.root = false;
 
     // Read the config file from the same directory as the file
     hand.section = &filename[strlen(dirPath)];
@@ -1015,6 +1073,8 @@ void emu_ReadSpecificValues(const char *filename)
     ini_parse_fatfs(config, handler, &hand);
     // determine whether a reset is required
     resetNeeded =  ((specific.M1NOT != used.M1NOT) ||
+                    (specific.loadUsingROM != used.loadUsingROM) ||
+                    (specific.saveUsingROM != used.saveUsingROM) ||
                     (specific.memory != used.memory) ||
                     (specific.computer != used.computer) ||
                     (specific.CHR128 != used.CHR128) ||
@@ -1175,8 +1235,8 @@ void emu_WaitFor50HzTimer(void)
     int32_t sound = sound_count + sound_prev;
     sound_prev = -sound_count;
 
-    printf("Spare ms in 10sec: %lld Under: %d\n", total_time / 1000, underrun);
-    printf("int: %lld sound: %d\n", ints, sound);
+    printf("Spare ms in 10sec: %lld Under: %lu\n", total_time / 1000, underrun);
+    printf("int: %lld sound: %ld\n", ints, sound);
     total_time = 0;
     underrun = 0;
   }

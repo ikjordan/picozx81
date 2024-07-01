@@ -51,20 +51,23 @@ extern uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByt
                               uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
 extern void displayStart(void);
 
-extern bool displayShowKeyboard(bool zx81);
+extern bool displayShowKeyboard(bool ROM8K);
 
 /* Common */
 extern void displayGetFreeBuffer(uint8_t** buff);
 extern void displayBuffer(uint8_t* buff, bool sync, bool free, bool chroma);
 extern void displayGetCurrentBuffer(uint8_t** buff);
-extern void displayGetChromaBuffer(uint8_t** chroma, uint8_t* buff);
-extern void displayResetChroma(void);
 extern void displaySetInterlace(bool on);
 
 extern void displayBlank(bool black);
 extern bool displayIsBlank(bool* isBlack);
 
 extern bool displayHideKeyboard(void);
+
+#ifdef SUPPORT_CHROMA
+extern void displayGetChromaBuffer(uint8_t** chroma, uint8_t* buff);
+extern void displayResetChroma(void);
+#endif
 
 #ifdef PICO_SPI_LCD_SD_SHARE
 extern void displayRequestSPIBus(void);

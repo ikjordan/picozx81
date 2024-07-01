@@ -7,10 +7,10 @@
 extern "C" {
 #endif
 extern void emu_sndInit(bool playSound, bool reset);
-extern void emu_generateSoundSamples(void);
-extern void emu_silenceSound(void);
-extern uint16_t emu_SoundSampleRate(void);
-
+extern void emu_sndGenerateSamples(void);
+extern void emu_sndSilence(void);
+extern uint16_t emu_sndGetSampleRate(void);
+extern void emu_sndQueueChange(bool playSound, int queued_sound_type);
 #ifdef __cplusplus
 }
 #endif
