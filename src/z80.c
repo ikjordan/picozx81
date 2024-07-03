@@ -93,7 +93,6 @@ static const int MAX_JMP = 8;
 
 static int RasterX = 0;
 static int RasterY = 0;
-static int lastRaise = 0;
 static int dest;
 
 static int adjustStartX=0;
@@ -111,6 +110,7 @@ static int rowcounter=0;
 static int hsync_counter=0;
 static bool rowcounter_hold = false;
 
+static void setRemainingDisplayBoundaries(void);
 static void displayAndNewScreen(bool sync);
 static inline void checkhsync(int tolchk);
 static inline void checkvsync(int tolchk);
@@ -203,6 +203,11 @@ void setEmulatedTV(bool fiftyHz, uint16_t vtol)
 void setDisplayBoundaries(void)
 {
   adjustStartX = emu_CentreX();
+  setRemainingDisplayBoundaries();
+}
+
+static void setRemainingDisplayBoundaries(void)
+{
   adjustStartY = emu_CentreY();
   startX = disp.start_x - adjustStartX - 6;
   startY = disp.start_y - adjustStartY;
@@ -214,8 +219,8 @@ void setDisplayBoundaries(void)
 /* Ensure that chroma and pixels are byte aligned */
 void adjustChroma(bool start)
 {
-    adjustStartX = start ? disp.adjust_x : emu_CentreX();
-    setDisplayBoundaries();
+    adjustStartX = start ? disp.adjust_x + (zx80 ? 8 : 0) : emu_CentreX();
+    setRemainingDisplayBoundaries();
 }
 #endif
 
@@ -258,7 +263,6 @@ void resetZ80(void)
   prevVideoFlipFlop3Q = 0;
 
   vsyncFound = false;
-  lastRaise = 0;
   lineClockCarryCounter = 0;
 
   scanline_len = 0;
@@ -451,8 +455,8 @@ static void __not_in_flash_func(vsync_raise)(void)
   // move to next valid pixel
   if (vsx >= disp.width)
   {
-      vsx = 0;
-      vsy++;
+    vsx = 0;
+    vsy++;
   }
   else if (vsx < 0)
   {
@@ -475,8 +479,8 @@ static void __not_in_flash_func(vsync_lower)(void)
   // Move to the next valid pixel
   if (nx >= disp.width)
   {
-      nx = 0;
-      ny++;
+    nx = 0;
+    ny++;
   }
   else if (nx < 0)
   {
@@ -687,10 +691,6 @@ void __not_in_flash_func(execZX81)(void)
           {
             VSYNC_state = 1;
             vsync_raise();
-            if (RasterY < VSYNC_TOLERANCEMIN)
-            {
-                lastRaise = RasterY;
-            }
           }
         }
       break;
@@ -724,18 +724,18 @@ void __not_in_flash_func(execZX81)(void)
       {
         if (NMI_generator)
         {
-        nmi_pending = 1;
-        if (ts==4)
-        {
-          tswait = 14 + (3-states_remaining - (hsync_counter - HSYNC_START));
-        }
-        else
-        {
-          tswait = 14;
-        }
-        states_remaining += tswait;
-        ts += tswait;
-        tstates += tswait;
+          nmi_pending = 1;
+          if (ts==4)
+          {
+            tswait = 14 + (3-states_remaining - (hsync_counter - HSYNC_START));
+          }
+          else
+          {
+            tswait = 14;
+          }
+          states_remaining += tswait;
+          ts += tswait;
+          tstates += tswait;
         }
 
         HSYNC_state = 1;
@@ -1319,7 +1319,7 @@ static void __not_in_flash_func(anyout)(void)
       rowcounter_hold = true;
     }
     vsync_lower();
-    if ((RasterY < VSYNC_TOLERANCEMIN) && (lastRaise != RasterY))
+    if ((sync_len > HSYNC_MAXLEN) && (RasterY < VSYNC_TOLERANCEMIN))
     {
         vsyncFound = false;
     }
