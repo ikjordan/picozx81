@@ -153,9 +153,9 @@ void displayStartLCD(void)
 }
 
 #ifndef PICOZX_LCD
-bool displayShowKeyboard(bool zx81)
+bool displayShowKeyboard(bool ROM8K)
 #else
-bool displayShowKeyboardLCD(bool zx81)
+bool displayShowKeyboardLCD(bool ROM8K)
 #endif
 {
     bool previous = showKeyboard;
@@ -165,12 +165,12 @@ bool displayShowKeyboardLCD(bool zx81)
 #ifdef PICOZX_LCD
         if (useLCD)
         {
-            keyboard = zx81 ? &ZX81KYBD_LCD : &ZX80KYBD_LCD;
+            keyboard = ROM8K ? &ZX81KYBD_LCD : &ZX80KYBD_LCD;
         }
         else
 #endif
         {
-            keyboard = zx81 ? &ZX81KYBD : &ZX80KYBD;
+            keyboard = ROM8K ? &ZX81KYBD : &ZX80KYBD;
         }
         keyboard_x = (PIXEL_WIDTH - keyboard->width)>>1;
         keyboard_y = (HEIGHT - keyboard->height)>>1;
@@ -300,8 +300,11 @@ static void __not_in_flash_func(render_loop)()
             for (uint y = 0; y < HEIGHT; ++y)
             {
                 uint8_t* buff = curr_buff;    // As curr_buff can change at any time
+#ifdef SUPPORT_CHROMA
                 uint8_t* cbuff = cbuffer;
-
+#else
+                uint8_t* cbuff = 0;
+#endif
                 uint8_t* linebuf = &buff[stride * y];
                 uint8_t* clinebuf = cbuff ? &cbuff[stride * y] : 0;
 

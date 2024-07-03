@@ -66,13 +66,13 @@ static void mainLoop(void)
         {
             if (s==HID_KEY_F5)
             {
-                displayShowKeyboard(!emu_ZX80Requested());
+                displayShowKeyboard(!emu_ROM4KRequested());
             }
             else
             {
                 if (s!=HID_KEY_ESCAPE)
                 {
-                    emu_silenceSound();
+                    emu_sndSilence();
                 }
                 displayHideKeyboard();
 

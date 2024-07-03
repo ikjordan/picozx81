@@ -505,37 +505,17 @@ instr(0xbb,12);
    }
 endinstr;
 
-/* save/load patches */
+#ifndef LOAD_AND_SAVE
+/* Action ROM patches */
 
 instr(0xfc,4);
-#ifdef SZ81	/* Added by Thunor */
-  if(!zx80 && hl < 0x8000)
-    {
-    sdl_load_file(hl,LOAD_FILE_METHOD_NAMEDLOAD);
-    }
-  else /* if((!zx80 && hl >= 0x8000) || zx80) */
-    {
-    sdl_load_file(hl,LOAD_FILE_METHOD_SELECTLOAD);
-    }
-#else
-  load_p(hl);
-#endif
+   load_p(hl, false);
 endinstr;
 
 instr(0xfd,4);
-#ifdef SZ81	/* Added by Thunor */
-  if(zx80)
-    {
-    sdl_save_file(hl,SAVE_FILE_METHOD_UNNAMEDSAVE);
-    }
-  else
-    {
-    sdl_save_file(hl,SAVE_FILE_METHOD_NAMEDSAVE);
-    }
-#else
-  save_p(hl);
-#endif
+   save_p(hl, false);
 endinstr;
+#endif
 
 default: tstates+=4;
 

@@ -214,16 +214,16 @@ void displayStartVGA(void)
 }
 
 #ifndef PICOZX_LCD
-bool displayShowKeyboard(bool zx81)
+bool displayShowKeyboard(bool ROM8K)
 #else
-bool displayShowKeyboardVGA(bool zx81)
+bool displayShowKeyboardVGA(bool ROM8K)
 #endif
 {
     bool previous = showKeyboard;
 
     if (!showKeyboard)
     {
-        keyboard = zx81 ? &ZX81KYBD : &ZX80KYBD;
+        keyboard = ROM8K ? &ZX81KYBD : &ZX80KYBD;
         keyboard_x = (video_mode->width - keyboard->width) >> 2;    // Centre (>>1), then 2 pixels per byte (>>1)
         keyboard_y = (HEIGHT - keyboard->height) >> 1;
         showKeyboard = true;
@@ -413,8 +413,11 @@ static void __not_in_flash_func(render_loop)()
         }
 
         uint8_t* current = curr_buff;    // As disp_index can change at any time
+#ifdef SUPPORT_CHROMA
         uint8_t* cbuf = cbuffer;
-
+#else
+        uint8_t* cbuf = 0;
+#endif
         if (showKeyboard && (line_num >= keyboard_y) && (line_num <(keyboard_y + keyboard->height)))
         {
             if (blank)

@@ -131,13 +131,13 @@ void displayStart(void)
     displayStartCommon();
 }
 
-bool displayShowKeyboard(bool zx81)
+bool displayShowKeyboard(bool ROM8K)
 {
     bool previous = showKeyboard;
 
     if (!showKeyboard)
     {
-        keyboard = zx81 ? &ZX81KYBD : &ZX80KYBD;
+        keyboard = ROM8K ? &ZX81KYBD : &ZX80KYBD;
         keyboard_x = (PIXEL_WIDTH - keyboard->width)>>1;
         keyboard_y = (HEIGHT - keyboard->height)>>1;
         keyboard_right = (keyboard_x & 0xffe0) + keyboard->width;
@@ -162,8 +162,9 @@ static void __not_in_flash_func(render_loop)()
         for (uint y = 0; y < HEIGHT; ++y)
         {
             uint8_t* buff = curr_buff;    // As curr_buff can change at any time
+#ifdef SUPPORT_CHROMA
             uint8_t* cbuf = cbuffer;
-
+#endif
             const uint8_t* linebuf = &buff[stride * y];
 
             queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
@@ -196,6 +197,7 @@ static void __not_in_flash_func(render_loop)()
                 }
                 else
                 {
+#ifdef SUPPORT_CHROMA
                     if (cbuf)
                     {
                         const uint8_t* chromabuf = &cbuf[stride * y];
@@ -220,6 +222,7 @@ static void __not_in_flash_func(render_loop)()
                         }
                     }
                     else
+#endif
                     {
                         // 32 pixels of display at 320, 52 pixels at 360
                         tmds_double_1bpp(linebuf, tmdsbuf, keyboard_x<<1);
@@ -227,7 +230,7 @@ static void __not_in_flash_func(render_loop)()
                         // Now do the end, as we need to encode from a 32 bit aligned boundary
 
                         // 32 more pixels of display at 320, 52 more pixels at 360
-                            // Calculate start in pixels - to get to bytes need to shift 3 times
+                        // Calculate start in pixels - to get to bytes need to shift 3 times
                         tmds_double_1bpp(&linebuf[keyboard_right>>3], &tmdsbuf[keyboard_right], keyboard_to_fill<<1);
 
                         // Insert 256 pixel of keyboard
@@ -254,6 +257,7 @@ static void __not_in_flash_func(render_loop)()
                 }
                 else
                 {
+#ifdef SUPPORT_CHROMA
                     if (cbuf)
                     {
                         const uint8_t* chromabuf = &cbuf[stride * y];
@@ -262,6 +266,7 @@ static void __not_in_flash_func(render_loop)()
                             tmds_encode_screen(linebuf, chromabuf, &tmdsbuf[p], CHARACTER_WIDTH, plane);
                     }
                     else
+#endif
                     {
                         tmds_double_1bpp(linebuf, tmdsbuf, video_mode->h_active_pixels);
                         tmds_clone(tmdsbuf, PIXEL_WIDTH);
