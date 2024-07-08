@@ -561,67 +561,60 @@ void __not_in_flash_func(execZX81)(void)
 
       if (((pc & 0x8000) && (!m1not || (pc & 0x4000)) && !(op & 0x40)))
       {
-        if ((i < 0x20) || (i < 0x40 && LowRAM && (!useWRX)))
-        {
-          if (chr128 && i > 0x20 && i & 1)
-            addr = ((i & 0xfe) << 8) | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3)|rowcounter;
-          else
-            addr = ((i & 0xfe) << 8) | ((op & 0x3f) << 3) | rowcounter;
-
-          if (UDGEnabled && (addr >= 0x1E00) && (addr < 0x2000))
-          {
-            v = mem[addr + ((op & 0x80) ? 0x6800 : 0x6600)];
-          }
-          else
-          {
-            v = mem[addr];
-          }
-        }
-        else if (useWRX)
-        {
-          v = mem[(i << 8) | (r & 0x80) | (radjust & 0x7f)];
-        }
-        else
-        {
-          v = 0xff;
-        }
-        v = (op & 0x80) ? ~v : v;
-
-#ifdef SUPPORT_CHROMA
-        if (chromamode)
-        {
-          unsigned char colour = (chromamode & 0x10) ? fetch(pc) : fetch(0xc000 | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter);
-          if ((v || (colour ^ fullcolour) & 0xf0) &&
-              (RasterX >= startX) &&
-              (RasterX < endX) &&
-              (RasterY >= startY) &&
-              (RasterY < endY))
-          {
-            int k = (dest + RasterX) >> 3;
-            scrnbmpc_new[k] = colour;
-            scrnbmp_new[k] = v;
-          }
-        }
-        else
-#endif
-        if (v &&
-            (RasterX >= startX) &&
+        if ((RasterX >= startX) &&
             (RasterX < endX) &&
             (RasterY >= startY) &&
             (RasterY < endY))
         {
-          int k = dest + RasterX;
-          int kh = k >> 3;
-          int kl = k & 7;
-
-          if (kl)
+          if ((i < 0x20) || (i < 0x40 && LowRAM && (!useWRX)))
           {
-            scrnbmp_new[kh++] |= (v >> kl);
-            scrnbmp_new[kh] = (v << (8 - kl));
+            if (chr128 && i > 0x20 && i & 1)
+              addr = ((i & 0xfe) << 8) | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3)|rowcounter;
+            else
+              addr = ((i & 0xfe) << 8) | ((op & 0x3f) << 3) | rowcounter;
+
+            if (UDGEnabled && (addr >= 0x1E00) && (addr < 0x2000))
+            {
+              v = mem[addr + ((op & 0x80) ? 0x6800 : 0x6600)];
+            }
+            else
+            {
+              v = mem[addr];
+            }
+          }
+          else if (useWRX)
+          {
+            v = mem[(i << 8) | (r & 0x80) | (radjust & 0x7f)];
           }
           else
           {
-            scrnbmp_new[kh] = v;
+            v = 0xff;
+          }
+          v = (op & 0x80) ? ~v : v;
+
+  #ifdef SUPPORT_CHROMA
+          if (chromamode)
+          {
+            int k = (dest + RasterX) >> 3;
+            scrnbmpc_new[k] = (chromamode & 0x10) ? fetch(pc) : fetch(0xc000 | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter);
+            scrnbmp_new[k] = v;
+          }
+          else
+  #endif
+          {
+            int k = dest + RasterX;
+            int kh = k >> 3;
+            int kl = k & 7;
+
+            if (kl)
+            {
+              scrnbmp_new[kh++] |= (v >> kl);
+              scrnbmp_new[kh] = (v << (8 - kl));
+            }
+            else
+            {
+              scrnbmp_new[kh] = v;
+            }
           }
         }
         /* The CPU sees a nop - so skip the Z80 emulation loop */
@@ -759,69 +752,63 @@ void __not_in_flash_func(execZX80)(void)
 
     if (((pc & 0x8000) && (!m1not || (pc & 0x4000)) && !(op & 0x40)))
     {
-      if ((i < 0x20) || (i < 0x40 && LowRAM && (!useWRX)))
-      {
-        if (chr128 && i > 0x20 && i & 1)
-          addr = ((i & 0xfe) << 8) | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3)|rowcounter;
-        else
-          addr = ((i & 0xfe) << 8) | ((op & 0x3f) << 3) | rowcounter;
-
-        if (UDGEnabled && (addr >= 0x1E00) && (addr < 0x2000))
-        {
-          v = mem[addr + ((op & 0x80) ? 0x6800 : 0x6600)];
-        }
-        else
-        {
-          v = mem[addr];
-        }
-      }
-      else if (useWRX)
-      {
-        v = mem[(i << 8) | (r & 0x80) | (radjust & 0x7f)];
-      }
-      else
-      {
-        v = 0xff;
-      }
-      v = (op & 0x80) ? ~v : v;
-
-#ifdef SUPPORT_CHROMA
-      if (chromamode)
-      {
-        unsigned char colour = (chromamode & 0x10) ? fetch(pc) : fetch(0xc000 | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter);
-        if ((v || (colour ^ fullcolour) & 0xf0) &&
-            (RasterX >= startX) &&
-            (RasterX < endX) &&
-            (RasterY >= startY) &&
-            (RasterY < endY))
-        {
-          int k = (dest + RasterX) >> 3;
-          scrnbmpc_new[k] = colour;
-          scrnbmp_new[k] = v;
-        }
-      }
-      else
-#endif
-      if (v &&
-          (RasterX >= startX) &&
+      if ((RasterX >= startX) &&
           (RasterX < endX) &&
           (RasterY >= startY) &&
           (RasterY < endY))
       {
-        int k = dest + RasterX;
-        int kh = k >> 3;
-        int kl = k & 7;
-
-        if (kl)
+        if ((i < 0x20) || (i < 0x40 && LowRAM && (!useWRX)))
         {
-          scrnbmp_new[kh++] |= (v >> kl);
-          scrnbmp_new[kh] = (v << (8 - kl));
+          if (chr128 && i > 0x20 && i & 1)
+            addr = ((i & 0xfe) << 8) | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3)|rowcounter;
+          else
+            addr = ((i & 0xfe) << 8) | ((op & 0x3f) << 3) | rowcounter;
+
+          if (UDGEnabled && (addr >= 0x1E00) && (addr < 0x2000))
+          {
+            v = mem[addr + ((op & 0x80) ? 0x6800 : 0x6600)];
+          }
+          else
+          {
+            v = mem[addr];
+          }
+        }
+        else if (useWRX)
+        {
+          v = mem[(i << 8) | (r & 0x80) | (radjust & 0x7f)];
         }
         else
         {
-          scrnbmp_new[kh] = v;
+          v = 0xff;
+        }
+        v = (op & 0x80) ? ~v : v;
+
+  #ifdef SUPPORT_CHROMA
+        if (chromamode)
+        {
+          int k = (dest + RasterX) >> 3;
+          scrnbmpc_new[k] = (chromamode & 0x10) ? fetch(pc) : fetch(0xc000 | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter);;
+          scrnbmp_new[k] = v;
+        }
+        else
+  #endif
+        {
+          int k = dest + RasterX;
+          int kh = k >> 3;
+          int kl = k & 7;
+
+          if (kl)
+          {
+            scrnbmp_new[kh++] |= (v >> kl);
+            scrnbmp_new[kh] = (v << (8 - kl));
+          }
+          else
+          {
+            scrnbmp_new[kh] = v;
+          }
         }
       }
+
       /* The CPU sees a nop - so skip the Z80 emulation loop */
       pc++;
       radjust++;
