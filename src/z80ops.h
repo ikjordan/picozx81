@@ -1077,7 +1077,7 @@ instr(0xd2,10);
 endinstr;
 
 instr(0xd3,11);
-   tstates+=out(a,fetch(pc),a);
+   out(a,fetch(pc),a);
    pc++;
 endinstr;
 

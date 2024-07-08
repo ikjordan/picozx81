@@ -49,6 +49,7 @@ unsigned char partable[256]={
    };
 
 unsigned long tstates=0,tsmax=65000,frames=0;
+static unsigned long ts=0;
 
 static unsigned char* scrnbmp_new = 0;
 #ifdef SUPPORT_CHROMA
@@ -99,6 +100,7 @@ static int adjustStartX=0;
 static int adjustStartY=0;
 static int startX = 0;
 static int startY = 0;
+static int syncX = 0;
 static int endX = 0;
 static int endY = 0;
 
@@ -211,6 +213,7 @@ static void setRemainingDisplayBoundaries(void)
   adjustStartY = emu_CentreY();
   startX = disp.start_x - adjustStartX - 6;
   startY = disp.start_y - adjustStartY;
+  syncX = disp.start_x - adjustStartX;
   endX = disp.end_x - adjustStartX;
   endY = disp.end_y - adjustStartY;
 }
@@ -233,6 +236,7 @@ void resetZ80(void)
   intsample=0;
   m1cycles=0;
   tstates=0;
+  ts=0;
   frames=0;
   vsy=0;
   nrmvideo=0;
@@ -449,7 +453,7 @@ static void __not_in_flash_func(displayAndNewScreen)(bool sync)
 static void __not_in_flash_func(vsync_raise)(void)
 {
   /* save current pos - in screen coords*/
-  vsx = RasterX - (disp.start_x - adjustStartX);
+  vsx = RasterX - syncX + (ts << 1);
   vsy = RasterY - startY;
 
   // move to next valid pixel
@@ -473,7 +477,7 @@ static void __not_in_flash_func(vsync_raise)(void)
 /* for vsync on -> off */
 static void __not_in_flash_func(vsync_lower)(void)
 {
-  int nx = RasterX - (disp.start_x - adjustStartX);
+  int nx = RasterX - syncX + (ts << 1);
   int ny = RasterY - startY;
 
   // Move to the next valid pixel
@@ -532,7 +536,6 @@ static void __not_in_flash_func(vsync_lower)(void)
 
 void __not_in_flash_func(execZX81)(void)
 {
-  unsigned long ts;
   unsigned char v;
   int addr;
 
@@ -736,8 +739,8 @@ void __not_in_flash_func(execZX81)(void)
 
 void __not_in_flash_func(execZX80)(void)
 {
-  unsigned long ts;
   unsigned long tstore;
+  unsigned long ts;     // deliberately hides static ts, so vsync at correct raster
   unsigned char v;
   int addr;
 
@@ -787,7 +790,7 @@ void __not_in_flash_func(execZX80)(void)
         if (chromamode)
         {
           int k = (dest + RasterX) >> 3;
-          scrnbmpc_new[k] = (chromamode & 0x10) ? fetch(pc) : fetch(0xc000 | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter);;
+          scrnbmpc_new[k] = (chromamode & 0x10) ? fetch(pc) : fetch(0xc000 | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter);
           scrnbmp_new[k] = v;
         }
         else

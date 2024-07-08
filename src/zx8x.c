@@ -140,7 +140,7 @@ unsigned int __not_in_flash_func(in)(int h, int l)
   return(255);
 }
 
-unsigned int __not_in_flash_func(out)(int h, int l, int a)
+void __not_in_flash_func(out)(int h, int l, int a)
 {
   if ((sound_type == SOUND_TYPE_VSYNC) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
     sound_beeper(1);
@@ -183,7 +183,7 @@ unsigned int __not_in_flash_func(out)(int h, int l, int a)
 #endif
     }
     LastInstruction=LASTINSTOUTFF;
-    return 0;
+    return;
   }
 #endif
 
@@ -213,7 +213,7 @@ unsigned int __not_in_flash_func(out)(int h, int l, int a)
   if (LastInstruction == LASTINSTNONE)
     LastInstruction=LASTINSTOUTFF;
 
-  return 0; // No additional tstates
+  return;
 }
 
 static char fname[256];

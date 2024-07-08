@@ -77,7 +77,7 @@ extern "C" {
 #endif
 
 extern unsigned int in(int h, int l);
-extern unsigned int out(int h, int l, int a);
+extern void out(int h, int l, int a);
 extern bool save_p(int name_addr, bool defer_rom);
 extern bool load_p(int name_addr, bool defer_rom);
 
