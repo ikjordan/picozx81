@@ -818,23 +818,32 @@ void __not_in_flash_func(execZX80)(void)
 
       ts = 4;
       tstates += 4;
-    }
-    else
-    {
-      ts = z80_op();
-    }
 
-    // Update the flip flop
-    prevVideoFlipFlop3Q = videoFlipFlop3Q;
+      // Update the flip flop
+      prevVideoFlipFlop3Q = videoFlipFlop3Q;
 
-    for (int i = 0; i < m1cycles; i++)
-    {
       if (videoFlipFlop3Clear)
       {
         videoFlipFlop3Q = videoFlipFlop2Q;
       }
-
       videoFlipFlop2Q = !videoFlipFlop1Q;
+    }
+    else
+    {
+      ts = z80_op();
+
+      // Update the flip flop
+      prevVideoFlipFlop3Q = videoFlipFlop3Q;
+
+      for (int i = 0; i < m1cycles; i++)
+      {
+        if (videoFlipFlop3Clear)
+        {
+          videoFlipFlop3Q = videoFlipFlop2Q;
+        }
+
+        videoFlipFlop2Q = !videoFlipFlop1Q;
+      }
     }
 
     if (!videoFlipFlop3Q)
