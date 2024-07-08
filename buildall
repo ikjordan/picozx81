@@ -6,7 +6,7 @@ build_uf2()
   board=$1"board .."
   uf2="picozx81_"$1".uf2"
 
-  cmake -DHDMI_SOUND=OFF -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board}
+  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board}
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }
@@ -16,7 +16,7 @@ build_uf2_hdmi()
   board=$1"board .."
   uf2="picozx81_"$1"_hdmi_sound.uf2"
 
-  cmake -DHDMI_SOUND=ON -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board}
+  cmake -DHDMI_SOUND=ON -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board}
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }
@@ -26,7 +26,7 @@ build_uf2_lcd()
   board=$1"board .."
   uf2="picozx81_"$1"_lcd.uf2"
 
-  cmake -DPICOZX_LCD=ON -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board}
+  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=ON -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board}
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }
