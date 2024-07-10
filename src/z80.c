@@ -571,10 +571,10 @@ void __not_in_flash_func(execZX81)(void)
         {
           if ((i < 0x20) || (i < 0x40 && LowRAM && (!useWRX)))
           {
-            if (chr128 && i > 0x20 && i & 1)
-              addr = ((i & 0xfe) << 8) | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3)|rowcounter;
-            else
+            if (!(chr128 && i > 0x20 && i & 1))
               addr = ((i & 0xfe) << 8) | ((op & 0x3f) << 3) | rowcounter;
+            else
+              addr = ((i & 0xfe) << 8) | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter;
 
             if (UDGEnabled && (addr >= 0x1E00) && (addr < 0x2000))
             {
@@ -762,10 +762,10 @@ void __not_in_flash_func(execZX80)(void)
       {
         if ((i < 0x20) || (i < 0x40 && LowRAM && (!useWRX)))
         {
-          if (chr128 && i > 0x20 && i & 1)
-            addr = ((i & 0xfe) << 8) | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3)|rowcounter;
-          else
+          if (!(chr128 && i > 0x20 && i & 1))
             addr = ((i & 0xfe) << 8) | ((op & 0x3f) << 3) | rowcounter;
+          else
+            addr = ((i & 0xfe) << 8) | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter;
 
           if (UDGEnabled && (addr >= 0x1E00) && (addr < 0x2000))
           {
