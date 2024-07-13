@@ -624,7 +624,7 @@ void __not_in_flash_func(execZX81)(void)
         radjust++;
 
         ts = 4;
-        tstates += 4;
+        tstates += ts;
       }
       else
       {
@@ -814,7 +814,7 @@ void __not_in_flash_func(execZX80)(void)
       radjust++;
 
       ts = 4;
-      tstates += 4;
+      tstates += ts;
 
       // Update the flip flop
       prevVideoFlipFlop3Q = videoFlipFlop3Q;
@@ -832,7 +832,7 @@ void __not_in_flash_func(execZX80)(void)
       // Update the flip flop
       prevVideoFlipFlop3Q = videoFlipFlop3Q;
 
-      for (int i = 0; i < m1cycles; i++)
+      for (int i = 0; i < m1cycles; ++i)
       {
         if (videoFlipFlop3Clear)
         {
@@ -975,13 +975,13 @@ void __not_in_flash_func(execZX80)(void)
         // Frames synchonised after second vsync in range
         if (vsyncFound)
         {
-          frameNotSync = !((RasterY >= VSYNC_TOLERANCEMIN) && (RasterY <= VSYNC_TOLERANCEMAX) &&
-                          (scanlineCounter >= VSYNC_TOLERANCEMIN) && (scanlineCounter <= VSYNC_TOLERANCEMAX));
+          frameNotSync = !((RasterY >= VSYNC_TOLERANCEMIN) && (RasterY < VSYNC_TOLERANCEMAX) &&
+                          (scanlineCounter >= VSYNC_TOLERANCEMIN) && (scanlineCounter < VSYNC_TOLERANCEMAX));
           vsyncFound = !frameNotSync;
         }
         else
         {
-          vsyncFound = (scanlineCounter >= VSYNC_TOLERANCEMIN) && (scanlineCounter <= VSYNC_TOLERANCEMAX);
+          vsyncFound = (scanlineCounter >= VSYNC_TOLERANCEMIN) && (scanlineCounter < VSYNC_TOLERANCEMAX);
         }
         scanlineCounter = 0;
 
@@ -994,15 +994,12 @@ void __not_in_flash_func(execZX80)(void)
       }
       else
       {
-        if (scanlineCounter < VSYNC_TOLERANCEMAX)
+        if (sync_type == SYNCTYPEH)
         {
-          if (sync_type == SYNCTYPEH)
-          {
-            scanlineCounter++;
-          }
+          scanlineCounter++;
         }
 
-        if (((sync_type == SYNCNONE) && videoFlipFlop3Q) || (scanlineCounter == VSYNC_TOLERANCEMAX))
+        if (((sync_type == SYNCNONE) && videoFlipFlop3Q) || (scanlineCounter >= VSYNC_TOLERANCEMAX))
         {
           frameNotSync = true;
           vsyncFound = false;
@@ -1034,26 +1031,26 @@ void __not_in_flash_func(execZX80)(void)
         if (S_RasterY >= VSYNC_TOLERANCEMAX)
         {
           S_RasterX = 0;
-          sync_type=SYNCTYPEV;
+          sync_type = SYNCTYPEV;
           if (sync_len < HSYNC_MINLEN)
           {
-            sync_len=HSYNC_MINLEN;
+            sync_len = HSYNC_MINLEN;
           }
         }
       }
 
-      if (sync_len<HSYNC_MINLEN) sync_type=0;
+      if (sync_len < HSYNC_MINLEN) sync_type=0;
 
       if (sync_type)
       {
         if (S_RasterX > HSYNC_TOLERANCEMAX)
         {
-          S_RasterX=0;
+          S_RasterX = 0;
           S_RasterY++;
         }
 
-        if (S_RasterY>=VSYNC_TOLERANCEMAX ||
-            (sync_len>VSYNC_MINLEN && S_RasterY>VSYNC_TOLERANCEMIN))
+        if (((sync_len > VSYNC_MINLEN) && (S_RasterY > VSYNC_TOLERANCEMIN)) ||
+             (S_RasterY >= VSYNC_TOLERANCEMAX))
         {
           if (nosync_lines >= FRAME_SCAN)
           {
@@ -1070,11 +1067,6 @@ void __not_in_flash_func(execZX80)(void)
         }
       }
 
-      // Update data for new ZX80 scanline
-      RasterX = S_RasterX;
-      RasterY = S_RasterY;
-      dest = disp.offset + (disp.stride_bit * (adjustStartY + RasterY)) + adjustStartX;
-
       if (sync_type != SYNCNONE)
       {
         sync_type = SYNCNONE;
@@ -1085,13 +1077,17 @@ void __not_in_flash_func(execZX80)(void)
       if (lineClockCarryCounter > 0)
       {
         scanline_len = lineClockCarryCounter << 1;
-        RasterX += scanline_len;
         lineClockCarryCounter = 0;
       }
       else
       {
         scanline_len = 0;
       }
+
+      // Update data for new ZX80 scanline
+      RasterX = S_RasterX + scanline_len;
+      RasterY = S_RasterY;
+      dest = disp.offset + (disp.stride_bit * (adjustStartY + RasterY)) + adjustStartX;
     }
   }
   while (tstates<tsmax);
