@@ -154,7 +154,7 @@ Read on for more information. The [Applications Tested](#applications-tested) se
 + If the emulator is started with no SD Card, or with an empty SD Card, then it will emulate a 16K ZX81
 + To switch to always starting emulating a ZX80, a populated SD Card is required. If it is present, the machine that is emulated is specified by the `config.ini` file in the root directory, see [configuring the emulator](#configuring-the-emulator)
 + If the contents of the [examples](examples) directory have been copied to the SD Card, then the included programs can be loaded. Press `F2` to see files in the current directory that can be loaded
-+ To make picozx81 emulate a an original 4K ZX80, without changing `config.ini`, either a ZX80 program can be loaded, or the computer type `ZX80-4K` can be selected from the Modify menu. Press F6 to bring up the Modify menu. To emaulate a ZX80 upgraded with a 8K ROM , select `ZX80-8K` from the modify menu
++ To make picozx81 emulate a an original 4K ZX80, without changing `config.ini`, either a ZX80 program can be loaded, or the computer type `ZX80-4K` can be selected from the Modify menu. Press F6 to bring up the Modify menu. To emulate a ZX80 upgraded with a 8K ROM , select `ZX80-8K` from the modify menu
 + The current settings used by the emulator can be viewed by pressing `F3`
 + The following sections describe how to configure the emulator and provide links to programs that can be downloaded, copied to the SD Card and then run using the emulator
 
@@ -623,7 +623,7 @@ All options are set in the `[default]` section of the `config.ini` file in the r
  e.g. to set `LCDReflect` to true, add the following to the `[default]` section of the configuration file: `LCDReflect = True`
 
  **Notes:**
- 1. If the configuration appears correct for a display, but no image appears, or the image is not stable, it could be that the display cannot support the SPI bus speed required to display every frame, or that cross talk is occuring between the wires connecting the display. In this case set `LCDFrameSkip = True`
+ 1. If the configuration appears correct for a display, but no image appears, or the image is not stable, it could be that the display cannot support the SPI bus speed required to display every frame, or that cross talk is occurring between the wires connecting the display. In this case set `LCDFrameSkip = True`
  2. It is recommended to use the Cytron maker board with the Pico pre-soldered, as this version can support higher bus speeds. If the version with a socket for a Pico is used, then the LCD display may not function correctly unless `LCDFrameSkip` is set to `True`
  3. If `LCDFrameSkip` equals `True`, then if `FrameSync` is set to `Interlaced` it will be interpreted as `On`
 
