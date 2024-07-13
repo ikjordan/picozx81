@@ -26,7 +26,7 @@
 #define LASTINSTOUTFD 3
 #define LASTINSTOUTFF 4
 
-extern unsigned long tstates,tsmax,frames;
+extern unsigned long tstates,tsmax;
 extern int ay_reg;
 extern int LastInstruction;
 extern bool frameNotSync;
@@ -54,12 +54,10 @@ void adjustChroma(bool start);
 
 #define AY_STORE_CHECK(x,y) \
          if(sound_type==SOUND_TYPE_QUICKSILVA) {\
-            switch(x){\
-               case 0x7fff:\
-                  ay_reg=((y)&0x0F); break;\
-               case 0x7ffe:\
-                  sound_ay_write(ay_reg,(y));\
-            }\
+            if(x==0x7fff)\
+               ay_reg=((y)&0x0F);\
+            else if (x==0x7ffe)\
+               sound_ay_write(ay_reg,(y));\
          }\
 
 #define QSUDG_STORE_CHECK(x,y) \
