@@ -48,7 +48,7 @@ unsigned char partable[256]={
       4, 0, 0, 4, 0, 4, 4, 0, 0, 4, 4, 0, 4, 0, 0, 4
    };
 
-unsigned long tstates=0,tsmax=65000,frames=0;
+unsigned long tstates=0,tsmax=65000;
 static unsigned long ts=0;
 
 static unsigned char* scrnbmp_new = 0;
@@ -237,7 +237,6 @@ void resetZ80(void)
   m1cycles=0;
   tstates=0;
   ts=0;
-  frames=0;
   vsy=0;
   nrmvideo=0;
   RasterX = 0;
@@ -536,9 +535,6 @@ static void __not_in_flash_func(vsync_lower)(void)
 
 void __not_in_flash_func(execZX81)(void)
 {
-  unsigned char v;
-  int addr;
-
   do
   {
     if(nmi_pending)
@@ -569,9 +565,12 @@ void __not_in_flash_func(execZX81)(void)
             (RasterY >= startY) &&
             (RasterY < endY))
         {
-          if ((i < 0x20) || (i < 0x40 && LowRAM && (!useWRX)))
+          unsigned char v;
+          int addr;
+
+          if ((i < 0x20) || ((i < 0x40) && LowRAM && (!useWRX)))
           {
-            if (!(chr128 && i > 0x20 && i & 1))
+            if (!(chr128 && (i > 0x20) && (i & 1)))
               addr = ((i & 0xfe) << 8) | ((op & 0x3f) << 3) | rowcounter;
             else
               addr = ((i & 0xfe) << 8) | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter;
@@ -595,7 +594,7 @@ void __not_in_flash_func(execZX81)(void)
           }
           v = (op & 0x80) ? ~v : v;
 
-  #ifdef SUPPORT_CHROMA
+#ifdef SUPPORT_CHROMA
           if (chromamode)
           {
             int k = (dest + RasterX) >> 3;
@@ -603,7 +602,7 @@ void __not_in_flash_func(execZX81)(void)
             scrnbmp_new[k] = v;
           }
           else
-  #endif
+#endif
           {
             int k = dest + RasterX;
             int kh = k >> 3;
@@ -652,13 +651,13 @@ void __not_in_flash_func(execZX81)(void)
                 vsync_raise();
               }
             }
+            LastInstruction = LASTINSTNONE;
           break;
 
           case LASTINSTOUTFF:
             anyout();
           break;
         }
-        LastInstruction = LASTINSTNONE;
       }
     }
 
@@ -734,15 +733,11 @@ void __not_in_flash_func(execZX81)(void)
   while (tstates<tsmax);
 
   tstates-=tsmax;
-  frames++;
 }
 
 void __not_in_flash_func(execZX80)(void)
 {
-  unsigned long tstore;
   unsigned long ts;     // deliberately hides static ts, so vsync at correct raster
-  unsigned char v;
-  int addr;
 
   do
   {
@@ -751,7 +746,6 @@ void __not_in_flash_func(execZX80)(void)
 
     intsample = 1;
     m1cycles = 1;
-    LastInstruction = LASTINSTNONE;
 
     if (((pc & 0x8000) && (!m1not || (pc & 0x4000)) && !(op & 0x40)))
     {
@@ -760,9 +754,12 @@ void __not_in_flash_func(execZX80)(void)
           (RasterY >= startY) &&
           (RasterY < endY))
       {
-        if ((i < 0x20) || (i < 0x40 && LowRAM && (!useWRX)))
+        unsigned char v;
+        int addr;
+
+        if ((i < 0x20) || ((i < 0x40) && LowRAM && (!useWRX)))
         {
-          if (!(chr128 && i > 0x20 && i & 1))
+          if (!(chr128 && (i > 0x20) && (i & 1)))
             addr = ((i & 0xfe) << 8) | ((op & 0x3f) << 3) | rowcounter;
           else
             addr = ((i & 0xfe) << 8) | ((((op & 0x80) >> 1) | (op & 0x3f)) << 3) | rowcounter;
@@ -786,7 +783,7 @@ void __not_in_flash_func(execZX80)(void)
         }
         v = (op & 0x80) ? ~v : v;
 
-  #ifdef SUPPORT_CHROMA
+#ifdef SUPPORT_CHROMA
         if (chromamode)
         {
           int k = (dest + RasterX) >> 3;
@@ -794,7 +791,7 @@ void __not_in_flash_func(execZX80)(void)
           scrnbmp_new[k] = v;
         }
         else
-  #endif
+#endif
         {
           int k = dest + RasterX;
           int kh = k >> 3;
@@ -859,7 +856,7 @@ void __not_in_flash_func(execZX80)(void)
     // execute an interrupt
     if (iff1 && intsample && !((radjust - 1) & 0x40))
     {
-      tstore = z80_interrupt();
+      unsigned long tstore = z80_interrupt();
       tstates += tstore;
       ts += tstore;
 
@@ -898,6 +895,7 @@ void __not_in_flash_func(execZX80)(void)
             videoFlipFlop3Q = 1;
           }
         }
+        LastInstruction = LASTINSTNONE;
       break;
 
       case LASTINSTINFE:      // VSync start
@@ -914,6 +912,7 @@ void __not_in_flash_func(execZX80)(void)
         videoFlipFlop3Clear = 0;
         videoFlipFlop3Q = 0;
         rowcounter = 0;
+        LastInstruction = LASTINSTNONE;
       break;
 
       default:
@@ -937,15 +936,16 @@ void __not_in_flash_func(execZX80)(void)
       if (sync_len <= ZX80HSyncAcceptanceDuration)
       {
         sync_type = SYNCTYPEH;
+        if (scanline_len >= ZX80HSyncAcceptancePixelPosition)
+        {
+          lineClockCarryCounter = ts;
+          scanline_len = scanlinePixelLength;
+        }
       }
       else
       {
-        sync_type = SYNCTYPEV;
-      }
-
-      if (sync_type == SYNCTYPEV)
-      {
         int overhangPixels = scanline_len - scanlinePixelLength;
+        sync_type = SYNCTYPEV;
 
         if (overhangPixels < 0)
         {
@@ -965,19 +965,14 @@ void __not_in_flash_func(execZX80)(void)
           scanline_len = scanlinePixelLength;
         }
       }
-      else if (scanline_len >= ZX80HSyncAcceptancePixelPosition)
-      {
-        lineClockCarryCounter = ts;
-        scanline_len = scanlinePixelLength;
-      }
     }
 
-    // If we are at the end of a zx80 line then process it
+    // If we are at the end of a line then process it
     if (!((scanline_len < scanlineThresholdPixelLength) && (sync_type == SYNCNONE)))
     {
       if (sync_type == SYNCTYPEV)
       {
-        // Frames synchonised after second vsyncs in range
+        // Frames synchonised after second vsync in range
         if (vsyncFound)
         {
           frameNotSync = !((RasterY >= VSYNC_TOLERANCEMIN) && (RasterY <= VSYNC_TOLERANCEMAX) &&
@@ -1102,7 +1097,6 @@ void __not_in_flash_func(execZX80)(void)
   while (tstates<tsmax);
 
   tstates-=tsmax;
-  frames++;
 }
 
 static unsigned long z80_op(void)
@@ -1246,6 +1240,8 @@ static inline void __not_in_flash_func(checksync)(int inc)
 
 static void __not_in_flash_func(anyout)(void)
 {
+  LastInstruction = LASTINSTNONE;
+
   if (VSYNC_state)
   {
     VSYNC_state = 0;
