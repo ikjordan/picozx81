@@ -186,7 +186,7 @@ The following can be configured:
 | FrameSync | Synchronises screen updates to the start of the display frame. Option to synchronise frame pairs for programs that display interlaced images| Off |`On` reduces "tearing" in programs with horizontal scrolling, at the expense of a possible small lag. `Interlaced` reduces flickering in programs that display interlaced images|
 | CHR128 | Enables emulation of a 128 character user defined graphics board (CHR$128) in Low memory. | Off|When enabled LowRAM is forced to On, WRX and QSUDG are forced to off|
 | QSUDG | Enables emulation of the QS user defined graphics board| Off |Memory automatically limited to 16 when selected |
-| Sound | Selects sound card (if any) | Off | Valid options are `QUICKSILVA`, `ZONX`, `TV`, `CHROMA` and `OFF` |
+| Sound | Selects sound card type (if any) | None | Valid options are `QUICKSILVA`, `ZONX`, `TV`, `CHROMA` and `NONE` or `OFF`|
 | ACB | Enables ACB stereo if sound card enabled | Off |  |
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 25 | See notes below|
@@ -237,7 +237,7 @@ Examples of the `config.ini` files used to test the programs listed in this [sec
 ### Editing `config.ini`
 The `config.ini` file *cannot* be edited within the emulator. Modify the `config.ini` file using another computer.
 
-After replacing the SD Card into the emulator, the pico *must* be restarted, either via a Power cycle, or by pressing the run / reset button on the board, before any edits will be visible to the emulator
+After replacing the SD Card into the emulator, the Pico *must* be restarted, either via a Power cycle, or by pressing the run / reset button on the board, before any edits will be visible to the emulator
 ### Need for reset of emulated machine
 The emulated machine is always reset if any of the following options are changed:
 
@@ -254,7 +254,7 @@ The original ZX80/ZX81 40 key keyboard does not have function keys. A "double sh
 2. Shift is released, without another key being pressed
 3. Within one second shift is pressed again
 4. Shift is released, without another key being pressed
-5. To generate a function key, within one second, a numeric key in the range `1` to `5` is pressed without shift being pressed. If `0` is pressed `Escape` is generated
+5. To generate a function key, within one second, a numeric key in the range `1` to `8` is pressed without shift being pressed. If `0` is pressed `Escape` is generated
 
 This mechanism is enabled by default. To disable it set `DoubleShift` to `Off` in the configuration file
 ### F1 - Reset
@@ -363,7 +363,7 @@ The original ZX81 used tape as a storage media, with no concept of a directory s
 ### Using the ROM routines
 The `LoadUsingROM` and `SaveUsingROM` configuration options allow the ROM code to be executed. This emulates the loading and saving of program files (but not data blocks) in the same time that it would take on a real ZX80/ZX81
 
-PicoZX81 generates realistic load and save sounds and graphics for the 8K ROM. The 4K ROM generates sounds and graphics when saving, which PicoZX81 emulates. The 4K ROM does not generate a load screen. PicoZX81 will show a black screen when the 4K ROM is loading a program
+Picozx81 generates realistic load and save sounds and graphics for the 8K ROM. The 4K ROM generates sounds and graphics when saving, which picozx81 emulates. The 4K ROM does not generate a load screen. Picozx81 will show a black screen when the 4K ROM is loading a program
 
 The save sounds generated for both the 4K and 8K ROMs have been recorded as wav files and then successfully loaded into the EightyOne emulator
 
@@ -506,7 +506,7 @@ To enable chroma support set LowRAM on, and Memory to 48kB
   + With default settings, the logo on the final screen "flashes" after the scrolling is complete. This is because the logo is displayed interlaced, at roughly 52Hz. Set `FrameSync` to `Interlaced` to display the final screen correctly without flashes.
   A frame rate adjusted version of the final Rezurrection screen exists in the [Demos](examples/ZX81/Demos) example directory: [head.p](examples/ZX81/Demos/heap.p) and [config.ini](examples/ZX81/Demos/config.ini). When run with `FiveSevenSix` and `FrameSync`  set to `on` or `interlaced` a stable interlaced image can be seen after the scrolling is complete
 + [ZX80 Kong](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface_Software_ColourisationDefinitions.htm) and [ZX80 Pacman](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface_Software_ColourisationDefinitions.htm)
-  + The Chroma80 4K ROM versions use a loader program to set the colour data and then load the main program. As the 4K ROM `LOAD` command does not take an argument, picozx81 will display the contents of the current directory when the loader program is run. Select the main program from the directory list and it will load and run, using the colour data loaded earlier
+  + The Chroma 80 4K ROM versions use a loader program to set the colour data and then load the main program. The loader available in the supplied links uses a custom tape load routine that is not detected by picozx81. To create a compatible loader that uses that standard 4K ROM load routine use the [Chroma Program Enhancement Creator](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ChromaProgramEnhancementCreator.htm). As the 4K ROM `LOAD` command does not take an argument, picozx81 will display the contents of the current directory when the loader program is run. Select the main program from the directory list and it will load and run, using the colour data loaded earlier
 # Building
 **Notes:**
 + Prebuilt executable files for the 7 supported board types can be found [here](uf2/)
@@ -552,7 +552,7 @@ This will be named `picozx81_vga.uf2`
 **Notes:**
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
 
-6. Upload the `uf2` file to the pico
+6. Upload the `uf2` file to the Pico
 7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
 
 # Extra Information
@@ -571,7 +571,7 @@ This will be named `picozx81_vga.uf2`
 + The board can be back powered by some TVs. This can cause the board to not start correctly. If this happens either connect the power before attaching the HDMI cable, or press the reset button on the board
 ### PicoMiteVGA
 + The PicoMiteVGA board has a PS/2 keyboard socket. Currently this is not supported, a USB keyboard must be used
-+ PicomiteVGA only supports 1 level of Red and Blue, so it cannot display the full range of colours that Chroma can generate
++ PicoMiteVGA only supports 1 level of Red and Blue, so it cannot display the full range of colours that Chroma can generate
 + Some versions of the PicoMiteVGA board have a jumper to select between RGB and GRN mode. Select RGB mode
 ### PICOZX
 + PICOZX has a bank of 4 extra keys below the SD Card. These act as function keys. `Menu` maps to `F1`, `Reload` to `F2` etc. If shift is pressed 4 is added to the function number. e.g. `shift` + `Menu` gives `F5` (and so displays the keyboard)
@@ -579,7 +579,7 @@ This will be named `picozx81_vga.uf2`
 + The PICOZX + LCD shares outputs with VGA. If the board is configured for VGA output, the intensity of the backlight of the LCD will vary with the contents of the VGA display
 + The PICOZX for the ZX-Spectrum case has two extra buttons on the back (in addition to a reset button). Without shift these two buttons will generate `F2` and `F5`. With shift they will generate `F3` and `F6`
 + Use the double shift mechanism to access all menus when using the PICOZX family
-+ To enter BOOTSEL mode on the PICOZX for the ZX-Spectrum press and hold the `R` key then press the `F2` menu key. This allows new firmware to be loaded without needing to press the BOOTSEL key on the pico
++ To enter BOOTSEL mode on the PICOZX for the ZX-Spectrum press and hold the `R` key then press the `F2` menu key. This allows new firmware to be loaded without needing to press the BOOTSEL key on the Pico
 ### Waveshare Pico-ResTouch-LCD-2.8
 + The Waveshare Pico-ResTouch-LCD-2.8 board has a touch controller, but the emulator does not support its use
 ### Olimex RP2040-PICO-PC
@@ -677,7 +677,7 @@ One intention of this project was to show what can be quickly achieved by levera
 
 Thanks to [Paul Farrow](http://www.fruitcake.plus.com/) for information on the Chroma expansion boards and the `.p81` file format
 ## Use with an original ZX80/ZX81 keyboard
-There are not enough unused GPIO pins on the Pimoroni demo boards to allow the direct connection of a ZX80/81 keyboard, but it can be done by using another Pico to convert the ZX80/81 keyboard into a USB keyboard. It may seem excessive to use a whole pico as a keyboard controller, but they are cheap and there is enough space to put the Pimoroni board, plus another Pico, plus a small USB hub into a ZX80 or ZX81 case
+There are not enough unused GPIO pins on the Pimoroni demo boards to allow the direct connection of a ZX80/81 keyboard, but it can be done by using another Pico to convert the ZX80/81 keyboard into a USB keyboard. It may seem excessive to use a whole Pico as a keyboard controller, but they are cheap and there is enough space to put the Pimoroni board, plus another Pico, plus a small USB hub into a ZX80 or ZX81 case
 
 Code to convert a ZX8x keyboard to USB can be found at [ZX81_USB_KBD](https://github.com/ikjordan/ZX81_USB_KBD). This code has been used to successfully connect a ZX81 keyboard to this emulator. If the keyboard is the only peripheral, then it can be plugged straight into the USB port of the Pico on the emulator board with the power connected to the USB power socket of the Pimoroni board. If other USB peripherals (such as another keyboard, or a USB joystick) also need to be connected then the ZX80/81 keyboard can be connected via a USB hub
 
@@ -688,9 +688,9 @@ The picozx board does support keyboard and joystick. This is achieved by using e
 ## Performance and constraints
 In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
-The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 83% of the available CPU clock cycles with sound disabled and 87% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation
+The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 78% of the available CPU clock cycles with sound disabled and 82% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation
 
-ZX80 hardware emulation takes more CPU. Emulating an idle ZX80 takes approximately 95% of a 252 MHz pico. Due to the nature of the ZX80 hardware display emulation, the CPU load drops, both in B&W and Chroma, when a ZX80 program is running
+ZX80 hardware emulation takes more CPU. Emulating an idle ZX80 with Zonx sound enabled takes approximately 91% of a 252 MHz Pico. Due to the nature of the ZX80 hardware display emulation, the CPU load drops, both in B&W and Chroma, when a ZX80 program is running
 
 The 640x480 display mode uses an overclock to 252MHz. The 720x576 display mode uses an overclock to 270MHz
 

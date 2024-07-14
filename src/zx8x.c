@@ -209,11 +209,11 @@ void __not_in_flash_func(out)(int h, int l, int a)
     case 0xfe:
       LastInstruction = LASTINSTOUTFE;
     break;
-  }
-  if (LastInstruction == LASTINSTNONE)
-    LastInstruction=LASTINSTOUTFF;
 
-  return;
+    default:
+      LastInstruction = LASTINSTOUTFF;
+    break;
+  }
 }
 
 static char fname[256];
