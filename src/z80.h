@@ -26,7 +26,6 @@
 #define LASTINSTOUTFD 3
 #define LASTINSTOUTFF 4
 
-extern unsigned long tstates,tsmax;
 extern int ay_reg;
 extern int LastInstruction;
 extern bool frameNotSync;

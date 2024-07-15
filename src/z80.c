@@ -48,7 +48,8 @@ unsigned char partable[256]={
       4, 0, 0, 4, 0, 4, 4, 0, 0, 4, 4, 0, 4, 0, 0, 4
    };
 
-unsigned long tstates=0,tsmax=65000;
+unsigned long tstates=0;
+const unsigned long tsmax=65000;
 static unsigned long ts=0;
 
 static unsigned char* scrnbmp_new = 0;
