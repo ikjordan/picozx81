@@ -36,7 +36,7 @@ int signal_int_flag=0;
 int ramsize=16;
 
 /* the keyboard state and other */
-static uint8_t keyboard[ 8 ] = {0xff,0xff,0xff,0xff, 0xff,0xff,0xff,0xff};
+static uint8_t keyboard[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 int zx80=0;
 int rom4k=0;
 int autoload=1;
@@ -70,8 +70,6 @@ static char tapename[64]={0};
 
 unsigned int __not_in_flash_func(in)(int h, int l)
 {
-  int data=0x80;
-
   if ((h == 0x7f) && (l == 0xef))
   {
 #ifdef SUPPORT_CHROMA
@@ -80,24 +78,26 @@ unsigned int __not_in_flash_func(in)(int h, int l)
 #ifdef DEBUG_CHROMA
       printf("Insufficient RAM Size for Chroma!\n");
 #endif
-      return 0xFF;
+      return 0xff;
     }
     else if (!emu_chromaSupported())
     {
 #ifdef DEBUG_CHROMA
       printf("Display does not support Chroma \n");
 #endif
-      return 0xFF;
+      return 0xff;
     }
     return 0x02; /* chroma 80 and 81 available*/
 #else
-    return 0xFF;
+    return 0xff;
 #endif
   }
 
   if (!(l&1))
   {
+    int data=0x80;
     LastInstruction=LASTINSTINFE;
+
     if (((sound_type == SOUND_TYPE_VSYNC) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync)))
     {
         sound_beeper(0);
@@ -113,14 +113,14 @@ unsigned int __not_in_flash_func(in)(int h, int l)
 
     switch(h)
     {
-      case 0xfe:        return(keyboard[0]^data);
-      case 0xfd:        return(keyboard[1]^data);
-      case 0xfb:        return(keyboard[2]^data);
-      case 0xf7:        return(keyboard[3]^data);
-      case 0xef:        return(keyboard[4]^data);
-      case 0xdf:        return(keyboard[5]^data);
-      case 0xbf:        return(keyboard[6]^data);
-      case 0x7f:        return(keyboard[7]^data);
+      case 0xfe:  return(keyboard[0] ^ data);
+      case 0xfd:  return(keyboard[1] ^ data);
+      case 0xfb:  return(keyboard[2] ^ data);
+      case 0xf7:  return(keyboard[3] ^ data);
+      case 0xef:  return(keyboard[4] ^ data);
+      case 0xdf:  return(keyboard[5] ^ data);
+      case 0xbf:  return(keyboard[6] ^ data);
+      case 0x7f:  return(keyboard[7] ^ data);
 
       default:
       {
@@ -130,14 +130,15 @@ unsigned int __not_in_flash_func(in)(int h, int l)
           * support this is AND together any for which the corresponding
           * bit is zero.
           */
-        for(i=0,mask=1;i<8;i++,mask<<=1)
-          if(!(h&mask))
-            retval&=keyboard[i];
-        return(retval^data);
+        for(i = 0, mask = 1; i < 8; i++, mask <<= 1)
+        {
+          if(!(h & mask)) retval &= keyboard[i];
+        }
+        return(retval ^ data);
       }
     }
   }
-  return(255);
+  return 0xff;
 }
 
 void __not_in_flash_func(out)(int h, int l, int a)
