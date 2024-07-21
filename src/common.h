@@ -48,7 +48,8 @@ extern unsigned char mem[MEMORYRAM_SIZE];
 extern unsigned char *memptr[64];
 extern int memattr[64];
 extern int sound_type;
-extern unsigned long tstates,tsmax;
+extern unsigned long tstates;
+extern const unsigned long tsmax;
 extern int ramsize;
 extern int autoload;
 extern int zx80;
@@ -77,7 +78,7 @@ extern "C" {
 #endif
 
 extern unsigned int in(int h, int l);
-extern unsigned int out(int h, int l, int a);
+extern void out(int h, int l, int a);
 extern bool save_p(int name_addr, bool defer_rom);
 extern bool load_p(int name_addr, bool defer_rom);
 

@@ -1235,8 +1235,8 @@ void emu_WaitFor50HzTimer(void)
     int32_t sound = sound_count + sound_prev;
     sound_prev = -sound_count;
 
-    printf("Spare ms in 10sec: %lld Under: %lu\n", total_time / 1000, underrun);
-    printf("int: %lld sound: %ld\n", ints, sound);
+    printf("ms spare: %lld U: %lu\n", total_time / 1000, underrun);
+    printf("I: %lld S: %ld\n", ints, sound);
     total_time = 0;
     underrun = 0;
   }
