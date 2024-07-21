@@ -29,7 +29,7 @@
 
 #define parity(a) (partable[a])
 
-unsigned char partable[256]={
+unsigned char partable[256] = {
       4, 0, 0, 4, 0, 4, 4, 0, 0, 4, 4, 0, 4, 0, 0, 4,
       0, 4, 4, 0, 4, 0, 0, 4, 4, 0, 0, 4, 0, 4, 4, 0,
       0, 4, 4, 0, 4, 0, 0, 4, 4, 0, 0, 4, 0, 4, 4, 0,
@@ -48,19 +48,19 @@ unsigned char partable[256]={
       4, 0, 0, 4, 0, 4, 4, 0, 0, 4, 4, 0, 4, 0, 0, 4
    };
 
-unsigned long tstates=0;
-const unsigned long tsmax=65000;
-static unsigned long ts=0;
+unsigned long tstates = 0;
+const unsigned long tsmax = 65000;
+static unsigned long ts = 0;
 
 static unsigned char* scrnbmp_new = 0;
 #ifdef SUPPORT_CHROMA
 static unsigned char* scrnbmpc_new = 0;
 #endif
 
-static int vsx=0;
-static int vsy=0;
-static int nrmvideo=1;
-int ay_reg=0;
+static int vsx = 0;
+static int vsy = 0;
+static int nrmvideo = 1;
+int ay_reg = 0;
 int LastInstruction;
 bool frameNotSync = true;
 
@@ -97,8 +97,8 @@ static int RasterX = 0;
 static int RasterY = 0;
 static int dest;
 
-static int adjustStartX=0;
-static int adjustStartY=0;
+static int adjustStartX = 0;
+static int adjustStartY = 0;
 static int startX = 0;
 static int startY = 0;
 static int syncX = 0;
@@ -109,8 +109,8 @@ static int nmi_pending, hsync_pending;
 static int NMI_generator;
 static int VSYNC_state, HSYNC_state, SYNC_signal;
 static int psync, sync_len;
-static int rowcounter=0;
-static int hsync_counter=0;
+static int rowcounter = 0;
+static int hsync_counter = 0;
 static bool rowcounter_hold = false;
 
 static void setRemainingDisplayBoundaries(void);
@@ -146,7 +146,7 @@ unsigned short pc;
 unsigned short ix, iy, sp;
 unsigned char radjust;
 unsigned char ixoriy, new_ixoriy;
-unsigned char intsample=0;
+unsigned char intsample = 0;
 unsigned char op;
 unsigned short m1cycles;
 
@@ -230,16 +230,17 @@ void adjustChroma(bool start)
 
 void resetZ80(void)
 {
-  a=f=b=c=d=e=h=l=a1=f1=b1=c1=d1=e1=h1=l1=i=iff1=iff2=im=r=0;
-  ixoriy=new_ixoriy=0;
-  ix=iy=sp=pc=0;
-  tstates=radjust=0;
-  intsample=0;
-  m1cycles=0;
-  tstates=0;
-  ts=0;
-  vsy=0;
-  nrmvideo=0;
+  a = f = b = c = d = e = h = l = 0;
+  a1 = f1 = b1 = c1 = d1 = e1 = h1 = l1 = i = iff1 = iff2 = im = r = 0;
+  ixoriy = new_ixoriy = 0;
+  ix= iy = sp = pc = 0;
+  tstates = radjust = 0;
+  intsample = 0;
+  m1cycles = 0;
+  tstates = 0;
+  ts = 0;
+  vsx = vsy = 0;
+  nrmvideo = 0;
   RasterX = 0;
   RasterY = 0;
   psync = 1;
@@ -249,9 +250,9 @@ void resetZ80(void)
   LastInstruction = LASTINSTNONE;
 
   /* ULA */
-  NMI_generator=0;
-  hsync_pending=0;
-  VSYNC_state=HSYNC_state=0;
+  NMI_generator = 0;
+  hsync_pending = 0;
+  VSYNC_state = HSYNC_state = 0;
 
   setDisplayBoundaries();
   dest = disp.offset + (adjustStartY * disp.stride_bit) + adjustStartX;
@@ -279,8 +280,8 @@ void resetZ80(void)
   /* Ensure chroma is turned off */
   chromamode = 0;
 #ifdef SUPPORT_CHROMA
-  bordercolour=0x0f;
-  bordercolournew=0x0f;
+  bordercolour = 0x0f;
+  bordercolournew = 0x0f;
   displayResetChroma();
 #endif
 
@@ -302,7 +303,8 @@ void resetZ80(void)
   if(autoload)
   {
     // Have already read the new specific parameters
-    if (rom4k) {
+    if (rom4k)
+    {
       /* Registers (common values) */
       a = 0x00; f = 0x44; b = 0x00; c = 0x00;
       d = 0x07; e = 0xae; h = 0x40; l = 0x2a;
@@ -312,22 +314,17 @@ void resetZ80(void)
       d1 = 0xd8; e1 = 0xf0; h1 = 0xd8; l1 = 0xf0;
       iff1 = 0x00; iff2 = 0x00; im = 0x02;
       radjust = 0x6a;
+
       /* Machine Stack (common values) */
-      if (ramsize >= 16) {
-        sp = 0x8000 - 4;
-      } else {
-        sp = 0x4000 - 4 + ramsize * 1024;
-      }
+      sp =  (ramsize >= 16) ? (0x8000 - 4) : (0x4000 - 4 + ramsize * 1024);
+
       mem[sp + 0] = 0x47;
       mem[sp + 1] = 0x04;
-      mem[sp + 2] = 0xba;
+      mem[sp + 2] = (ramsize >= 16) ? 0x22 : 0xba;
       mem[sp + 3] = 0x3f;
-      /* Now override if RAM configuration changes things
-       * (there's a possibility these changes are unimportant) */
-      if (ramsize == 16) {
-        mem[sp + 2] = 0x22;
-      }
-    } else {
+    }
+    else
+    {
       /* Registers (common values) */
       a = 0x0b; f = 0x00; b = 0x00; c = 0x02;
       d = 0x40; e = 0x9b; h = 0x40; l = 0x99;
@@ -337,23 +334,24 @@ void resetZ80(void)
       d1 = 0x00; e1 = 0x2b; h1 = 0x00; l1 = 0x00;
       iff1 = 0; iff2 = 0; im = 2;
       radjust = 0xa4;
+
       /* GOSUB Stack (common values) */
-      if (ramsize >= 16) {
-        sp = 0x8000 - 4;
-      } else {
-        sp = 0x4000 - 4 + ramsize * 1024;
-      }
+      sp = (ramsize >= 16) ? (0x8000 - 4) : (0x4000 - 4 + ramsize * 1024);
+
       mem[sp + 0] = 0x76;
       mem[sp + 1] = 0x06;
       mem[sp + 2] = 0x00;
       mem[sp + 3] = 0x3e;
-      /* Now override if RAM configuration changes things,
-         without these changes Multi-scroll sometimes fail to start */
-      if (ramsize >= 4) {
+
+      /* Update values for larger RAM sizes,
+         without these changes Multi-scroll sometimes fails to start */
+      if (ramsize >= 4)
+      {
         d = 0x43; h = 0x43;
         a1 = 0xec; b1 = 0x81; c1 = 0x02;
         radjust = 0xa9;
       }
+
       /* System variables */
       mem[0x4000] = 0xff;               /* ERR_NR */
       mem[0x4001] = 0x80;;              /* FLAGS */
@@ -366,8 +364,8 @@ void resetZ80(void)
       mem[0x4008] = 0xff;               /* PPC hi */
     }
 
-    /* finally, load. It'll reset (via reset81) if it fails. */
-    load_p(32768, false);
+    /* finally, load. Reset (via resetZ80) occurs if load fails. */
+    load_p(0x8000, false);
   }
 }
 
@@ -504,9 +502,9 @@ static void __not_in_flash_func(vsync_lower)(void)
   if((ny < vsy) || ((ny == vsy) && (nx < vsx)))
   {
     // wrapping around frame, so display bottom
-    uint8_t* start = scrnbmp_new+vsy*disp.stride_byte+(vsx>>3)-1;
+    uint8_t* start = scrnbmp_new + vsy * disp.stride_byte + (vsx >> 3) - 1;
     *start++ = (0xff >> (vsx & 0x7));
-    memset(start, 0xff, disp.stride_byte*(disp.height-vsy)-(vsx>>3)-1);
+    memset(start, 0xff, disp.stride_byte * (disp.height - vsy) - (vsx >> 3) - 1);
 
     // check for case where wrap ends at bottom
     if ((nx == 0) && (ny == 0)) return;
@@ -516,8 +514,8 @@ static void __not_in_flash_func(vsync_lower)(void)
     vsy = 0;
   }
 
-  uint8_t* start = scrnbmp_new+vsy*disp.stride_byte+(vsx>>3)-1;
-  uint8_t* end = scrnbmp_new+ny*disp.stride_byte+(nx>>3);
+  uint8_t* start = scrnbmp_new + vsy * disp.stride_byte + (vsx >> 3) - 1;
+  uint8_t* end = scrnbmp_new + ny * disp.stride_byte + (nx >> 3);
   *start++ = (0xff >> (vsx & 0x7));
 
   // end bits?
@@ -530,7 +528,7 @@ static void __not_in_flash_func(vsync_lower)(void)
   // especially when displaying the loading screen
   if (end > start)
   {
-    memset(start, 0xff, end-start);
+    memset(start, 0xff, end - start);
   }
 }
 
@@ -673,8 +671,8 @@ void __not_in_flash_func(execZX81)(void)
       tstate_inc = states_remaining > MAX_JMP ? MAX_JMP: states_remaining;
       states_remaining -= tstate_inc;
 
-      hsync_counter+=tstate_inc;
-      RasterX += (tstate_inc<<1);
+      hsync_counter += tstate_inc;
+      RasterX += (tstate_inc << 1);
 
       if (hsync_counter >= HLEN)
       {
@@ -688,7 +686,7 @@ void __not_in_flash_func(execZX81)(void)
         if (NMI_generator)
         {
           nmi_pending = 1;
-          if (ts==4)
+          if (ts == 4)
           {
             tswait = 14 + (3 - states_remaining - (hsync_counter - HSYNC_START));
           }
@@ -731,9 +729,9 @@ void __not_in_flash_func(execZX81)(void)
     }
     while (states_remaining);
   }
-  while (tstates<tsmax);
+  while (tstates < tsmax);
 
-  tstates-=tsmax;
+  tstates -= tsmax;
 }
 
 void __not_in_flash_func(execZX80)(void)
@@ -1040,7 +1038,7 @@ void __not_in_flash_func(execZX80)(void)
         }
       }
 
-      if (sync_len < HSYNC_MINLEN) sync_type=0;
+      if (sync_len < HSYNC_MINLEN) sync_type = 0;
 
       if (sync_type)
       {
@@ -1091,9 +1089,9 @@ void __not_in_flash_func(execZX80)(void)
       dest = disp.offset + (disp.stride_bit * (adjustStartY + RasterY)) + adjustStartX;
     }
   }
-  while (tstates<tsmax);
+  while (tstates < tsmax);
 
-  tstates-=tsmax;
+  tstates -= tsmax;
 }
 
 static unsigned long z80_op(void)
@@ -1126,11 +1124,11 @@ static unsigned long z80_op(void)
 static inline int __not_in_flash_func(z80_interrupt)(void)
 {
   // NOTE: For optimisation, need to ensure iff1 set before calling this
-  if(fetchm(pc)==0x76)
+  if(fetchm(pc)  == 0x76)
   {
     pc++;
   }
-  iff1=iff2=0;
+  iff1 = iff2 = 0;
   push2(pc);
   radjust++;
 
@@ -1138,12 +1136,12 @@ static inline int __not_in_flash_func(z80_interrupt)(void)
   {
     case 0: /* IM 0 */
     case 2: /* IM 1 */
-      pc=0x38;
+      pc = 0x38;
       return 13;
     break;
 
     case 3: /* IM 2 */
-      pc = fetch2((i<<8)|0xff);
+      pc = fetch2((i << 8) | 0xff);
       return 19;
     break;
 
@@ -1155,15 +1153,15 @@ static inline int __not_in_flash_func(z80_interrupt)(void)
 
 static inline int __not_in_flash_func(nmi_interrupt)(void)
 {
-  iff1=0;
-  if(fetchm(pc)==0x76)
+  iff1 = 0;
+  if(fetchm(pc) == 0x76)
   {
     pc++;
   }
   push2(pc);
   radjust++;
   //m1cycles++;       Not needed for ZX81
-  pc=0x66;
+  pc = 0x66;
 
   return 11;
 }
@@ -1171,8 +1169,8 @@ static inline int __not_in_flash_func(nmi_interrupt)(void)
 /* Normally, these sync checks are done by the TV :-) */
 static inline void __not_in_flash_func(checkhsync)(int tolchk)
 {
-  if ( ( !tolchk && sync_len >= HSYNC_MINLEN && sync_len <= (HSYNC_MAXLEN + MAX_JMP) && RasterX>=HSYNC_TOLERANCEMIN )  ||
-       (  tolchk &&                                                                     RasterX>=HSYNC_TOLERANCEMAX ) )
+  if ( ( !tolchk && sync_len >= HSYNC_MINLEN && sync_len <= (HSYNC_MAXLEN + MAX_JMP) && RasterX >= HSYNC_TOLERANCEMIN )  ||
+       (  tolchk &&                                                                     RasterX >= HSYNC_TOLERANCEMAX ) )
   {
     RasterX = ((hsync_counter - HSYNC_END) < MAX_JMP) ? ((hsync_counter - HSYNC_END) << 1) : 0;
     RasterY++;
@@ -1182,8 +1180,8 @@ static inline void __not_in_flash_func(checkhsync)(int tolchk)
 
 static inline void __not_in_flash_func(checkvsync)(int tolchk)
 {
-  if ( ( !tolchk && sync_len >= VSYNC_MINLEN && RasterY>=VSYNC_TOLERANCEMIN ) ||
-       (  tolchk &&                             RasterY>=VSYNC_TOLERANCEMAX ) )
+  if ( ( !tolchk && sync_len >= VSYNC_MINLEN && RasterY >= VSYNC_TOLERANCEMIN ) ||
+       (  tolchk &&                             RasterY >= VSYNC_TOLERANCEMAX ) )
   {
     if (sync_len>(int)tsmax)
     {

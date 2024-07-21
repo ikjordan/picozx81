@@ -44,7 +44,7 @@ static BitState_t bit_state = ZERO_BIT;
 
 static PulseState_t pulse_state = SILENCE_PULSE;
 static uint32_t pulse_length_max = LOADP_SILENCE_INTRO_LENGTH;
-static uint pulse_count = 0;
+static uint32_t pulse_count = 0;
 static char byte_to_send = 0;
 
 static void moveToNextByte(void);
@@ -250,7 +250,7 @@ EMU_LOCK_SDCARD
     {
         ret = getNextByte(&read_buffer);
     } while (ret && ((read_buffer & 0x80) == 0));
-    
+
 EMU_UNLOCK_SDCARD
     return ret;
 }
