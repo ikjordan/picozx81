@@ -147,7 +147,7 @@ void __not_in_flash_func(out)(int h, int l, int a)
     sound_beeper(1);
 
 #ifdef SUPPORT_CHROMA
-  if ((h==0x7f) && (l==0xef))
+  if ((h == 0x7f) && (l == 0xef))
   { /* chroma */
     if (emu_chromaSupported())
     {
@@ -183,7 +183,7 @@ void __not_in_flash_func(out)(int h, int l, int a)
       printf("Chroma requested, but not supported.\n");
 #endif
     }
-    LastInstruction=LASTINSTOUTFF;
+    LastInstruction = LASTINSTOUTFF;
     return;
   }
 #endif
