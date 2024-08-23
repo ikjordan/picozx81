@@ -65,7 +65,7 @@ The right image shows the emulator running [MaxDemo](https://bodo4all.fortunecit
 </p>
 
 ### HDMI/DVI Output
-To the left [ZX81 Hires Invaders](https://www.perfectlynormalsite.com/hiresinvaders.html) can be seen on a TV connected over HDMI. Sound can also be played over HDMI
+To the left [SplinterGU SInvaders](https://splintergu.itch.io/space-invaders-for-zx81-wrx) can be seen on a TV connected over HDMI. Sound can also be played over HDMI
 
 To the right can be seen a status page, illustrating some of the configurable options for the emulator
 
@@ -512,7 +512,7 @@ To enable chroma support set LowRAM on, and Memory to 48kB
 + Prebuilt executable files for the 7 supported board types can be found [here](uf2/)
 + If a **zip** of the source files is downloaded from GitHub, it will be **incomplete**, as the zip will not contain the submodules. Zip files of the submodules would have to be downloaded separately from GitHub. It is easier to clone recursive the repository, as described in the following section
 ### To build:
-1. Install the Raspberry Pi Pico toolchain and SDK
+1. Install the Raspberry Pi Pico toolchain and SDK. SDK 2.x must be used
 
     Instructions to do this for several operating systems can be found by downloading [this pdf](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf). Chapter 2 covers installation on the Raspberry Pi, chapter 9 describes the process for other operating systems
 2. The vga display uses the `pico_scanvideo` library, which is part of the `pico-extras` repository. Clone this repository, including submodules

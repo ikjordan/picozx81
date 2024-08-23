@@ -1,6 +1,7 @@
 #include "pico.h"
 #include "pico/stdlib.h"
 #include "hardware/vreg.h"
+#include "hardware/clocks.h"
 #include "tusb.h"
 
 #include "iopins.h"

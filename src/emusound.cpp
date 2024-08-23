@@ -71,7 +71,7 @@ int i2s_dma;
 int irq_num;
 int i2s_pio_sm;
 int i2s_dreq = DREQ_PIO0_TX0;
-gpio_function i2s_gpio_func = GPIO_FUNC_PIO0;
+gpio_function_t i2s_gpio_func = GPIO_FUNC_PIO0;
 #endif
 
 #ifdef TIME_SPARE

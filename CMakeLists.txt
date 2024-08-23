@@ -1,6 +1,12 @@
 set(PROJECT picozx81)
 cmake_minimum_required(VERSION 3.13)
 
+# Look for board file in local board directory
+set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
+if (NOT PICO_BOARD)
+    set(PICO_BOARD "vgaboard")
+endif()
+
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 include($ENV{PICO_EXTRAS_PATH}/external/pico_extras_import.cmake)
 
@@ -10,12 +16,6 @@ OPTION(TIME_SPARE "Set to true to measure idle time" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
 OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
 OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
-
-# Look for board file first in local board directory
-set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
-if (NOT PICO_BOARD)
-    set(PICO_BOARD "vgaboard")
-endif()
 
 # Set to "dviboard" to build for Pimoroni dvi board
 # e.g. cmake -DPICO_BOARD=dviboard
