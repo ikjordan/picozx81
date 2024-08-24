@@ -72,7 +72,7 @@
 #define TP 3300
 #define PICO_PICOZXREAL_BOARD
 
-// Maker board has a Pico on it, so default anything we haven't set above
-#include "boards/pico.h"
+// default anything we haven't set above
+#include "mcu.h"
 
 #endif

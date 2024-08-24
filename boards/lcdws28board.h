@@ -66,7 +66,7 @@
 
 #define PICO_LCDWS28_BOARD
 
-// Waveshare LCD 2.8 board has a Pico on it, so default anything we haven't set above
-#include "boards/pico.h"
+// default anything we haven't set above
+#include "mcu.h"
 
 #endif

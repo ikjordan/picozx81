@@ -4,9 +4,9 @@
 build_uf2()
 {
   board=$1"board .."
-  uf2="picozx81_"$1".uf2"
+  uf2="picozx81_"$1"_"$2".uf2"
 
-  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board}
+  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }
@@ -14,9 +14,10 @@ build_uf2()
 build_uf2_hdmi()
 {
   board=$1"board .."
-  uf2="picozx81_"$1"_hdmi_sound.uf2"
+  mcu=$2
+  uf2="picozx81_"$1"_hdmi_sound_"$2".uf2"
 
-  cmake -DHDMI_SOUND=ON -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board}
+  cmake -DHDMI_SOUND=ON -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }
@@ -24,30 +25,45 @@ build_uf2_hdmi()
 build_uf2_lcd()
 {
   board=$1"board .."
-  uf2="picozx81_"$1"_lcd.uf2"
+  mcu=$2
+  uf2="picozx81_"$1"_lcd_"$2".uf2"
 
-  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=ON -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board}
+  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=ON -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }
 
 # Create the directories
-mkdir -p build
+mkdir -p build_2040
+mkdir -p build_2350
 mkdir -p uf2
-cd build
 
-# Build all PicoZX81 variants
-build_uf2 vga
-build_uf2 dvi
-build_uf2 picomitevga
-build_uf2 olimexpc
-build_uf2 vga332
-build_uf2 vgamaker222c
-build_uf2 lcdws28
-build_uf2 lcdmaker
-build_uf2 picozx
-build_uf2 picozxreal
-build_uf2_hdmi dvi
-build_uf2_hdmi olimexpc
-build_uf2_hdmi wspizero
-build_uf2_lcd picozx
+# Build all PicoZX81 variants for rp2040
+cd build_2040
+
+build_uf2 vga rp2040
+build_uf2 dvi rp2040
+build_uf2 picomitevga rp2040
+build_uf2 olimexpc rp2040
+build_uf2 vga332 rp2040
+build_uf2 vgamaker222c rp2040
+build_uf2 lcdws28 rp2040
+build_uf2 lcdmaker rp2040
+build_uf2 picozx rp2040
+build_uf2 picozxreal rp2040
+build_uf2_hdmi dvi rp2040
+build_uf2_hdmi olimexpc rp2040
+build_uf2_hdmi wspizero rp2040
+build_uf2_lcd picozx rp2040
+
+# Build all PicoZX81 variants that can take a rp2350
+cd ../build_2350
+
+build_uf2 vga rp2350
+build_uf2 dvi rp2350
+build_uf2 picomitevga rp2350
+build_uf2 olimexpc rp2350
+build_uf2 vga332 rp2350
+build_uf2 lcdws28 rp2350
+build_uf2_hdmi dvi rp2350
+build_uf2_hdmi olimexpc rp2350

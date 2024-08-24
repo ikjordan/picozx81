@@ -45,6 +45,8 @@
 + [PICOZX with LCD](https://hackaday.io/project/186039-pico-zx-spectrum-128k) All in one board with VGA and LCD output, built in keyboard and 9-pin joystick port
 + [PICOZX for ZX-Spectrum case](https://www.pcbway.com/project/shareproject/PICOZX_motherboard_for_ZX_Spectrum_original_case_5bbde8be.html) All in one board with VGA output, designed to be put in a ZX-Spectrum case with keyboard and 9-pin joystick port
 
+Both the RP2040 and RP2350A is supported
+
 ## Examples
 ### Installed in a reproduction case
 The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
@@ -121,21 +123,33 @@ The fastest way to get started is to:
 
 ## Load the pre-build binary onto the Pico
 Click on the uf2 name corresponding to your board in the table below to download the latest version
+### RP2040
 | Board | uf2 name |
 | --- | --- |
-| Pimoroni DVI | [`picozx81_dvi.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi.uf2)|
-| Pimoroni VGA | [`picozx81_vga.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vga.uf2)|
-| Olimex PICO DVI | [`picozx81_olimexpc.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc.uf2)|
-| PicoMiteVGA | [`picozx81_picomitevga.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga.uf2)|
-| Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound.uf2)|
-| Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound.uf2)|
-| Waveshare PiZero with HDMI Sound| [`picozx81_wspizero_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/blob/main/uf2/picozx81_wspizero_hdmi_sound.uf2)|
-| Waveshare 2.8 LCD | [`picozx81_lcdws28.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28.uf2)|
-| Cytron Maker + 320x240 LCD | [`picozx81_lcdmaker.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdmaker.uf2)|
-| Cytron Maker + VGA 222 CSYNC | [`picozx81_vgamaker222c.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vgamaker222c.uf2)|
-| PICOZX | [`picozx81_picozx.uf2`](https://github.com/ikjordan/picozx81/blob/main/uf2/picozx81_picozx.uf2)|
-| PICOZX with LCD | [`picozx81_picozx_lcd.uf2`](https://github.com/ikjordan/picozx81/blob/main/uf2/picozx81_picozx_lcd.uf2)|
-| PICOZX for ZX-Spectrum case | [`picozx81_picozxreal.uf2`](https://github.com/ikjordan/picozx81/blob/main/uf2/picozx81_picozxreal.uf2)|
+| Pimoroni DVI | [`picozx81_dvi_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_rp2040.uf2)|
+| Pimoroni VGA | [`picozx81_vga_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vga_rp2040.uf2)|
+| Olimex PICO DVI | [`picozx81_olimexpc_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_rp2040.uf2)|
+| PicoMiteVGA | [`picozx81_picomitevga_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga_rp2040.uf2)|
+| Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound_rp2040.uf2)|
+| Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound_rp2040.uf2)|
+| Waveshare PiZero with HDMI Sound| [`picozx81_wspizero_hdmi_sound_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_wspizero_hdmi_sound_rp2040.uf2)|
+| Waveshare 2.8 LCD | [`picozx81_lcdws28_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28_rp2040.uf2)|
+| Cytron Maker + 320x240 LCD | [`picozx81_lcdmaker_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdmaker_rp2040.uf2)|
+| Cytron Maker + VGA 222 CSYNC | [`picozx81_vgamaker222c_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vgamaker222c_rp2040.uf2)|
+| PICOZX | [`picozx81_picozx_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picozx_rp2040.uf2)|
+| PICOZX with LCD | [`picozx81_picozx_lcd_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picozx_lcd_rp2040.uf2)|
+| PICOZX for ZX-Spectrum case | [`picozx81_picozxreal_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picozxreal_rp2040.uf2)|
+
+### RP2350
+| Board | uf2 name |
+| --- | --- |
+| Pimoroni DVI | [`picozx81_dvi_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_rp2350.uf2)|
+| Pimoroni VGA | [`picozx81_vga_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vga_rp2350.uf2)|
+| Olimex PICO DVI | [`picozx81_olimexpc_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_rp2350.uf2)|
+| PicoMiteVGA | [`picozx81_picomitevga_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga_rp2350.uf2)|
+| Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound_rp2350.uf2)|
+| Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound_rp2350.uf2)|
+| Waveshare 2.8 LCD | [`picozx81_lcdws28_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28_rp2350.uf2)|
 
 1. Connect your Board to your display using a VGA or HDMI cable, as appropriate for your board
 2. Connect the Pico to your PC using a USB cable, whilst pressing the **BOOTSEL** button on the Pico. Use the micro USB connector on the Pico, *not* the micro USB cable on your board
@@ -523,33 +537,34 @@ To enable chroma support set LowRAM on, and Memory to 48kB
 
     `git clone --recursive https://github.com/ikjordan/picozx81.git`
 
-4. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board will be created.
-This will be named `picozx81_vga.uf2`
+4. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board abd a rp2040 will be created.
+This will be named `picozx81_vga_rp2040.uf2`
 
     `mkdir build`  
     `cd build`  
     `cmake -DCMAKE_BUILD_TYPE=Release ..`  
     `make`
-5. To build for other boards, pass the board type as part of the cmake command. e.g.
+5. To build for other boards with a RP2040, pass the board type as part of the cmake command. e.g.
 
 | Board | CMake | uf2 name |
 | --- | --- | --- |
-| Pimoroni DVI |`cmake -DPICO_BOARD=dviboard ..` | `picozx81_dvi.uf2`|
-| PicoMiteVGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga.uf2`|
-| Olimex PICO DVI |`cmake -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc.uf2`|
+| Pimoroni DVI |`cmake -DPICO_BOARD=dviboard ..` | `picozx81_dvi_rp2040.uf2`|
+| PicoMiteVGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga_rp2040.uf2`|
+| Olimex PICO DVI |`cmake -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_rp2040.uf2`|
 | Pimoroni VGA |`cmake -DPICO_BOARD=vgaboard ..` | `picozx81_vga.uf2`|
-| Custom 332 VGA (similar to MCUME)|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
-| Cytron Maker based 222 VGA with CSYNC (similar to PICOZX)|`cmake -DPICO_BOARD=vgamaker222cboard ..`| `picozx81_vgamaker222c.uf2`|
-| PICOZX without LCD |`cmake -DPICO_BOARD=picozxboard ..`| `picozx81_picozx.uf2`|
-| PICOZX with LCD |`cmake -DPICOZX_LCD=ON -DPICO_BOARD=picozxboard ..`| `picozx81_picozx_lcd.uf2`|
-| PICOZX in Spectrum case |`cmake -DPICO_BOARD=picozxrealboard ..`| `picozx81_picozxreal.uf2`|
-| Pimoroni DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=dviboard ..` | `picozx81_dvi_hdmi_sound.uf2`|
-| Olimex PICO DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_hdmi_sound.uf2`|
-| Wavesare PiZero with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=wspizeroboard ..` | `picozx81_wspizero_hdmi_sound.uf2`|
-| Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28.uf2`|
-| Cytron Maker|`cmake -DPICO_BOARD=lcdmakerboard ..`| `picozx81_lcdmaker.uf2`|
+| Custom 332 VGA (similar to MCUME)|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332_rp2040.uf2`|
+| Cytron Maker based 222 VGA with CSYNC (similar to PICOZX)|`cmake -DPICO_BOARD=vgamaker222cboard ..`| `picozx81_vgamaker222c_rp2040.uf2`|
+| PICOZX without LCD |`cmake -DPICO_BOARD=picozxboard ..`| `picozx81_picozx_rp2040.uf2`|
+| PICOZX with LCD |`cmake -DPICOZX_LCD=ON -DPICO_BOARD=picozxboard ..`| `picozx81_picozx_lcd_rp2040.uf2`|
+| PICOZX in Spectrum case |`cmake -DPICO_BOARD=picozxrealboard ..`| `picozx81_picozxreal_rp2040.uf2`|
+| Pimoroni DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=dviboard ..` | `picozx81_dvi_hdmi_sound_rp2040.uf2`|
+| Olimex PICO DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_hdmi_sound_rp2040.uf2`|
+| Wavesare PiZero with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=wspizeroboard ..` | `picozx81_wspizero_hdmi_sound_rp2040.uf2`|
+| Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28_rp2040.uf2`|
+| Cytron Maker|`cmake -DPICO_BOARD=lcdmakerboard ..`| `picozx81_lcdmaker_rp2040.uf2`|
 
 **Notes:**
++ To build for the RP2350 append -DPICO_MCU=rp2350 to the CMake command. The resulting `uf2` file will include rp2355 in its name
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
 
 6. Upload the `uf2` file to the Pico
