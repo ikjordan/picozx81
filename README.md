@@ -565,7 +565,7 @@ This will be named `picozx81_vga_rp2040.uf2`
 
 **Notes:**
 + To build for the RP2350 append -DPICO_MCU=rp2350 to the CMake command. The resulting `uf2` file will include rp2355 in its name
-+ The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
++ The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported combinations of mcu and board types
 
 6. Upload the `uf2` file to the Pico
 7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
@@ -575,7 +575,7 @@ This will be named `picozx81_vga_rp2040.uf2`
 + The original intention of the emulator was to provide an authentic '80s feel. It emulated the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. It has now been extended to provide emulation of some of the amazing ZX81 developments of recent years, such as [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm). It supports the loading and saving of memory blocks, using a syntax similar to ZXpand
 + The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
 + Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
-+ To achieve a full speed emulation the Pico is overclocked to 252MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_CLOCK` to the cmake command
++ To achieve a full speed emulation the Pico is overclocked to 252MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_VOLT` to the cmake command
 + The Pico only has 1 USB port. The Pimoroni, Olimex and Waveshare PiZero boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
 + To connect more than one peripheral (e.g. a keyboard and joystick) at the same time, a powered USB OTG hub is required. These 3 hubs have been successfully tested. [1](https://www.amazon.co.uk/dp/B083WML1XB), [2](https://www.amazon.co.uk/dp/B078M3Z84Z), [3](https://www.amazon.co.uk/dp/B07Z4RHJ2D). Plug the hub directly into the USB port on the Pico. The USB-A connector on the PICOZX boards can also be used  
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously

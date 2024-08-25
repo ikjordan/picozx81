@@ -2,9 +2,7 @@ set(PROJECT picozx81)
 cmake_minimum_required(VERSION 3.13)
 
 # Determine the MCU type and configure accordingly
-if (NOT PICO_MCU)
-    set (PICO_MCU "rp2040")
-endif()
+set(PICO_MCU "rp2040" CACHE STRING "Specify Pico MCU type")
 
 if ((${PICO_MCU} STREQUAL "rp2350"))
     set(PICO_PLATFORM "rp2350-arm-s")
@@ -24,6 +22,7 @@ include($ENV{PICO_EXTRAS_PATH}/external/pico_extras_import.cmake)
 project(${PROJECT} C CXX ASM)
 
 OPTION(TIME_SPARE "Set to true to measure idle time" OFF)
+OPTION(FLASH_LED "Set to blink board led and measure idle time" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
 OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
 OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
@@ -232,7 +231,9 @@ if ((${PICO_MCU} STREQUAL "rp2350"))
     target_compile_definitions(${PROJECT} PUBLIC -DPICO_2350)
 endif()
 
-if (${TIME_SPARE})
+if (${FLASH_LED})
+    target_compile_definitions(${PROJECT} PRIVATE -DFLASH_LED -DTIME_SPARE)
+elseif (${TIME_SPARE})
     target_compile_definitions(${PROJECT} PRIVATE -DTIME_SPARE)
 endif()
 

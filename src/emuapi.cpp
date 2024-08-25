@@ -146,6 +146,10 @@ void emu_init(void)
   {
     emu_ReadDefaultValues();
   }
+#ifdef FLASH_LED
+    gpio_init(PICO_DEFAULT_LED_PIN);
+    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+#endif
 }
 
 // Return if file system initialised
@@ -1239,6 +1243,11 @@ void emu_WaitFor50HzTimer(void)
     printf("I: %lld S: %ld\n", ints, sound);
     total_time = 0;
     underrun = 0;
+#ifdef FLASH_LED
+    static bool led_on = false;
+    led_on = !led_on;
+    gpio_put(PICO_DEFAULT_LED_PIN, led_on);
+#endif
   }
 #endif
 }
