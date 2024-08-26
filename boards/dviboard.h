@@ -67,7 +67,7 @@
 
 #define PICO_DVI_BOARD
 
-// dviboard has a Pico on it, so default anything we haven't set above
-#include "boards/pico.h"
+// default anything we haven't set above
+#include "mcu.h"
 
 #endif

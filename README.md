@@ -45,6 +45,8 @@
 + [PICOZX with LCD](https://hackaday.io/project/186039-pico-zx-spectrum-128k) All in one board with VGA and LCD output, built in keyboard and 9-pin joystick port
 + [PICOZX for ZX-Spectrum case](https://www.pcbway.com/project/shareproject/PICOZX_motherboard_for_ZX_Spectrum_original_case_5bbde8be.html) All in one board with VGA output, designed to be put in a ZX-Spectrum case with keyboard and 9-pin joystick port
 
+Both the RP2040 and RP2350A is supported
+
 ## Examples
 ### Installed in a reproduction case
 The following images are taken with permission from a thread on [SinclairZXWorld](https://sinclairzxworld.com/viewtopic.php?f=3&t=5071&start=20) and show how user `computergui` has used picozx81 together with a case created by user `Spinnetti` to create a replica ZX80
@@ -65,7 +67,7 @@ The right image shows the emulator running [MaxDemo](https://bodo4all.fortunecit
 </p>
 
 ### HDMI/DVI Output
-To the left [ZX81 Hires Invaders](https://www.perfectlynormalsite.com/hiresinvaders.html) can be seen on a TV connected over HDMI. Sound can also be played over HDMI
+To the left [SplinterGU SInvaders](https://splintergu.itch.io/space-invaders-for-zx81-wrx) can be seen on a TV connected over HDMI. Sound can also be played over HDMI
 
 To the right can be seen a status page, illustrating some of the configurable options for the emulator
 
@@ -121,21 +123,33 @@ The fastest way to get started is to:
 
 ## Load the pre-build binary onto the Pico
 Click on the uf2 name corresponding to your board in the table below to download the latest version
+### RP2040
 | Board | uf2 name |
 | --- | --- |
-| Pimoroni DVI | [`picozx81_dvi.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi.uf2)|
-| Pimoroni VGA | [`picozx81_vga.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vga.uf2)|
-| Olimex PICO DVI | [`picozx81_olimexpc.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc.uf2)|
-| PicoMiteVGA | [`picozx81_picomitevga.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga.uf2)|
-| Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound.uf2)|
-| Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound.uf2)|
-| Waveshare PiZero with HDMI Sound| [`picozx81_wspizero_hdmi_sound.uf2`](https://github.com/ikjordan/picozx81/blob/main/uf2/picozx81_wspizero_hdmi_sound.uf2)|
-| Waveshare 2.8 LCD | [`picozx81_lcdws28.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28.uf2)|
-| Cytron Maker + 320x240 LCD | [`picozx81_lcdmaker.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdmaker.uf2)|
-| Cytron Maker + VGA 222 CSYNC | [`picozx81_vgamaker222c.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vgamaker222c.uf2)|
-| PICOZX | [`picozx81_picozx.uf2`](https://github.com/ikjordan/picozx81/blob/main/uf2/picozx81_picozx.uf2)|
-| PICOZX with LCD | [`picozx81_picozx_lcd.uf2`](https://github.com/ikjordan/picozx81/blob/main/uf2/picozx81_picozx_lcd.uf2)|
-| PICOZX for ZX-Spectrum case | [`picozx81_picozxreal.uf2`](https://github.com/ikjordan/picozx81/blob/main/uf2/picozx81_picozxreal.uf2)|
+| Pimoroni DVI | [`picozx81_dvi_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_rp2040.uf2)|
+| Pimoroni VGA | [`picozx81_vga_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vga_rp2040.uf2)|
+| Olimex PICO DVI | [`picozx81_olimexpc_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_rp2040.uf2)|
+| PicoMiteVGA | [`picozx81_picomitevga_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga_rp2040.uf2)|
+| Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound_rp2040.uf2)|
+| Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound_rp2040.uf2)|
+| Waveshare PiZero with HDMI Sound| [`picozx81_wspizero_hdmi_sound_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_wspizero_hdmi_sound_rp2040.uf2)|
+| Waveshare 2.8 LCD | [`picozx81_lcdws28_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28_rp2040.uf2)|
+| Cytron Maker + 320x240 LCD | [`picozx81_lcdmaker_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdmaker_rp2040.uf2)|
+| Cytron Maker + VGA 222 CSYNC | [`picozx81_vgamaker222c_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vgamaker222c_rp2040.uf2)|
+| PICOZX | [`picozx81_picozx_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picozx_rp2040.uf2)|
+| PICOZX with LCD | [`picozx81_picozx_lcd_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picozx_lcd_rp2040.uf2)|
+| PICOZX for ZX-Spectrum case | [`picozx81_picozxreal_rp2040.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picozxreal_rp2040.uf2)|
+
+### RP2350
+| Board | uf2 name |
+| --- | --- |
+| Pimoroni DVI | [`picozx81_dvi_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_rp2350.uf2)|
+| Pimoroni VGA | [`picozx81_vga_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vga_rp2350.uf2)|
+| Olimex PICO DVI | [`picozx81_olimexpc_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_rp2350.uf2)|
+| PicoMiteVGA | [`picozx81_picomitevga_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga_rp2350.uf2)|
+| Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound_rp2350.uf2)|
+| Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound_rp2350.uf2)|
+| Waveshare 2.8 LCD | [`picozx81_lcdws28_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28_rp2350.uf2)|
 
 1. Connect your Board to your display using a VGA or HDMI cable, as appropriate for your board
 2. Connect the Pico to your PC using a USB cable, whilst pressing the **BOOTSEL** button on the Pico. Use the micro USB connector on the Pico, *not* the micro USB cable on your board
@@ -512,7 +526,7 @@ To enable chroma support set LowRAM on, and Memory to 48kB
 + Prebuilt executable files for the 7 supported board types can be found [here](uf2/)
 + If a **zip** of the source files is downloaded from GitHub, it will be **incomplete**, as the zip will not contain the submodules. Zip files of the submodules would have to be downloaded separately from GitHub. It is easier to clone recursive the repository, as described in the following section
 ### To build:
-1. Install the Raspberry Pi Pico toolchain and SDK
+1. Install the Raspberry Pi Pico toolchain and SDK. SDK 2.x must be used
 
     Instructions to do this for several operating systems can be found by downloading [this pdf](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf). Chapter 2 covers installation on the Raspberry Pi, chapter 9 describes the process for other operating systems
 2. The vga display uses the `pico_scanvideo` library, which is part of the `pico-extras` repository. Clone this repository, including submodules
@@ -523,44 +537,46 @@ To enable chroma support set LowRAM on, and Memory to 48kB
 
     `git clone --recursive https://github.com/ikjordan/picozx81.git`
 
-4. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board will be created.
-This will be named `picozx81_vga.uf2`
+4. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board and a rp2040 will be created.
+This will be named `picozx81_vga_rp2040.uf2`
 
     `mkdir build`  
     `cd build`  
     `cmake -DCMAKE_BUILD_TYPE=Release ..`  
     `make`
-5. To build for other boards, pass the board type as part of the cmake command. e.g.
+5. To build for other boards with a RP2040, pass the board type as part of the cmake command. e.g.
 
 | Board | CMake | uf2 name |
 | --- | --- | --- |
-| Pimoroni DVI |`cmake -DPICO_BOARD=dviboard ..` | `picozx81_dvi.uf2`|
-| PicoMiteVGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga.uf2`|
-| Olimex PICO DVI |`cmake -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc.uf2`|
+| Pimoroni DVI |`cmake -DPICO_BOARD=dviboard ..` | `picozx81_dvi_rp2040.uf2`|
+| PicoMiteVGA |`cmake -DPICO_BOARD=picomitevgaboard ..` | `picozx81_picomitevga_rp2040.uf2`|
+| Olimex PICO DVI |`cmake -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_rp2040.uf2`|
 | Pimoroni VGA |`cmake -DPICO_BOARD=vgaboard ..` | `picozx81_vga.uf2`|
-| Custom 332 VGA (similar to MCUME)|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332.uf2`|
-| Cytron Maker based 222 VGA with CSYNC (similar to PICOZX)|`cmake -DPICO_BOARD=vgamaker222cboard ..`| `picozx81_vgamaker222c.uf2`|
-| PICOZX without LCD |`cmake -DPICO_BOARD=picozxboard ..`| `picozx81_picozx.uf2`|
-| PICOZX with LCD |`cmake -DPICOZX_LCD=ON -DPICO_BOARD=picozxboard ..`| `picozx81_picozx_lcd.uf2`|
-| PICOZX in Spectrum case |`cmake -DPICO_BOARD=picozxrealboard ..`| `picozx81_picozxreal.uf2`|
-| Pimoroni DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=dviboard ..` | `picozx81_dvi_hdmi_sound.uf2`|
-| Olimex PICO DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_hdmi_sound.uf2`|
-| Wavesare PiZero with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=wspizeroboard ..` | `picozx81_wspizero_hdmi_sound.uf2`|
-| Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28.uf2`|
-| Cytron Maker|`cmake -DPICO_BOARD=lcdmakerboard ..`| `picozx81_lcdmaker.uf2`|
-
-**Notes:**
-+ The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported board types
-
+| Custom 332 VGA (similar to MCUME)|`cmake -DPICO_BOARD=vga332board ..`| `picozx81_vga332_rp2040.uf2`|
+| Cytron Maker based 222 VGA with CSYNC (similar to PICOZX)|`cmake -DPICO_BOARD=vgamaker222cboard ..`| `picozx81_vgamaker222c_rp2040.uf2`|
+| PICOZX without LCD |`cmake -DPICO_BOARD=picozxboard ..`| `picozx81_picozx_rp2040.uf2`|
+| PICOZX with LCD |`cmake -DPICOZX_LCD=ON -DPICO_BOARD=picozxboard ..`| `picozx81_picozx_lcd_rp2040.uf2`|
+| PICOZX in Spectrum case |`cmake -DPICO_BOARD=picozxrealboard ..`| `picozx81_picozxreal_rp2040.uf2`|
+| Pimoroni DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=dviboard ..` | `picozx81_dvi_hdmi_sound_rp2040.uf2`|
+| Olimex PICO DVI with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=olimexpcboard ..` | `picozx81_olimexpc_hdmi_sound_rp2040.uf2`|
+| Wavesare PiZero with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=wspizeroboard ..` | `picozx81_wspizero_hdmi_sound_rp2040.uf2`|
+| Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28_rp2040.uf2`|
+| Cytron Maker|`cmake -DPICO_BOARD=lcdmakerboard ..`| `picozx81_lcdmaker_rp2040.uf2`|
 6. Upload the `uf2` file to the Pico
 7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
+
+**Notes:**
++ To build for the RP2350 append -DPICO_MCU=rp2350 to the CMake command. The resulting `uf2` file will include rp2355 in its name
++ The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported combinations of mcu and board types
++ To debug using OpenOCD build and install OpenOCD as described in [Getting Started with Raspberry Pi Pico-series](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf)
++ If debugging using MS Visual Studio Code then install the Raspberry Pi Pico extension. Commands loaded by this extension are used to determine the active MCU type in `launch.json`
 
 # Extra Information
 ## General
 + The original intention of the emulator was to provide an authentic '80s feel. It emulated the hardware that was advertised in the early '80s i.e. QS UDG, Sound, joystick, hi-res mono graphics. It has now been extended to provide emulation of some of the amazing ZX81 developments of recent years, such as [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm). It supports the loading and saving of memory blocks, using a syntax similar to ZXpand
 + The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
 + Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
-+ To achieve a full speed emulation the Pico is overclocked to 252MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_CLOCK` to the cmake command
++ To achieve a full speed emulation the Pico is overclocked to 252MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_VOLT` to the cmake command
 + The Pico only has 1 USB port. The Pimoroni, Olimex and Waveshare PiZero boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
 + To connect more than one peripheral (e.g. a keyboard and joystick) at the same time, a powered USB OTG hub is required. These 3 hubs have been successfully tested. [1](https://www.amazon.co.uk/dp/B083WML1XB), [2](https://www.amazon.co.uk/dp/B078M3Z84Z), [3](https://www.amazon.co.uk/dp/B07Z4RHJ2D). Plug the hub directly into the USB port on the Pico. The USB-A connector on the PICOZX boards can also be used  
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
@@ -688,9 +704,9 @@ The picozx board does support keyboard and joystick. This is achieved by using e
 ## Performance and constraints
 In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
-The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 83% of the available CPU clock cycles with sound disabled and 87% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation
+The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 83% of the available RP2040 CPU clock cycles with sound disabled and 87% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation. Figures are much lower for the RP2350 (56.5% without sound, 59% with sound)
 
-ZX80 hardware emulation takes more CPU. Emulating an idle ZX80 with Zonx sound enabled takes approximately 94% of a 252 MHz Pico. Due to the nature of the ZX80 hardware display emulation, the CPU load drops, both in B&W and Chroma, when a ZX80 program is running
+ZX80 hardware emulation takes more CPU. Emulating an idle ZX80 with Zonx sound enabled takes approximately 94% of a 252 MHz RP2040 based Pico. Due to the nature of the ZX80 hardware display emulation, the CPU load drops, both in B&W and Chroma, when a ZX80 program is running. The CPU load is much lower on a RP2350 based Pico. An idle ZX80 with Zonx sound enabled takes approximately 65% of a 252 MHz RP2350 based Pico
 
 The 640x480 display mode uses an overclock to 252MHz. The 720x576 display mode uses an overclock to 270MHz
 

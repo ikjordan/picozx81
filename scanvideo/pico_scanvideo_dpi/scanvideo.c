@@ -14,7 +14,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "pico/platform.h"
+#include "pico.h"
 #include "pico/sem.h"
 #include "pico/util/buffer.h"
 #include "hardware/clocks.h"

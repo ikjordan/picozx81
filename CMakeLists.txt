@@ -1,21 +1,31 @@
 set(PROJECT picozx81)
 cmake_minimum_required(VERSION 3.13)
 
+# Determine the MCU type and configure accordingly
+set(PICO_MCU "rp2040" CACHE STRING "Specify Pico MCU type")
+
+if ((${PICO_MCU} STREQUAL "rp2350"))
+    set(PICO_PLATFORM "rp2350-arm-s")
+else()
+    set(PICO_PLATFORM "rp2040")
+endif()
+
+# Look for board file in local board directory
+set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
+if (NOT PICO_BOARD)
+    set(PICO_BOARD "vgaboard")
+endif()
+
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 include($ENV{PICO_EXTRAS_PATH}/external/pico_extras_import.cmake)
 
 project(${PROJECT} C CXX ASM)
 
 OPTION(TIME_SPARE "Set to true to measure idle time" OFF)
+OPTION(FLASH_LED "Set to blink board led and measure idle time" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
 OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
 OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
-
-# Look for board file first in local board directory
-set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
-if (NOT PICO_BOARD)
-    set(PICO_BOARD "vgaboard")
-endif()
 
 # Set to "dviboard" to build for Pimoroni dvi board
 # e.g. cmake -DPICO_BOARD=dviboard
@@ -43,6 +53,10 @@ endif()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
+
+if (PICO_SDK_VERSION_STRING VERSION_LESS "2.0.0")
+    message(FATAL_ERROR "Raspberry Pi Pico SDK version 2.0.0 (or later) required. Current version is ${PICO_SDK_VERSION_STRING}")
+endif()
 
 # Initialize the Pico SDK
 pico_sdk_init()
@@ -153,15 +167,15 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
     target_link_libraries(${PROJECT} libdvi)
 
     if ((${PICO_BOARD} STREQUAL "wspizeroboard"))
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_wspizero_hdmi_sound")
+        Set(NAME_ROOT "picozx81_wspizero_hdmi_sound")
         target_compile_definitions(${PROJECT} PUBLIC
                                 -DDVI_DEFAULT_SERIAL_CONFIG=waveshare_rp2040_pizero_hdmi_cfg)
     else()
         if (${PICO_BOARD} STREQUAL "dviboard")
             if (${HDMI_SOUND})
-                set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_dvi_hdmi_sound")
+                Set(NAME_ROOT "picozx81_dvi_hdmi_sound")
             else()
-                set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_dvi")
+                Set(NAME_ROOT "picozx81_dvi")
             endif()
             target_compile_definitions(${PROJECT} PUBLIC
                                     -DDVI_DEFAULT_SERIAL_CONFIG=pimoroni_demo_hdmi_cfg)
@@ -170,37 +184,37 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
                                     -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2040_PICO_PC_cfg
                                     -DDVI_USE_PIO_CLOCK)
             if(${HDMI_SOUND})
-                set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_olimexpc_hdmi_sound")
+                set(NAME_ROOT "picozx81_olimexpc_hdmi_sound")
             else()
-                set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_olimexpc")
+            set(NAME_ROOT "picozx81_olimexpc")
             endif()
         endif()
     endif()
 elseif ((${PICO_BOARD} STREQUAL "lcdws28board"))
     pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/spi_lcd.pio)
-    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_lcdws28")
+    set(NAME_ROOT "picozx81_lcdws28")
 elseif ((${PICO_BOARD} STREQUAL "lcdmakerboard"))
     pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/spi_lcd.pio)
-    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_lcdmaker")
+    set(NAME_ROOT "picozx81_lcdmaker")
 else()
     if (${PICO_BOARD} STREQUAL "vgaboard")
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga")
+        set(NAME_ROOT "picozx81_vga")
     elseif (${PICO_BOARD} STREQUAL "picomitevgaboard")
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picomitevga")
+        set(NAME_ROOT "picozx81_picomitevga")
     elseif (${PICO_BOARD} STREQUAL "vga332board")
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vga332")
+        set(NAME_ROOT "picozx81_vga332")
     elseif (${PICO_BOARD} STREQUAL "vgamaker222cboard")
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_vgamaker222c")
+        set(NAME_ROOT "picozx81_vgamaker222c")
     elseif (${PICO_BOARD} STREQUAL "picozxboard")
         if (${PICOZX_LCD})
             pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/spi_lcd.pio)
             target_compile_definitions(${PROJECT} PRIVATE -DPICOZX_LCD)
-            set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picozx_lcd")
+            set(NAME_ROOT "picozx81_picozx_lcd")
         else ()
-            set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picozx")
+            set(NAME_ROOT "picozx81_picozx")
         endif ()
     elseif (${PICO_BOARD} STREQUAL "picozxrealboard")
-        set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "picozx81_picozxreal")
+        set(NAME_ROOT "picozx81_picozxreal")
     endif()
 
     if ((${PICO_BOARD} STREQUAL "vgamaker222cboard") OR (${PICO_BOARD} STREQUAL "picozxboard") OR (${PICO_BOARD} STREQUAL "picozxrealboard"))
@@ -210,7 +224,16 @@ else()
     endif()
 endif()
 
-if (${TIME_SPARE})
+string(CONCAT FULL_NAME  ${NAME_ROOT} "_" ${PICO_MCU})
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${FULL_NAME})
+
+if ((${PICO_MCU} STREQUAL "rp2350"))
+    target_compile_definitions(${PROJECT} PUBLIC -DPICO_2350)
+endif()
+
+if (${FLASH_LED})
+    target_compile_definitions(${PROJECT} PRIVATE -DFLASH_LED -DTIME_SPARE)
+elseif (${TIME_SPARE})
     target_compile_definitions(${PROJECT} PRIVATE -DTIME_SPARE)
 endif()
 
