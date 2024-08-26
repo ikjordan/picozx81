@@ -537,7 +537,7 @@ To enable chroma support set LowRAM on, and Memory to 48kB
 
     `git clone --recursive https://github.com/ikjordan/picozx81.git`
 
-4. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board abd a rp2040 will be created.
+4. create a build directory, move to that directory and build using CMake. By default an executable compatible with the Pimoroni vga board and a rp2040 will be created.
 This will be named `picozx81_vga_rp2040.uf2`
 
     `mkdir build`  
@@ -562,13 +562,14 @@ This will be named `picozx81_vga_rp2040.uf2`
 | Wavesare PiZero with HDMI sound|`cmake -DHDMI_SOUND=ON -DPICO_BOARD=wspizeroboard ..` | `picozx81_wspizero_hdmi_sound_rp2040.uf2`|
 | Waveshare Pico-ResTouch-LCD-2.8|`cmake -DPICO_BOARD=lcdws28board ..`| `picozx81_lcdws28_rp2040.uf2`|
 | Cytron Maker|`cmake -DPICO_BOARD=lcdmakerboard ..`| `picozx81_lcdmaker_rp2040.uf2`|
+6. Upload the `uf2` file to the Pico
+7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
 
 **Notes:**
 + To build for the RP2350 append -DPICO_MCU=rp2350 to the CMake command. The resulting `uf2` file will include rp2355 in its name
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported combinations of mcu and board types
-
-6. Upload the `uf2` file to the Pico
-7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
++ To debug using OpenOCD build and install OpenOCD as described in [Getting Started with Raspberry Pi Pico-series](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf)
++ If debugging using MS Visual Studio Code then install the Raspberry Pi Pico extension. Commands loaded by this extension are used to determine the active MCU type in `launch.json`
 
 # Extra Information
 ## General
@@ -703,9 +704,9 @@ The picozx board does support keyboard and joystick. This is achieved by using e
 ## Performance and constraints
 In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
-The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 83% of the available CPU clock cycles with sound disabled and 87% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation
+The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 83% of the available RP2040 CPU clock cycles with sound disabled and 87% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation. Figures are much lower for the RP2350 (56.5% without sound, 59% with sound)
 
-ZX80 hardware emulation takes more CPU. Emulating an idle ZX80 with Zonx sound enabled takes approximately 94% of a 252 MHz Pico. Due to the nature of the ZX80 hardware display emulation, the CPU load drops, both in B&W and Chroma, when a ZX80 program is running
+ZX80 hardware emulation takes more CPU. Emulating an idle ZX80 with Zonx sound enabled takes approximately 94% of a 252 MHz RP2040 based Pico. Due to the nature of the ZX80 hardware display emulation, the CPU load drops, both in B&W and Chroma, when a ZX80 program is running. The CPU load is much lower on a RP2350 based Pico. An idle ZX80 with Zonx sound enabled takes approximately 65% of a 252 MHz RP2350 based Pico
 
 The 640x480 display mode uses an overclock to 252MHz. The 720x576 display mode uses an overclock to 270MHz
 
