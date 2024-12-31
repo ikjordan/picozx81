@@ -232,6 +232,7 @@ static void __not_in_flash_func(pwmInterruptHandler)()
 
 static bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t)
 {
+  (void)(t);
   static uint32_t call_count = 0;
   static int cnt = 0;
 

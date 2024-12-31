@@ -244,7 +244,7 @@ endif()
 # always support Chroma
 target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA -DLOAD_AND_SAVE)
 
-target_compile_options(${PROJECT} PRIVATE -Wall)
+target_compile_options(${PROJECT} PRIVATE -Wall -Wextra)
 
 target_link_libraries(${PROJECT}
                       pico_multicore

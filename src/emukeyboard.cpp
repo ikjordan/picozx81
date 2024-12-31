@@ -180,6 +180,8 @@ void emu_KeyboardScan(void* data)
         }
     }
 #endif
+#else
+    (void)(data);
 #endif
 }
 
