@@ -122,6 +122,11 @@ static void mainLoop(void)
                         rebootMenu();
                         // Never return from this call
                     break;
+
+                    case HID_KEY_F9:
+                        snapMenu();
+                    break;
+
                 }
             }
         }

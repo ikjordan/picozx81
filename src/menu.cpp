@@ -5,6 +5,7 @@
 
 #include "emuapi.h"
 #include "emuvideo.h"
+#include "z80.h"
 #include "zx80rom.h"
 #include "zx81rom.h"
 
@@ -90,6 +91,7 @@ static bool getFile(char* inout, uint index, bool* direct);
 static void showModify(PositionF6_T pos, ModifyF6_T* modify);
 static void showRestart(PositionF7_T pos, RestartF7_T* restart);
 static void showReboot(FiveSevenSix_T mode);
+static void showSnap(void);
 static void showSave(const uint8_t* name, uint len, uint cursor, uint col, uint row);
 static void setConvert(bool zx80);
 
@@ -1068,6 +1070,43 @@ void rebootMenu(void)
     }
 }
 
+// Save a snapshot (f9)
+void snapMenu(void)
+{
+    uint8_t key = 0;
+    uint8_t debounce = 0;
+
+    if (!buildMenu(false))
+        return;
+
+    hidNavigateMenu(&debounce);
+    showSnap();
+
+    // Testing:
+    if (emu_FileOpen("/snaptest", "w+b"))
+    {
+        if (save_snap_z80())
+        {
+            do
+            {
+                key = 0;
+                tuh_task();
+                hidNavigateMenu(&key);
+                emu_WaitFor50HzTimer();
+            } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
+        }
+        emu_FileClose();
+    }
+
+    debounceExit(key == HID_KEY_ENTER);
+    if (emu_FileOpen("/snaptest", "r+b"))
+    {
+        load_snap_z80();
+        emu_FileClose();
+    }
+    endMenu(false);
+}
+
 /*
  * Private interface
  */
@@ -1314,6 +1353,16 @@ static void showReboot(FiveSevenSix_T mode)
     else
         writeString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
 #endif
+}
+
+static void showSnap(void)
+{
+    uint lcount = (disp.height >> 4) - 13;
+
+    int lhs = (disp.width >> 4) - 10;
+
+    writeString("Snap", lhs + 6, lcount);
+    writeString("====", lhs + 6, lcount+1);
 }
 
 static void showSave(const uint8_t* name, uint len, uint cursor, uint col, uint row)

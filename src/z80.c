@@ -234,7 +234,7 @@ void resetZ80(void)
   a1 = f1 = b1 = c1 = d1 = e1 = h1 = l1 = i = iff1 = iff2 = im = r = 0;
   ixoriy = new_ixoriy = 0;
   ix= iy = sp = pc = 0;
-  tstates = radjust = 0;
+  radjust = 0;
   intsample = 0;
   m1cycles = 0;
   tstates = 0;
@@ -1251,4 +1251,171 @@ static void __not_in_flash_func(anyout)(void)
         vsyncFound = false;
     }
   }
+}
+
+bool save_snap_z80(void)
+{
+  if (!emu_FileWriteBytes(&a, sizeof(a))) return false;
+  if (!emu_FileWriteBytes(&f, sizeof(f))) return false;
+  if (!emu_FileWriteBytes(&b, sizeof(b))) return false;
+  if (!emu_FileWriteBytes(&c, sizeof(c))) return false;
+  if (!emu_FileWriteBytes(&d, sizeof(d))) return false;
+  if (!emu_FileWriteBytes(&e, sizeof(e))) return false;
+  if (!emu_FileWriteBytes(&h, sizeof(h))) return false;
+  if (!emu_FileWriteBytes(&l, sizeof(l))) return false;
+
+  if (!emu_FileWriteBytes(&a1, sizeof(a1))) return false;
+  if (!emu_FileWriteBytes(&f1, sizeof(f1))) return false;
+  if (!emu_FileWriteBytes(&b1, sizeof(b1))) return false;
+  if (!emu_FileWriteBytes(&c1, sizeof(c1))) return false;
+  if (!emu_FileWriteBytes(&d1, sizeof(d1))) return false;
+  if (!emu_FileWriteBytes(&e1, sizeof(e1))) return false;
+  if (!emu_FileWriteBytes(&h1, sizeof(h1))) return false;
+  if (!emu_FileWriteBytes(&l1, sizeof(l1))) return false;
+  if (!emu_FileWriteBytes(&i, sizeof(i))) return false;
+  if (!emu_FileWriteBytes(&iff1, sizeof(iff1))) return false;
+  if (!emu_FileWriteBytes(&iff2, sizeof(iff2))) return false;
+  if (!emu_FileWriteBytes(&im, sizeof(im))) return false;
+  if (!emu_FileWriteBytes(&r, sizeof(r))) return false;
+
+  if (!emu_FileWriteBytes(&ixoriy, sizeof(ixoriy))) return false;
+  if (!emu_FileWriteBytes(&new_ixoriy, sizeof(new_ixoriy))) return false;
+
+  if (!emu_FileWriteBytes(&ix, sizeof(ix))) return false;
+  if (!emu_FileWriteBytes(&iy, sizeof(iy))) return false;
+  if (!emu_FileWriteBytes(&sp, sizeof(sp))) return false;
+  if (!emu_FileWriteBytes(&pc, sizeof(pc))) return false;
+
+  if (!emu_FileWriteBytes(&radjust, sizeof(radjust))) return false;
+  if (!emu_FileWriteBytes(&intsample, sizeof(intsample))) return false;
+  if (!emu_FileWriteBytes(&m1cycles, sizeof(m1cycles))) return false;
+
+  if (!emu_FileWriteBytes(&tstates, sizeof(tstates))) return false;
+  if (!emu_FileWriteBytes(&ts, sizeof(ts))) return false;
+  if (!emu_FileWriteBytes(&vsx, sizeof(vsx))) return false;
+  if (!emu_FileWriteBytes(&vsy, sizeof(vsy))) return false;
+  if (!emu_FileWriteBytes(&nrmvideo, sizeof(nrmvideo))) return false;
+  if (!emu_FileWriteBytes(&RasterX, sizeof(RasterX))) return false;
+  if (!emu_FileWriteBytes(&RasterY, sizeof(RasterY))) return false;
+  if (!emu_FileWriteBytes(&psync, sizeof(psync))) return false;
+  if (!emu_FileWriteBytes(&sync_len, sizeof(sync_len))) return false;
+
+  if (!emu_FileWriteBytes(&running_rom, sizeof(running_rom))) return false;
+  if (!emu_FileWriteBytes(&frameNotSync, sizeof(frameNotSync))) return false;
+  if (!emu_FileWriteBytes(&LastInstruction, sizeof(LastInstruction))) return false;
+
+  if (!emu_FileWriteBytes(&NMI_generator, sizeof(NMI_generator))) return false;
+  if (!emu_FileWriteBytes(&hsync_pending, sizeof(hsync_pending))) return false;
+  if (!emu_FileWriteBytes(&VSYNC_state, sizeof(VSYNC_state))) return false;
+  if (!emu_FileWriteBytes(&HSYNC_state, sizeof(HSYNC_state))) return false;
+
+  if (!emu_FileWriteBytes(&S_RasterX, sizeof(S_RasterX))) return false;
+  if (!emu_FileWriteBytes(&S_RasterY, sizeof(S_RasterY))) return false;
+
+  if (!emu_FileWriteBytes(&videoFlipFlop1Q, sizeof(videoFlipFlop1Q))) return false;
+  if (!emu_FileWriteBytes(&videoFlipFlop2Q, sizeof(videoFlipFlop2Q))) return false;
+  if (!emu_FileWriteBytes(&videoFlipFlop3Q, sizeof(videoFlipFlop3Q))) return false;
+  if (!emu_FileWriteBytes(&videoFlipFlop3Clear, sizeof(videoFlipFlop3Clear))) return false;
+  if (!emu_FileWriteBytes(&prevVideoFlipFlop3Q, sizeof(prevVideoFlipFlop3Q))) return false;
+
+  if (!emu_FileWriteBytes(&vsyncFound, sizeof(vsyncFound))) return false;
+  if (!emu_FileWriteBytes(&lineClockCarryCounter, sizeof(lineClockCarryCounter))) return false;
+
+  if (!emu_FileWriteBytes(&scanline_len, sizeof(scanline_len))) return false;
+  if (!emu_FileWriteBytes(&sync_type, sizeof(sync_type))) return false;
+  if (!emu_FileWriteBytes(&sync_len, sizeof(sync_len))) return false;
+  if (!emu_FileWriteBytes(&nosync_lines, sizeof(nosync_lines))) return false;
+
+  // Process interlace emu_VideoSetInterlace();
+
+  if (!emu_FileWriteBytes(&chromamode, sizeof(chromamode))) return false;
+#ifdef SUPPORT_CHROMA
+  if (!emu_FileWriteBytes(&bordercolour, sizeof(bordercolour))) return false;
+  if (!emu_FileWriteBytes(&bordercolournew, sizeof(bordercolournew))) return false;
+#endif
+
+  return true;
+}
+
+bool load_snap_z80(void)
+{
+  if (!emu_FileReadBytes(&a, sizeof(a))) return false;
+  if (!emu_FileReadBytes(&f, sizeof(f))) return false;
+  if (!emu_FileReadBytes(&b, sizeof(b))) return false;
+  if (!emu_FileReadBytes(&c, sizeof(c))) return false;
+  if (!emu_FileReadBytes(&d, sizeof(d))) return false;
+  if (!emu_FileReadBytes(&e, sizeof(e))) return false;
+  if (!emu_FileReadBytes(&h, sizeof(h))) return false;
+  if (!emu_FileReadBytes(&l, sizeof(l))) return false;
+
+  if (!emu_FileReadBytes(&a1, sizeof(a1))) return false;
+  if (!emu_FileReadBytes(&f1, sizeof(f1))) return false;
+  if (!emu_FileReadBytes(&b1, sizeof(b1))) return false;
+  if (!emu_FileReadBytes(&c1, sizeof(c1))) return false;
+  if (!emu_FileReadBytes(&d1, sizeof(d1))) return false;
+  if (!emu_FileReadBytes(&e1, sizeof(e1))) return false;
+  if (!emu_FileReadBytes(&h1, sizeof(h1))) return false;
+  if (!emu_FileReadBytes(&l1, sizeof(l1))) return false;
+  if (!emu_FileReadBytes(&i, sizeof(i))) return false;
+  if (!emu_FileReadBytes(&iff1, sizeof(iff1))) return false;
+  if (!emu_FileReadBytes(&iff2, sizeof(iff2))) return false;
+  if (!emu_FileReadBytes(&im, sizeof(im))) return false;
+  if (!emu_FileReadBytes(&r, sizeof(r))) return false;
+
+  if (!emu_FileReadBytes(&ixoriy, sizeof(ixoriy))) return false;
+  if (!emu_FileReadBytes(&new_ixoriy, sizeof(new_ixoriy))) return false;
+
+  if (!emu_FileReadBytes(&ix, sizeof(ix))) return false;
+  if (!emu_FileReadBytes(&iy, sizeof(iy))) return false;
+  if (!emu_FileReadBytes(&sp, sizeof(sp))) return false;
+  if (!emu_FileReadBytes(&pc, sizeof(pc))) return false;
+
+  if (!emu_FileReadBytes(&radjust, sizeof(radjust))) return false;
+  if (!emu_FileReadBytes(&intsample, sizeof(intsample))) return false;
+  if (!emu_FileReadBytes(&m1cycles, sizeof(m1cycles))) return false;
+
+  if (!emu_FileReadBytes(&tstates, sizeof(tstates))) return false;
+  if (!emu_FileReadBytes(&ts, sizeof(ts))) return false;
+  if (!emu_FileReadBytes(&vsx, sizeof(vsx))) return false;
+  if (!emu_FileReadBytes(&vsy, sizeof(vsy))) return false;
+  if (!emu_FileReadBytes(&nrmvideo, sizeof(nrmvideo))) return false;
+  if (!emu_FileReadBytes(&RasterX, sizeof(RasterX))) return false;
+  if (!emu_FileReadBytes(&RasterY, sizeof(RasterY))) return false;
+  if (!emu_FileReadBytes(&psync, sizeof(psync))) return false;
+  if (!emu_FileReadBytes(&sync_len, sizeof(sync_len))) return false;
+
+  if (!emu_FileReadBytes(&running_rom, sizeof(running_rom))) return false;
+  if (!emu_FileReadBytes(&frameNotSync, sizeof(frameNotSync))) return false;
+  if (!emu_FileReadBytes(&LastInstruction, sizeof(LastInstruction))) return false;
+
+  if (!emu_FileReadBytes(&NMI_generator, sizeof(NMI_generator))) return false;
+  if (!emu_FileReadBytes(&hsync_pending, sizeof(hsync_pending))) return false;
+  if (!emu_FileReadBytes(&VSYNC_state, sizeof(VSYNC_state))) return false;
+  if (!emu_FileReadBytes(&HSYNC_state, sizeof(HSYNC_state))) return false;
+
+  if (!emu_FileReadBytes(&S_RasterX, sizeof(S_RasterX))) return false;
+  if (!emu_FileReadBytes(&S_RasterY, sizeof(S_RasterY))) return false;
+
+  if (!emu_FileReadBytes(&videoFlipFlop1Q, sizeof(videoFlipFlop1Q))) return false;
+  if (!emu_FileReadBytes(&videoFlipFlop2Q, sizeof(videoFlipFlop2Q))) return false;
+  if (!emu_FileReadBytes(&videoFlipFlop3Q, sizeof(videoFlipFlop3Q))) return false;
+  if (!emu_FileReadBytes(&videoFlipFlop3Clear, sizeof(videoFlipFlop3Clear))) return false;
+  if (!emu_FileReadBytes(&prevVideoFlipFlop3Q, sizeof(prevVideoFlipFlop3Q))) return false;
+
+  if (!emu_FileReadBytes(&vsyncFound, sizeof(vsyncFound))) return false;
+  if (!emu_FileReadBytes(&lineClockCarryCounter, sizeof(lineClockCarryCounter))) return false;
+
+  if (!emu_FileReadBytes(&scanline_len, sizeof(scanline_len))) return false;
+  if (!emu_FileReadBytes(&sync_type, sizeof(sync_type))) return false;
+  if (!emu_FileReadBytes(&sync_len, sizeof(sync_len))) return false;
+  if (!emu_FileReadBytes(&nosync_lines, sizeof(nosync_lines))) return false;
+
+  // Process interlace emu_VideoSetInterlace();
+
+  if (!emu_FileReadBytes(&chromamode, sizeof(chromamode))) return false;
+#ifdef SUPPORT_CHROMA
+  if (!emu_FileReadBytes(&bordercolour, sizeof(bordercolour))) return false;
+  if (!emu_FileReadBytes(&bordercolournew, sizeof(bordercolournew))) return false;
+#endif
+  return true;
 }

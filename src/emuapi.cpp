@@ -29,11 +29,12 @@ static bool fsinit = false;
  ********************************/
 bool emu_FileOpen(const char *filepath, const char *mode)
 {
-  (void)mode;   // Ignore mode, always open as read only
+  BYTE access = (*mode == 'w') ? (FA_WRITE | FA_CREATE_ALWAYS) : FA_READ;
+
   bool retval = false;
 
   printf("FileOpen %s\n", filepath);
-  FRESULT res = f_open(&file, filepath, FA_READ);
+  FRESULT res = f_open(&file, filepath, access);
   if (res == FR_OK)
   {
     retval = true;
@@ -45,7 +46,7 @@ bool emu_FileOpen(const char *filepath, const char *mode)
   return (retval);
 }
 
-int emu_FileRead(void *buf, int size, int offset)
+int emu_FileRead(void* buf, int size, int offset)
 {
   unsigned int read = 0;
 
@@ -60,7 +61,7 @@ int emu_FileRead(void *buf, int size, int offset)
       }
     }
 
-    if (f_read(&file, (void *)buf, size, &read) != FR_OK)
+    if (f_read(&file, buf, size, &read) != FR_OK)
     {
       printf("emu_FileRead read failed\n");
       read = 0;
@@ -68,9 +69,49 @@ int emu_FileRead(void *buf, int size, int offset)
   }
   else
   {
-    printf("emu_FileRead negative size %i\n", size);
+    printf("emu_FileRead illegal size %i\n", size);
   }
   return read;
+}
+
+int emu_FileReadBytes(void* buf, int size)
+{
+  unsigned int read = 0;
+
+  if (size > 0)
+  {
+
+    if (f_read(&file, buf, size, &read) != FR_OK)
+    {
+      printf("emu_FileReadBytes read failed\n");
+      read = 0;
+    }
+  }
+  else
+  {
+    printf("emu_FileReadBytes illegal size %i\n", size);
+  }
+  return read;
+}
+
+int emu_FileWriteBytes(const void* buf, int size)
+{
+  unsigned int write = 0;
+
+  if (size > 0)
+  {
+
+    if (f_write(&file, buf, size, &write) != FR_OK)
+    {
+      printf("emu_FileWriteBytes write failed\n");
+      write = 0;
+    }
+  }
+  else
+  {
+    printf("emu_FileReadBytes illegal size %i\n", size);
+  }
+  return write;
 }
 
 void emu_FileClose(void)
