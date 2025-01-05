@@ -53,7 +53,7 @@
 int sound_enabled=0;
 int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 
-/* sound_type is in common.c */
+/* sound_type is in z80.c */
 
 #define AY_CLOCK_QUICKSILVA (3250000>>2)
 

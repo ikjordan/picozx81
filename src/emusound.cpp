@@ -456,3 +456,19 @@ void emu_sndSilence(void)
     soundBuffer16[i] = ZEROSOUND;
   }
 }
+
+bool emu_sndSaveSnap(void)
+{
+  if (!emu_FileWriteBytes(&queued_sound_type, sizeof(queued_sound_type))) return false;
+  if (!emu_FileWriteBytes(&queued_play, sizeof(queued_play))) return false;
+
+  return true;
+}
+
+bool emu_sndLoadSnap(void)
+{
+  if (!emu_FileReadBytes(&queued_sound_type, sizeof(queued_sound_type))) return false;
+  if (!emu_FileReadBytes(&queued_play, sizeof(queued_play))) return false;
+
+  return true;
+}

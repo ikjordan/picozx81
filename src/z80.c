@@ -1374,8 +1374,6 @@ bool save_snap_z80(void)
 
 bool load_snap_z80(void)
 {
-  printf("tstates = %lu a= %c h=%c\n", tstates, a, c);
-
   if (!emu_FileReadBytes(&a, sizeof(a))) return false;
   if (!emu_FileReadBytes(&f, sizeof(f))) return false;
   if (!emu_FileReadBytes(&b, sizeof(b))) return false;
@@ -1454,8 +1452,6 @@ bool load_snap_z80(void)
   if (!emu_FileReadBytes(&sync_len, sizeof(sync_len))) return false;
   if (!emu_FileReadBytes(&nosync_lines, sizeof(nosync_lines))) return false;
 
-  // Process interlace emu_VideoSetInterlace();
-
   if (!emu_FileReadBytes(&chromamode, sizeof(chromamode))) return false;
 #ifdef SUPPORT_CHROMA
   if (!emu_FileReadBytes(&bordercolour, sizeof(bordercolour))) return false;
@@ -1490,6 +1486,13 @@ bool load_snap_z80(void)
   if (!emu_FileReadBytes(&running_rom, sizeof(running_rom))) return false;
 
   if (!emu_FileReadBytes(&scanlineCounter, sizeof(scanlineCounter))) return false;
+
+  // Reinitialise the sound
+  emu_sndInit(sound_type != SOUND_TYPE_NONE, true);
+
+  // TO DO Add check that resolution is the same
+  // TO DO Set the interlace correctly
+  // TO DO support change in display type?
 
   return true;
 }

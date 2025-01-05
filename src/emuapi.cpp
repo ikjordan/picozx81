@@ -11,6 +11,7 @@
 
 #include "emuapi.h"
 #include "emuvideo.h"
+#include "emusound.h"
 #include "emupriv.h"
 #include "z80.h"
 #include "zx8x.h"
@@ -168,15 +169,28 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
   return true;
 }
 
+#define SNAPSHOT_ID ('P'+'A'+'N'+'S')
+#define SUPPORTED_VERSION 0x00000001
+
 bool emu_loadSnapshot(const char* filepath)
 {
-  bool ret = true;
+  bool ret = false;
   printf("loadSnapshot %s \n", filepath);
 
   EMU_LOCK_SDCARD
   if (!(f_open(&file, filepath, FA_READ)))
   {
-    if (!load_snap_z80())
+    // Check identifer
+    uint32_t id;
+    if (!emu_FileReadBytes(&id, sizeof(id)) || id != SNAPSHOT_ID)
+    {
+      printf("emu_loadSnapshot wrong id\n");
+    }
+    else if (!emu_FileReadBytes(&id, sizeof(id)) || id != SUPPORTED_VERSION)
+    {
+      printf("emu_loadSnapshot wrong version\n");
+    }
+    else if (!load_snap_z80())
     {
       printf("load_snap_z80 failed\n");
     }
@@ -184,12 +198,19 @@ bool emu_loadSnapshot(const char* filepath)
     {
       printf("load_snap_zx8x failed\n");
     }
+    else if (!emu_sndLoadSnap())
+    {
+      printf("emu_sndLoadSnap failed\n");
+    }
+    else
+    {
+      ret = true;
+    }
     f_close(&file);
   }
   else
   {
     printf("file open failed\n");
-    ret = false;
   }
   EMU_UNLOCK_SDCARD
   return ret;
@@ -197,13 +218,25 @@ bool emu_loadSnapshot(const char* filepath)
 
 bool emu_saveSnapshot(const char* filepath)
 {
-  bool ret = true;
+  bool ret = false;
   printf("saveSnapshot %s \n", filepath);
 
   EMU_LOCK_SDCARD
   if (!(f_open(&file, filepath, FA_CREATE_ALWAYS | FA_WRITE)))
   {
-    if (!save_snap_z80())
+    // write identifer
+    uint32_t id = SNAPSHOT_ID;
+    uint32_t version = SUPPORTED_VERSION;
+    if (!emu_FileWriteBytes(&id, sizeof(id)))
+    {
+      printf("emu_saveSnapshot write id failed\n");
+    }
+    else if (!emu_FileWriteBytes(&version, sizeof(version)))
+    {
+      printf("emu_saveSnapshot write version failed\n");
+    }
+
+    else if (!save_snap_z80())
     {
       printf("save_snap_z80 failed\n");
     }
@@ -211,12 +244,19 @@ bool emu_saveSnapshot(const char* filepath)
     {
       printf("save_snap_zx8x failed\n");
     }
+    else if (!emu_sndSaveSnap())
+    {
+      printf("emu_sndSaveSnap failed\n");
+    }
+    else
+    {
+      ret = true;
+    }
     f_close(&file);
   }
   else
   {
     printf("file open failed\n");
-    ret = false;
   }
   EMU_UNLOCK_SDCARD
   return ret;
