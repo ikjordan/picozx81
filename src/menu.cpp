@@ -5,9 +5,9 @@
 
 #include "emuapi.h"
 #include "emuvideo.h"
-#include "z80.h"
 #include "zx80rom.h"
 #include "zx81rom.h"
+#include "zx8x.h"
 
 #include "hid_usb.h"
 #include "display.h"
@@ -91,8 +91,7 @@ static bool getFile(char* inout, uint index, bool* direct);
 static void showModify(PositionF6_T pos, ModifyF6_T* modify);
 static void showRestart(PositionF7_T pos, RestartF7_T* restart);
 static void showReboot(FiveSevenSix_T mode);
-static void showSnap(void);
-static void showSave(const uint8_t* name, uint len, uint cursor, uint col, uint row);
+static void showSave(const char* name, uint len, uint cursor, uint col, uint row);
 static void setConvert(bool zx80);
 
 static bool wasBlank = false;
@@ -300,7 +299,7 @@ bool loadMenu(void)
 #define MAX_SAVE 30
 #define ROW_SPACING 12
 
-bool saveMenu(uint8_t* save, uint length)
+bool saveMenu(char* save, uint length, bool zx80)
 {
     uint8_t key = 0;
     uint8_t detected = 0;
@@ -345,8 +344,16 @@ bool saveMenu(uint8_t* save, uint length)
     }
     else
     {
-        writeString("Save", col - 2, row - ROW_SPACING - 1);
-        writeString("====", col - 2, row - ROW_SPACING);
+        if (zx80)
+        {
+            writeString("Save ZX80", col - 5, row - ROW_SPACING - 1);
+            writeString("=========", col - 5, row - ROW_SPACING);
+        }
+        else
+        {
+            writeString("Save Snapshot", col - 7, row - ROW_SPACING - 1);
+            writeString("=============", col - 7, row - ROW_SPACING);
+        }
 
         showSave(save, len, cursor, col - (MAX_SAVE >> 1), row + ROW_SPACING);
 
@@ -1073,38 +1080,26 @@ void rebootMenu(void)
 // Save a snapshot (f9)
 void snapMenu(void)
 {
-    uint8_t key = 0;
-    uint8_t debounce = 0;
+    char* snap_path = z8x_getFilenameDirectory();
+    int path_len = strlen(snap_path);
 
-    if (!buildMenu(false))
-        return;
-
-    hidNavigateMenu(&debounce);
-    showSnap();
-
-    // Testing:
-    if (emu_FileOpen("/snaptest", "w+b"))
+    if (saveMenu(&snap_path[path_len], MAX_SAVE, false))
     {
-        if (save_snap_z80())
+        // Check for extension and add .s if not present
+        if (strlen(&snap_path[path_len]))
         {
-            do
+            if (!emu_EndsWith(snap_path, ".s"))
             {
-                key = 0;
-                tuh_task();
-                hidNavigateMenu(&key);
-                emu_WaitFor50HzTimer();
-            } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
-        }
-        emu_FileClose();
-    }
+                strcat(snap_path, ".s");
+            }
 
-    debounceExit(key == HID_KEY_ENTER);
-    if (emu_FileOpen("/snaptest", "r+b"))
-    {
-        load_snap_z80();
-        emu_FileClose();
+            // Write the data
+            if (!emu_saveSnapshot((const char*)snap_path))
+            {
+                printf("emu_saveSnapshot failed\n");
+            }
+        }
     }
-    endMenu(false);
 }
 
 /*
@@ -1355,17 +1350,7 @@ static void showReboot(FiveSevenSix_T mode)
 #endif
 }
 
-static void showSnap(void)
-{
-    uint lcount = (disp.height >> 4) - 13;
-
-    int lhs = (disp.width >> 4) - 10;
-
-    writeString("Snap", lhs + 6, lcount);
-    writeString("====", lhs + 6, lcount+1);
-}
-
-static void showSave(const uint8_t* name, uint len, uint cursor, uint col, uint row)
+static void showSave(const char* name, uint len, uint cursor, uint col, uint row)
 {
 
     for (uint i=0; i<cursor; ++i)
@@ -1605,7 +1590,7 @@ static int populateFiles(const char* path, uint first)
             if ((!(fno.fattrib & AM_DIR) && (strlen(fno.fname) < MAX_FILENAME_LEN)) &&
                 ((emu_EndsWith(fno.fname, ".o") || emu_EndsWith(fno.fname, ".p") ||
                   emu_EndsWith(fno.fname, ".80") || emu_EndsWith(fno.fname, ".81") ||
-                  emu_EndsWith(fno.fname, ".p81") || allfiles)))
+                  emu_EndsWith(fno.fname, ".p81") || emu_EndsWith(fno.fname, ".s") || allfiles)))
             {
                 if ((count >= first) && (count < (first + fullrow)))
                 {
@@ -1712,7 +1697,7 @@ static bool getFile(char* inout, uint index, bool* direct)
                 if ((strlen(fno.fname) < MAX_FILENAME_LEN) &&
                     ((emu_EndsWith(fno.fname, ".o") || emu_EndsWith(fno.fname, ".p") ||
                       emu_EndsWith(fno.fname, ".80") || emu_EndsWith(fno.fname, ".81")) ||
-                      emu_EndsWith(fno.fname, ".p81") || allfiles))
+                      emu_EndsWith(fno.fname, ".p81") || emu_EndsWith(fno.fname, ".s") || allfiles))
                 {
                     ++count;
                 }

@@ -31,8 +31,6 @@ bool parseNumber(const char* input,
 byte mem[MEMORYRAM_SIZE];
 unsigned char *memptr[64];
 int memattr[64];
-int nmigen=0,hsyncgen=0,vsync=0;
-int signal_int_flag=0;
 int ramsize=16;
 
 /* the keyboard state and other */
@@ -67,6 +65,8 @@ static char zx2ascii[64]={
 };
 
 static char tapename[64]={0};
+
+static void set_mem_attribute_and_ptr(void);
 
 unsigned int __not_in_flash_func(in)(int h, int l)
 {
@@ -218,6 +218,12 @@ void __not_in_flash_func(out)(int h, int l, int a)
 }
 
 static char fname[256];
+
+char* z8x_getFilenameDirectory(void)
+{
+    strcpy(fname, emu_GetDirectory());
+    return fname;
+}
 
 bool load_p(int name_addr, bool defer_rom)
 {
@@ -528,7 +534,7 @@ bool save_p(int name_addr, bool defer_rom)
 
       // Display the ZX80 save screen
       uint length = strlen(fname);
-      if (!saveMenu((uint8_t*)(&fname[length]), sizeof(fname) - length - 1))
+      if (!saveMenu(&fname[length], sizeof(fname) - length - 1, true))
       {
         // A default name
         strcat(fname,"zx80prog.o");
@@ -682,13 +688,8 @@ void rom4kPatches()
 #endif
 }
 
-static void initmem()
+static void initmem(void)
 {
-  int f;
-  int count;
-  int ramtmp = ramsize;
-  bool odd=false;
-
   if(rom4k)
   {
     memset(mem+0x1000,0,0xf000);
@@ -697,9 +698,17 @@ static void initmem()
   {
     memset(mem+0x2000,0,0xe000);
   }
+  set_mem_attribute_and_ptr();
+}
+
+static void set_mem_attribute_and_ptr(void)
+{
+  int f;
+  int ramtmp = ramsize;
+  bool odd = false;
+  int count = 0;
 
   /* ROM setup */
-  count=0;
   for(f=0;f<16;f++)
   {
     memattr[f]=memattr[32+f]=0;
@@ -884,8 +893,9 @@ bool z8x_Step(void)
 }
 
 // Set the tape name and validate it
-void z8x_Start(const char * filename)
+bool z8x_Start(const char * filename)
 {
+  bool reset = true;
   char c;
 
   autoload = 0;
@@ -900,32 +910,41 @@ void z8x_Start(const char * filename)
     strcpy(fname, emu_GetDirectory());
     strcat(fname, tapename);
 
-    EMU_LOCK_SDCARD
-
-    if (emu_FileOpen(fname, "r+b"))
+    if (emu_EndsWith(tapename, ".s"))
     {
-      int fsize = emu_FileRead(&c, 1, 0);
-      if (!fsize)
-      {
-        printf("Read %s failed. No autoload\n", filename);
-      }
-      else
-      {
-        autoload = 1;
+      emu_loadSnapshot(fname);
+      reset = false;
+    }
+    else
+    {
+      EMU_LOCK_SDCARD
 
-        // Read the new specific values
-        emu_ReadSpecificValues(fname);
-
-        // Determine the computer type from the ending - do not change for .p81
-        if (!emu_EndsWith(fname, ".p81"))
+      if (emu_FileOpen(fname, "r+b"))
+      {
+        int fsize = emu_FileRead(&c, 1, 0);
+        if (!fsize)
         {
-          emu_SetRom4K(emu_EndsWith(fname, ".o") || emu_EndsWith(fname, ".80"));
+          printf("Read %s failed. No autoload\n", filename);
         }
+        else
+        {
+          autoload = 1;
+
+          // Read the new specific values
+          emu_ReadSpecificValues(fname);
+
+          // Determine the computer type from the ending - do not change for .p81
+          if (!emu_EndsWith(fname, ".p81"))
+          {
+            emu_SetRom4K(emu_EndsWith(fname, ".o") || emu_EndsWith(fname, ".80"));
+          }
+        }
+        emu_FileClose();
+        EMU_UNLOCK_SDCARD
       }
-      emu_FileClose();
-      EMU_UNLOCK_SDCARD
     }
   }
+  return reset;
 }
 
 // input: string to be parsed for an unsigned number
@@ -995,4 +1014,48 @@ char *strzx80_to_ascii(int memaddr)
   } while (mem[memaddr++] < 0x80);
 
   return translated;
+}
+bool save_snap_zx8x(void)
+{
+  if (!emu_FileWriteBytes(mem, sizeof(byte) * MEMORYRAM_SIZE)) return false;
+  // memptr and memattr recreated when loaded
+
+  if (!emu_FileWriteBytes(keyboard, sizeof(uint8_t) * 8)) return false;
+  if (!emu_FileWriteBytes(&ramsize, sizeof(ramsize))) return false;
+  if (!emu_FileWriteBytes(&zx80, sizeof(zx80))) return false;
+  if (!emu_FileWriteBytes(&rom4k, sizeof(rom4k))) return false;
+  if (!emu_FileWriteBytes(&autoload, sizeof(autoload))) return false;
+  if (!emu_FileWriteBytes(&chromamode, sizeof(chromamode))) return false;
+#ifdef SUPPORT_CHROMA
+  if (!emu_FileWriteBytes(&bordercolour, sizeof(bordercolour))) return false;
+  if (!emu_FileWriteBytes(&bordercolournew, sizeof(bordercolournew))) return false;
+  if (!emu_FileWriteBytes(&fullcolour, sizeof(fullcolour))) return false;
+  if (!emu_FileWriteBytes(&chroma_set, sizeof(chroma_set))) return false;
+#endif
+  if (!emu_FileWriteBytes(&resetRequired, sizeof(resetRequired))) return false;
+
+  return true;
+}
+
+bool load_snap_zx8x(void)
+{
+  if (!emu_FileReadBytes(mem, sizeof(byte) * MEMORYRAM_SIZE)) return false;
+  // memptr and memattr recreated when loaded
+
+  if (!emu_FileReadBytes(keyboard, sizeof(uint8_t) * 8)) return false;
+  if (!emu_FileReadBytes(&ramsize, sizeof(ramsize))) return false;
+  if (!emu_FileReadBytes(&zx80, sizeof(zx80))) return false;
+  if (!emu_FileReadBytes(&rom4k, sizeof(rom4k))) return false;
+  if (!emu_FileReadBytes(&autoload, sizeof(autoload))) return false;
+  if (!emu_FileReadBytes(&chromamode, sizeof(chromamode))) return false;
+#ifdef SUPPORT_CHROMA
+  if (!emu_FileReadBytes(&bordercolour, sizeof(bordercolour))) return false;
+  if (!emu_FileReadBytes(&bordercolournew, sizeof(bordercolournew))) return false;
+  if (!emu_FileReadBytes(&fullcolour, sizeof(fullcolour))) return false;
+  if (!emu_FileReadBytes(&chroma_set, sizeof(chroma_set))) return false;
+#endif
+  if (!emu_FileReadBytes(&resetRequired, sizeof(resetRequired))) return false;
+
+  set_mem_attribute_and_ptr();
+  return true;
 }

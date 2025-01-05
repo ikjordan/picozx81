@@ -29,7 +29,7 @@
 
 #define parity(a) (partable[a])
 
-unsigned char partable[256] = {
+unsigned char partable[256] = {     // Constant, but want to be in RAM
       4, 0, 0, 4, 0, 4, 4, 0, 0, 4, 4, 0, 4, 0, 0, 4,
       0, 4, 4, 0, 4, 0, 0, 4, 4, 0, 0, 4, 0, 4, 4, 0,
       0, 4, 4, 0, 4, 0, 0, 4, 4, 0, 0, 4, 0, 4, 4, 0,
@@ -59,7 +59,6 @@ static unsigned char* scrnbmpc_new = 0;
 
 static int vsx = 0;
 static int vsy = 0;
-static int nrmvideo = 1;
 int ay_reg = 0;
 int LastInstruction;
 bool frameNotSync = true;
@@ -240,7 +239,6 @@ void resetZ80(void)
   tstates = 0;
   ts = 0;
   vsx = vsy = 0;
-  nrmvideo = 0;
   RasterX = 0;
   RasterY = 0;
   psync = 1;
@@ -251,6 +249,7 @@ void resetZ80(void)
 
   /* ULA */
   NMI_generator = 0;
+  nmi_pending = 0;
   hsync_pending = 0;
   VSYNC_state = HSYNC_state = 0;
 
@@ -1288,13 +1287,18 @@ bool save_snap_z80(void)
 
   if (!emu_FileWriteBytes(&radjust, sizeof(radjust))) return false;
   if (!emu_FileWriteBytes(&intsample, sizeof(intsample))) return false;
+  if (!emu_FileWriteBytes(&op, sizeof(op))) return false;
   if (!emu_FileWriteBytes(&m1cycles, sizeof(m1cycles))) return false;
 
   if (!emu_FileWriteBytes(&tstates, sizeof(tstates))) return false;
   if (!emu_FileWriteBytes(&ts, sizeof(ts))) return false;
   if (!emu_FileWriteBytes(&vsx, sizeof(vsx))) return false;
   if (!emu_FileWriteBytes(&vsy, sizeof(vsy))) return false;
-  if (!emu_FileWriteBytes(&nrmvideo, sizeof(nrmvideo))) return false;
+
+  if (!emu_FileWriteBytes(&FRAME_SCAN, sizeof(FRAME_SCAN))) return false;
+  if (!emu_FileWriteBytes(&VSYNC_TOLERANCEMIN, sizeof(VSYNC_TOLERANCEMIN))) return false;
+  if (!emu_FileWriteBytes(&VSYNC_TOLERANCEMAX, sizeof(VSYNC_TOLERANCEMAX))) return false;
+
   if (!emu_FileWriteBytes(&RasterX, sizeof(RasterX))) return false;
   if (!emu_FileWriteBytes(&RasterY, sizeof(RasterY))) return false;
   if (!emu_FileWriteBytes(&psync, sizeof(psync))) return false;
@@ -1302,9 +1306,11 @@ bool save_snap_z80(void)
 
   if (!emu_FileWriteBytes(&running_rom, sizeof(running_rom))) return false;
   if (!emu_FileWriteBytes(&frameNotSync, sizeof(frameNotSync))) return false;
+  if (!emu_FileWriteBytes(&ay_reg, sizeof(ay_reg))) return false;
   if (!emu_FileWriteBytes(&LastInstruction, sizeof(LastInstruction))) return false;
 
   if (!emu_FileWriteBytes(&NMI_generator, sizeof(NMI_generator))) return false;
+  if (!emu_FileWriteBytes(&nmi_pending, sizeof(nmi_pending))) return false;
   if (!emu_FileWriteBytes(&hsync_pending, sizeof(hsync_pending))) return false;
   if (!emu_FileWriteBytes(&VSYNC_state, sizeof(VSYNC_state))) return false;
   if (!emu_FileWriteBytes(&HSYNC_state, sizeof(HSYNC_state))) return false;
@@ -1334,11 +1340,42 @@ bool save_snap_z80(void)
   if (!emu_FileWriteBytes(&bordercolournew, sizeof(bordercolournew))) return false;
 #endif
 
+  if (!emu_FileWriteBytes(&dest, sizeof(dest))) return false;
+  if (!emu_FileWriteBytes(&adjustStartX, sizeof(adjustStartX))) return false;
+  if (!emu_FileWriteBytes(&adjustStartY, sizeof(adjustStartY))) return false;
+  if (!emu_FileWriteBytes(&startX, sizeof(startX))) return false;
+  if (!emu_FileWriteBytes(&startY, sizeof(startY))) return false;
+  if (!emu_FileWriteBytes(&syncX, sizeof(syncX))) return false;
+  if (!emu_FileWriteBytes(&endX, sizeof(endX))) return false;
+  if (!emu_FileWriteBytes(&endY, sizeof(endY))) return false;
+
+  if (!emu_FileWriteBytes(&psync, sizeof(psync))) return false;
+  if (!emu_FileWriteBytes(&sync_len, sizeof(sync_len))) return false;
+  if (!emu_FileWriteBytes(&rowcounter, sizeof(rowcounter))) return false;
+  if (!emu_FileWriteBytes(&sync_len, sizeof(sync_len))) return false;
+  if (!emu_FileWriteBytes(&hsync_counter, sizeof(hsync_counter))) return false;
+  if (!emu_FileWriteBytes(&rowcounter_hold, sizeof(rowcounter_hold))) return false;
+
+  if (!emu_FileWriteBytes(&sound_type, sizeof(sound_type))) return false;
+  if (!emu_FileWriteBytes(&m1not, sizeof(m1not))) return false;
+  if (!emu_FileWriteBytes(&useWRX, sizeof(useWRX))) return false;
+  if (!emu_FileWriteBytes(&UDGEnabled, sizeof(UDGEnabled))) return false;
+  if (!emu_FileWriteBytes(&useQSUDG, sizeof(useQSUDG))) return false;
+  if (!emu_FileWriteBytes(&LowRAM, sizeof(LowRAM))) return false;
+  if (!emu_FileWriteBytes(&chr128, sizeof(chr128))) return false;
+  if (!emu_FileWriteBytes(&useNTSC, sizeof(useNTSC))) return false;
+  if (!emu_FileWriteBytes(&frameSync, sizeof(frameSync))) return false;
+  if (!emu_FileWriteBytes(&running_rom, sizeof(running_rom))) return false;
+
+  if (!emu_FileWriteBytes(&scanlineCounter, sizeof(scanlineCounter))) return false;
+
   return true;
 }
 
 bool load_snap_z80(void)
 {
+  printf("tstates = %lu a= %c h=%c\n", tstates, a, c);
+
   if (!emu_FileReadBytes(&a, sizeof(a))) return false;
   if (!emu_FileReadBytes(&f, sizeof(f))) return false;
   if (!emu_FileReadBytes(&b, sizeof(b))) return false;
@@ -1372,13 +1409,18 @@ bool load_snap_z80(void)
 
   if (!emu_FileReadBytes(&radjust, sizeof(radjust))) return false;
   if (!emu_FileReadBytes(&intsample, sizeof(intsample))) return false;
+  if (!emu_FileReadBytes(&op, sizeof(op))) return false;
   if (!emu_FileReadBytes(&m1cycles, sizeof(m1cycles))) return false;
 
   if (!emu_FileReadBytes(&tstates, sizeof(tstates))) return false;
   if (!emu_FileReadBytes(&ts, sizeof(ts))) return false;
   if (!emu_FileReadBytes(&vsx, sizeof(vsx))) return false;
   if (!emu_FileReadBytes(&vsy, sizeof(vsy))) return false;
-  if (!emu_FileReadBytes(&nrmvideo, sizeof(nrmvideo))) return false;
+
+  if (!emu_FileReadBytes(&FRAME_SCAN, sizeof(FRAME_SCAN))) return false;
+  if (!emu_FileReadBytes(&VSYNC_TOLERANCEMIN, sizeof(VSYNC_TOLERANCEMIN))) return false;
+  if (!emu_FileReadBytes(&VSYNC_TOLERANCEMAX, sizeof(VSYNC_TOLERANCEMAX))) return false;
+
   if (!emu_FileReadBytes(&RasterX, sizeof(RasterX))) return false;
   if (!emu_FileReadBytes(&RasterY, sizeof(RasterY))) return false;
   if (!emu_FileReadBytes(&psync, sizeof(psync))) return false;
@@ -1386,9 +1428,11 @@ bool load_snap_z80(void)
 
   if (!emu_FileReadBytes(&running_rom, sizeof(running_rom))) return false;
   if (!emu_FileReadBytes(&frameNotSync, sizeof(frameNotSync))) return false;
+  if (!emu_FileReadBytes(&ay_reg, sizeof(ay_reg))) return false;
   if (!emu_FileReadBytes(&LastInstruction, sizeof(LastInstruction))) return false;
 
   if (!emu_FileReadBytes(&NMI_generator, sizeof(NMI_generator))) return false;
+  if (!emu_FileReadBytes(&nmi_pending, sizeof(nmi_pending))) return false;
   if (!emu_FileReadBytes(&hsync_pending, sizeof(hsync_pending))) return false;
   if (!emu_FileReadBytes(&VSYNC_state, sizeof(VSYNC_state))) return false;
   if (!emu_FileReadBytes(&HSYNC_state, sizeof(HSYNC_state))) return false;
@@ -1417,5 +1461,35 @@ bool load_snap_z80(void)
   if (!emu_FileReadBytes(&bordercolour, sizeof(bordercolour))) return false;
   if (!emu_FileReadBytes(&bordercolournew, sizeof(bordercolournew))) return false;
 #endif
+
+  if (!emu_FileReadBytes(&dest, sizeof(dest))) return false;
+  if (!emu_FileReadBytes(&adjustStartX, sizeof(adjustStartX))) return false;
+  if (!emu_FileReadBytes(&adjustStartY, sizeof(adjustStartY))) return false;
+  if (!emu_FileReadBytes(&startX, sizeof(startX))) return false;
+  if (!emu_FileReadBytes(&startY, sizeof(startY))) return false;
+  if (!emu_FileReadBytes(&syncX, sizeof(syncX))) return false;
+  if (!emu_FileReadBytes(&endX, sizeof(endX))) return false;
+  if (!emu_FileReadBytes(&endY, sizeof(endY))) return false;
+
+  if (!emu_FileReadBytes(&psync, sizeof(psync))) return false;
+  if (!emu_FileReadBytes(&sync_len, sizeof(sync_len))) return false;
+  if (!emu_FileReadBytes(&rowcounter, sizeof(rowcounter))) return false;
+  if (!emu_FileReadBytes(&sync_len, sizeof(sync_len))) return false;
+  if (!emu_FileReadBytes(&hsync_counter, sizeof(hsync_counter))) return false;
+  if (!emu_FileReadBytes(&rowcounter_hold, sizeof(rowcounter_hold))) return false;
+
+  if (!emu_FileReadBytes(&sound_type, sizeof(sound_type))) return false;
+  if (!emu_FileReadBytes(&m1not, sizeof(m1not))) return false;
+  if (!emu_FileReadBytes(&useWRX, sizeof(useWRX))) return false;
+  if (!emu_FileReadBytes(&UDGEnabled, sizeof(UDGEnabled))) return false;
+  if (!emu_FileReadBytes(&useQSUDG, sizeof(useQSUDG))) return false;
+  if (!emu_FileReadBytes(&LowRAM, sizeof(LowRAM))) return false;
+  if (!emu_FileReadBytes(&chr128, sizeof(chr128))) return false;
+  if (!emu_FileReadBytes(&useNTSC, sizeof(useNTSC))) return false;
+  if (!emu_FileReadBytes(&frameSync, sizeof(frameSync))) return false;
+  if (!emu_FileReadBytes(&running_rom, sizeof(running_rom))) return false;
+
+  if (!emu_FileReadBytes(&scanlineCounter, sizeof(scanlineCounter))) return false;
+
   return true;
 }

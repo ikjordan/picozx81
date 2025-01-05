@@ -37,13 +37,16 @@ extern bool emu_fsInitialised(void);
 
 extern bool emu_FileOpen(const char * filepath, const char * mode);
 extern int emu_FileRead(void * buf, int size, int offset);
-extern int emu_FileReadBytes(void* buf, int size);
-extern int emu_FileWriteBytes(const void* buf, int size);
+extern int emu_FileReadBytes(void* buf, unsigned int size);
+extern int emu_FileWriteBytes(const void* buf, unsigned int size);
 extern void emu_FileClose(void);
 
 extern unsigned int emu_FileSize(const char * filepath);
 extern bool emu_SaveFile(const char * filepath, void * buf, int size);
 extern bool emu_EndsWith(const char * s, const char * suffix);
+
+extern bool emu_loadSnapshot(const char* filepath);
+extern bool emu_saveSnapshot(const char* filepath);
 
 extern const char* emu_GetLoadName(void);
 extern void emu_SetLoadName(const char* name);

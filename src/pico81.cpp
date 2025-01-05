@@ -87,8 +87,10 @@ static void mainLoop(void)
                     case HID_KEY_F2:
                         if (loadMenu())
                         {
-                            z8x_Start(emu_GetLoadName());
-                            return;
+                            if (z8x_Start(emu_GetLoadName()))
+                            {
+                                return;
+                            }
                         }
                     break;
 
