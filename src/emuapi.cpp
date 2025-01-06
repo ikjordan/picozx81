@@ -169,16 +169,17 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
   return true;
 }
 
-#define SNAPSHOT_ID ('P'+'A'+'N'+'S')
-#define SUPPORTED_VERSION 0x00000001
+#define SNAPSHOT_ID       0x50414E53          // Little endian 'SNAP'
+#define SUPPORTED_VERSION 0x00010001          // Major and minor versions
 
-bool emu_loadSnapshot(const char* filepath)
+bool emu_loadSnapshot(const char* filename, const char* fullpathname)
 {
   bool ret = false;
-  printf("loadSnapshot %s \n", filepath);
+  FiveSevenSix_T state;
+  printf("loadSnapshot %s \n", fullpathname);
 
   EMU_LOCK_SDCARD
-  if (!(f_open(&file, filepath, FA_READ)))
+  if (!(f_open(&file, fullpathname, FA_READ)))
   {
     // Check identifer
     uint32_t id;
@@ -189,6 +190,15 @@ bool emu_loadSnapshot(const char* filepath)
     else if (!emu_FileReadBytes(&id, sizeof(id)) || id != SUPPORTED_VERSION)
     {
       printf("emu_loadSnapshot wrong version\n");
+    }
+    else if (!emu_FileReadBytes(&state, sizeof(state)) || state != emu_576Requested())
+    {
+      printf("wrong display type - triggering reboot\n");
+      emu_SetRebootMode(state, emu_GetDirectory(), filename);
+    }
+    else if (!display_load_snap())
+    {
+      printf("display_load_snap failed\n");
     }
     else if (!load_snap_z80())
     {
@@ -219,6 +229,8 @@ bool emu_loadSnapshot(const char* filepath)
 bool emu_saveSnapshot(const char* filepath)
 {
   bool ret = false;
+  FiveSevenSix_T state = emu_576Requested();
+
   printf("saveSnapshot %s \n", filepath);
 
   EMU_LOCK_SDCARD
@@ -235,7 +247,14 @@ bool emu_saveSnapshot(const char* filepath)
     {
       printf("emu_saveSnapshot write version failed\n");
     }
-
+    else if (!emu_FileWriteBytes(&state, sizeof(state)))
+    {
+      printf("emu_saveSnapshot write display state failed\n");
+    }
+    else if (!display_save_snap())
+    {
+      printf("display_save_snap failed\n");
+    }
     else if (!save_snap_z80())
     {
       printf("save_snap_z80 failed\n");
@@ -775,7 +794,7 @@ void emu_SetCHR128(bool chr128)
   specific.CHR128 = chr128;
 }
 
-void emu_SetRebootMode(FiveSevenSix_T mode)
+void emu_SetRebootMode(FiveSevenSix_T mode, const char* dirname, const char* filename)
 {
   char filepath[MAX_FULLPATH_LEN];
 
@@ -792,6 +811,17 @@ void emu_SetRebootMode(FiveSevenSix_T mode)
     f_write(&file, filepath, strlen(filepath), &bw);
     sprintf(filepath, "FiveSevenSix = %s\n", (mode == MATCH) ? "MATCH" : (mode == ON) ? "ON" : "OFF");
     f_write(&file, filepath, strlen(filepath), &bw);
+    if (filename)
+    {
+      sprintf(filepath, "Load = %s\n", filename);
+      f_write(&file, filepath, strlen(filepath), &bw);
+
+      if (dirname)
+      {
+        sprintf(filepath, "Dir = %s\n", dirname);
+        f_write(&file, filepath, strlen(filepath), &bw);
+      }
+    }
     f_close(&file);
 
     // Set the watchdog to trigger a reboot

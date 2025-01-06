@@ -1072,7 +1072,7 @@ void rebootMenu(void)
         if (initialMode != mode)
         {
             // Write file and reboot
-            emu_SetRebootMode(mode);
+            emu_SetRebootMode(mode, NULL, NULL);
         }
     }
 }

@@ -64,6 +64,9 @@ extern bool displayIsBlank(bool* isBlack);
 
 extern bool displayHideKeyboard(void);
 
+extern bool display_save_snap(void);
+extern bool display_load_snap(void);
+
 #ifdef SUPPORT_CHROMA
 extern void displayGetChromaBuffer(uint8_t** chroma, uint8_t* buff);
 extern void displayResetChroma(void);

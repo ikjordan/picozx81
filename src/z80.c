@@ -1338,6 +1338,9 @@ bool save_snap_z80(void)
 #ifdef SUPPORT_CHROMA
   if (!emu_FileWriteBytes(&bordercolour, sizeof(bordercolour))) return false;
   if (!emu_FileWriteBytes(&bordercolournew, sizeof(bordercolournew))) return false;
+#else
+  uint16_t dummy = 0;
+  if (!emu_FileWriteBytes(&dummy, sizeof(dummy))) return false;
 #endif
 
   if (!emu_FileWriteBytes(&dest, sizeof(dest))) return false;
@@ -1456,6 +1459,9 @@ bool load_snap_z80(void)
 #ifdef SUPPORT_CHROMA
   if (!emu_FileReadBytes(&bordercolour, sizeof(bordercolour))) return false;
   if (!emu_FileReadBytes(&bordercolournew, sizeof(bordercolournew))) return false;
+#else
+  uint16_t dummy = 0;
+  if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
 #endif
 
   if (!emu_FileReadBytes(&dest, sizeof(dest))) return false;
@@ -1486,13 +1492,5 @@ bool load_snap_z80(void)
   if (!emu_FileReadBytes(&running_rom, sizeof(running_rom))) return false;
 
   if (!emu_FileReadBytes(&scanlineCounter, sizeof(scanlineCounter))) return false;
-
-  // Reinitialise the sound
-  emu_sndInit(sound_type != SOUND_TYPE_NONE, true);
-
-  // TO DO Add check that resolution is the same
-  // TO DO Set the interlace correctly
-  // TO DO support change in display type?
-
   return true;
 }

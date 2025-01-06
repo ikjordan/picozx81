@@ -459,6 +459,7 @@ void emu_sndSilence(void)
 
 bool emu_sndSaveSnap(void)
 {
+  if (!sound_save_snap()) return false;
   if (!emu_FileWriteBytes(&queued_sound_type, sizeof(queued_sound_type))) return false;
   if (!emu_FileWriteBytes(&queued_play, sizeof(queued_play))) return false;
 
@@ -467,6 +468,7 @@ bool emu_sndSaveSnap(void)
 
 bool emu_sndLoadSnap(void)
 {
+  if (!sound_load_snap()) return false;
   if (!emu_FileReadBytes(&queued_sound_type, sizeof(queued_sound_type))) return false;
   if (!emu_FileReadBytes(&queued_play, sizeof(queued_play))) return false;
 

@@ -47,6 +47,7 @@ unsigned char chroma_set=0;
 #endif
 
 static bool resetRequired = false;
+static bool load_snap = false;
 
 /* the ZX81 char is used to index into this, to give the ascii.
  * awkward chars are mapped to '_' (underscore), and the ZX81's
@@ -860,6 +861,14 @@ void z8x_Init(void)
 
   resetZ80();
   emu_sndInit(sound_type != SOUND_TYPE_NONE, true);
+
+  if (load_snap)
+  {
+      strcpy(fname, emu_GetDirectory());
+      strcat(fname, tapename);
+      emu_loadSnapshot(tapename, fname);
+      load_snap = false;
+  }
 }
 
 void z8x_updateValues(void)
@@ -893,12 +902,12 @@ bool z8x_Step(void)
 }
 
 // Set the tape name and validate it
-bool z8x_Start(const char * filename)
+void z8x_Start(const char * filename)
 {
-  bool reset = true;
   char c;
 
   autoload = 0;
+  load_snap = false;
 
   if (filename)
   {
@@ -912,8 +921,7 @@ bool z8x_Start(const char * filename)
 
     if (emu_EndsWith(tapename, ".s"))
     {
-      emu_loadSnapshot(fname);
-      reset = false;
+      load_snap = true;
     }
     else
     {
@@ -944,7 +952,6 @@ bool z8x_Start(const char * filename)
       }
     }
   }
-  return reset;
 }
 
 // input: string to be parsed for an unsigned number
@@ -1031,6 +1038,9 @@ bool save_snap_zx8x(void)
   if (!emu_FileWriteBytes(&bordercolournew, sizeof(bordercolournew))) return false;
   if (!emu_FileWriteBytes(&fullcolour, sizeof(fullcolour))) return false;
   if (!emu_FileWriteBytes(&chroma_set, sizeof(chroma_set))) return false;
+#else
+  uint32_t dummy = 0;
+  if (!emu_FileWriteBytes(&dummy, sizeof(dummy))) return false;
 #endif
   if (!emu_FileWriteBytes(&resetRequired, sizeof(resetRequired))) return false;
 
@@ -1053,6 +1063,9 @@ bool load_snap_zx8x(void)
   if (!emu_FileReadBytes(&bordercolournew, sizeof(bordercolournew))) return false;
   if (!emu_FileReadBytes(&fullcolour, sizeof(fullcolour))) return false;
   if (!emu_FileReadBytes(&chroma_set, sizeof(chroma_set))) return false;
+#else
+  uint32_t dummy = 0;
+  if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
 #endif
   if (!emu_FileReadBytes(&resetRequired, sizeof(resetRequired))) return false;
 

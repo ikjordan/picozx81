@@ -42,6 +42,8 @@ extern void sound_frame(uint16_t* buff);
 extern void sound_beeper(int on);
 extern void sound_change_type(int new_sound_type);
 
+extern bool sound_save_snap(void);
+extern bool sound_load_snap(void);
 
 #ifdef __cplusplus
 }
