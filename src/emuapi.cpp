@@ -7,14 +7,11 @@
 #include <string.h>
 #include "tusb.h"
 #include "hid_usb.h"
-#include "display.h"
 
 #include "emuapi.h"
 #include "emuvideo.h"
 #include "emusound.h"
 #include "emupriv.h"
-#include "z80.h"
-#include "zx8x.h"
 
 #include "ini.h"
 #include "iopins.h"
@@ -1185,6 +1182,20 @@ void emu_ReadSpecificValues(const char *filename)
 #define SUPPORTED_VERSION 0x00010001          // Major and minor versions
 #define SECOND_OFFSET     57                  // Start of second data section
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern bool save_snap_zx8x(void);
+extern bool load_snap_zx8x(uint32_t version);
+extern bool save_snap_z80(void);
+extern bool load_snap_z80(uint32_t version);
+extern bool display_save_snap(void);
+extern bool display_load_snap(uint32_t version);
+
+#ifdef __cplusplus
+}
+#endif
+
 bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
 {
   bool ret = false;
@@ -1241,11 +1252,13 @@ bool emu_loadSnapshotData(const char* fullpathname)
   {
     // Check identifer
     uint32_t id;
+    uint32_t version;
+
     if (!emu_FileReadBytes(&id, sizeof(id)) || id != SNAPSHOT_ID)
     {
       printf("emu_loadSnapshotData wrong id\n");
     }
-    else if (!emu_FileReadBytes(&id, sizeof(id)) || id != SUPPORTED_VERSION)
+    else if (!emu_FileReadBytes(&version, sizeof(version)) || id != SUPPORTED_VERSION)
     {
       printf("emu_loadSnapshotData wrong version\n");
     }
@@ -1253,19 +1266,19 @@ bool emu_loadSnapshotData(const char* fullpathname)
     {
       printf("emu_loadSnapshotData move to start of second data failed\n");
     }
-    else if (!display_load_snap())
+    else if (!display_load_snap(version))
     {
       printf("display_load_snap failed\n");
     }
-    else if (!load_snap_z80())
+    else if (!load_snap_z80(version))
     {
       printf("load_snap_z80 failed\n");
     }
-    else if (!load_snap_zx8x())
+    else if (!load_snap_zx8x(version))
     {
       printf("load_snap_zx8x failed\n");
     }
-    else if (!emu_sndLoadSnap())
+    else if (!emu_sndLoadSnap(version))
     {
       printf("emu_sndLoadSnap failed\n");
     }

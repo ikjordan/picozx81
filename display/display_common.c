@@ -8,7 +8,7 @@
 #include "display_priv.h"
 #include "zx80bmp.h"
 #include "zx81bmp.h"
-#include "../src/emuapi.h"
+#include "../src/emusnap.h"
 
 #ifdef SUPPORT_CHROMA
 // Structure for chroma buffers

@@ -46,7 +46,7 @@
 #include "sound.h"
 #include "z80.h"
 #include "iopins.h"
-#include "emuapi.h"
+#include "emusnap.h"
 
 /* configuration */
 /* Always generate two channels, even if mono */
@@ -619,8 +619,10 @@ bool sound_save_snap(void)
   return true;
 }
 
-bool sound_load_snap(void)
+bool sound_load_snap(uint32_t version)
 {
+  (void)version;
+
   if (!emu_FileReadBytes(&sound_enabled, sizeof(sound_enabled))) return false;
   if (!emu_FileReadBytes(&sound_stereo_acb, sizeof(sound_stereo_acb))) return false;
   if (!emu_FileReadBytes(&beeper_tick, sizeof(beeper_tick))) return false;

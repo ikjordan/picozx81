@@ -2,7 +2,6 @@
 #define EMUVIDEO_H
 
 #include <stdint.h>
-#include "emuapi.h"
 
 #ifdef __cplusplus
 extern "C" {

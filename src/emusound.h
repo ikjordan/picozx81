@@ -13,7 +13,7 @@ extern uint16_t emu_sndGetSampleRate(void);
 extern void emu_sndQueueChange(bool playSound, int queued_sound_type);
 
 extern bool emu_sndSaveSnap(void);
-extern bool emu_sndLoadSnap(void);
+extern bool emu_sndLoadSnap(uint32_t version);
 
 #ifdef __cplusplus
 }

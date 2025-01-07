@@ -1028,6 +1028,7 @@ char *strzx80_to_ascii(int memaddr)
 
   return translated;
 }
+
 bool save_snap_zx8x(void)
 {
   if (!emu_FileWriteBytes(mem, sizeof(byte) * MEMORYRAM_SIZE)) return false;
@@ -1053,8 +1054,10 @@ bool save_snap_zx8x(void)
   return true;
 }
 
-bool load_snap_zx8x(void)
+bool load_snap_zx8x(uint32_t version)
 {
+  (void) version;
+
   if (!emu_FileReadBytes(mem, sizeof(byte) * MEMORYRAM_SIZE)) return false;
   // memptr and memattr recreated when loaded
 

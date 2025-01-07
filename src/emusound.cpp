@@ -466,9 +466,9 @@ bool emu_sndSaveSnap(void)
   return true;
 }
 
-bool emu_sndLoadSnap(void)
+bool emu_sndLoadSnap(uint32_t version)
 {
-  if (!sound_load_snap()) return false;
+  if (!sound_load_snap(version)) return false;
   if (!emu_FileReadBytes(&queued_sound_type, sizeof(queued_sound_type))) return false;
   if (!emu_FileReadBytes(&queued_play, sizeof(queued_play))) return false;
 

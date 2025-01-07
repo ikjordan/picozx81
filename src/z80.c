@@ -23,6 +23,7 @@
 #include "pico.h"     /* For not in flash */
 #include "z80.h"
 #include <stdio.h>
+#include "emuapi.h"
 #include "emuvideo.h"
 #include "emusound.h"
 #include "display.h"
@@ -1375,8 +1376,10 @@ bool save_snap_z80(void)
   return true;
 }
 
-bool load_snap_z80(void)
+bool load_snap_z80(uint32_t version)
 {
+  (void)version;
+
   if (!emu_FileReadBytes(&a, sizeof(a))) return false;
   if (!emu_FileReadBytes(&f, sizeof(f))) return false;
   if (!emu_FileReadBytes(&b, sizeof(b))) return false;

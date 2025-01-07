@@ -43,7 +43,7 @@ extern void sound_beeper(int on);
 extern void sound_change_type(int new_sound_type);
 
 extern bool sound_save_snap(void);
-extern bool sound_load_snap(void);
+extern bool sound_load_snap(uint32_t version);
 
 #ifdef __cplusplus
 }

@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "emusnap.h"
 
 #define MAX_FILENAME_LEN 64
 #define MAX_DIRECTORY_LEN 128
@@ -37,8 +38,6 @@ extern bool emu_fsInitialised(void);
 
 extern bool emu_FileOpen(const char * filepath, const char * mode);
 extern int emu_FileRead(void * buf, int size, int offset);
-extern int emu_FileReadBytes(void* buf, unsigned int size);
-extern int emu_FileWriteBytes(const void* buf, unsigned int size);
 extern void emu_FileClose(void);
 
 extern unsigned int emu_FileSize(const char * filepath);
