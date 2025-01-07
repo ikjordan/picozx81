@@ -22,10 +22,11 @@
 + Emulates user defined graphics, including CHR$128 and QS User Defined Graphics
 + Emulates the [Chroma 80](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface.htm) and [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm) interfaces to allow a colour display. Also supports the enhanced TV sound provided by Chroma
 + Emulation runs at accurate speed of a 3.25MHz ZX81
++ Supports saving of snapshots. No need to restart from the beginning after you die in a game!
 + Optionally emulates real-time ZX81/80 program load and save with realistic sound and graphics
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
-+ Load `.p`, `.81`, `.o`, `.80` and `.p81` files from micro SD Card. Save `.p` and `.o` files
++ Load `.p`, `.81`, `.o`, `.s` (picozx81 snapshot), `.80` and `.p81` files from micro SD Card. Save `.p`, `.o` and `.s` files
 + Can display at 640x480 or 720x576 (for an authentic display on a UK TV)
 + 720x576 can be configured to run at a frame rate to match the "real" ZX81 (~50.65 Hz).
 + An interlaced mode can be selected to display interlaced images with minimal flicker
@@ -234,7 +235,7 @@ Eight extra options apply across all programs and can only be set in the `[defau
 | Dir | Sets the initial default directory to load and save programs | / |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
-| AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81`, `.80` and `.p81` are initially displayed|Off|
+| AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.s`, `.81`, `.80` and `.p81` are initially displayed|Off|
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2| 1 |
 | LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated | OFF |
 | SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated | OFF |
@@ -268,7 +269,7 @@ The original ZX80/ZX81 40 key keyboard does not have function keys. A "double sh
 2. Shift is released, without another key being pressed
 3. Within one second shift is pressed again
 4. Shift is released, without another key being pressed
-5. To generate a function key, within one second, a numeric key in the range `1` to `8` is pressed without shift being pressed. If `0` is pressed `Escape` is generated
+5. To generate a function key, within one second, a numeric key in the range `1` to `9` is pressed without shift being pressed. If `0` is pressed `Escape` is generated
 
 This mechanism is enabled by default. To disable it set `DoubleShift` to `Off` in the configuration file
 ### F1 - Reset
@@ -280,7 +281,7 @@ If the name of a file or directory is too long to display in full it is truncate
 
 + The display can be navigated using the `up`, `down` and `enter` keys. The `7` key also generates `up` and the `6` key also generates `down`
 + For directories with a large number of files it is possible to move to the next page of files by using the `right`, `Page Down` or `8` key. To move to the previous page of files use the `left`, `Page Up` or `5` key
-+ Press `A` to display all files in the directory. Press `P` to only display files with extensions `.p`, `.o`, `.81`, `.80` and .`p81`
++ Press `A` to display all files in the directory. Press `P` to only display files with extensions `.p`, `.o`, `.s`, `.81`, `.80` and .`p81`
 + Press `enter` whilst a directory entry is selected to move to that directory
 + Press `enter` when a file is selected to load that file
 + Press `Escape`, `space`, `Q` or `0` to return to the emulation without changing directory or loading a new program
@@ -306,13 +307,22 @@ The changes are *not* written back to the config files, so will be lost when the
 Allows the impact of changes to display resolution and frequency to be seen without editing config files. If a change is made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots.
 
 On the LCD builds the display resolution is fixed and only the frequency can be changed
+
+### F9 - Save snapshot
+Saves a snapshot of the current running program to SD-Card. The file is saved to the current directory. A screen is displayed to allow a filename to be entered. If the filename does not end with `.s` it is automatically appended. If a file of the specified name already exists in the current directory, it is overwritten
+without warning. Snapshot files are designed so that they can be loaded onto any device running picozx81.
+
+Use the `F2` command and select the file to reload the snapshot. If necessary the pico will reboot to set the correct display resolution and frequency
+
 ## Loading and saving options
-The emulator supports loading `.p`, `.81`, `.o`, `.80` and `.p81` files from micro SD Card. It can save in `.p` and `.o` format.
+The emulator supports loading `.p`, `.81`, `.o`, `.s`, `.80` and `.p81` files from micro SD Card. It can save in `.p`, `.o` and `.s` formats. ``.o` and `.p` are the standard ZX81 formats. `.s` is a snapshot format specific to picozx81.
 Files to be loaded should only contain characters that are in the ZX81 or ZX80 character set
 ### Load
 There are 3 ways to load files:
 #### 1. Via the F2 menu
 The user can navigate the SD card directory and select a file to load. The emulator is configured to the settings specified for the file in the `config.ini` files, reset and the new file loaded
+
+**Note:** This is the only supported way to load snapshot (`.s`) files. The configuration information is stored as part of the snapshot file, it is not loaded separately from `config.ini`
 #### 2. Via `LOAD ""` (ZX81) or `LOAD` (ZX80)
 If the user enters the `LOAD` command without specifying a file name the SD Card directory menu is displayed and a file to load can be selected. The emulator is configured to the settings specified for the file in the `config.ini` files. Unlike for option 1, the emulator is only reset if the configuration differs. This, for example, allows for RAMTOP to be manually set before loading a program
 #### 3. Via `LOAD "program-name"` (ZX81 only)
@@ -321,7 +331,7 @@ If a file name is specified, then `.p` is appended and an attempt is made to loa
 If the supplied filename, with `.p` appended, does not exist, then the `LOAD` fails with error `D`. This is similar to a "real" ZX81, where if a named file is not on a tape, the computer will attempt to load until the user aborts by pressing `BREAK`, generating error `D`
 ### Save
 #### ZX81
-To save a program the `SAVE "Filename"` command is used. If `"Filename"` has no extension then `.p` is appended to the supplied file name. The file is saved in the current directory. If a file of the specified name already exists, it is overwritten
+To save a program the `SAVE "Filename"` command is used. If `"Filename"` has no extension then `.p` is appended to the supplied file name. The file is saved in the current directory. If a file of the specified name already exists, it is overwritten without warning.
 
 #### ZX80
 To save a program the `SAVE` command is used. `SAVE` does not take a file name, so mechanisms are provided to supply a file name. When `SAVE` is executed the emulator scans the program for a `REM` statement of the form:
