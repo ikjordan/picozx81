@@ -1217,9 +1217,9 @@ bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
     {
       printf("emu_loadSnapshotSpecific wrong id\n");
     }
-    else if (!emu_FileReadBytes(&id, sizeof(id)) || id != SUPPORTED_VERSION)
+    else if (!emu_FileReadBytes(&id, sizeof(id)) || (id != SUPPORTED_VERSION))
     {
-      printf("emu_loadSnapshotSpecific wrong version\n");
+      printf("emu_loadSnapshotSpecific wrong version %li\n", id);
     }
     else if (!emu_FileReadBytes(&state, sizeof(state)) || state != emu_576Requested())
     {
@@ -1264,9 +1264,9 @@ bool emu_loadSnapshotData(const char* fullpathname)
     {
       printf("emu_loadSnapshotData wrong id\n");
     }
-    else if (!emu_FileReadBytes(&version, sizeof(version)) || id != SUPPORTED_VERSION)
+    else if (!emu_FileReadBytes(&version, sizeof(version)) || version != SUPPORTED_VERSION)
     {
-      printf("emu_loadSnapshotData wrong version\n");
+      printf("emu_loadSnapshotData wrong version %li\n", version);
     }
     else if (f_lseek(&file, SECOND_OFFSET) || (f_tell(&file) != SECOND_OFFSET))
     {
