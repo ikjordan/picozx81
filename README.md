@@ -347,6 +347,8 @@ The ZX80 keyboard image is automatically displayed to make it easier to enter no
 Press `ENTER` to exit the screen and use the filename, `.o` is appended if not supplied. Press `Esc` or `SHIFT 1` to leave the screen without setting a filename
 
 The program is saved to the current directory. If no valid file name is supplied a default filename of `"zx80prog.o"` is used. Any existing file with the same name is overwritten
+#### Snapshots
+The only way to save a snapshot of a running ZX80 or ZX81 program is by pressing `F9`
 
 ### Loading and Saving Memory Blocks
 When emulating a ZX81, extensions are provided to `LOAD` and `SAVE` to support the loading and saving of memory blocks. The syntax is similar to that used by [ZXpand](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual)
@@ -533,8 +535,8 @@ To enable chroma support set LowRAM on, and Memory to 48kB
   + The Chroma 80 4K ROM versions use a loader program to set the colour data and then load the main program. The loader available in the supplied links uses a custom tape load routine that is not detected by picozx81. To create a compatible loader that uses that standard 4K ROM load routine use the [Chroma Program Enhancement Creator](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ChromaProgramEnhancementCreator.htm). As the 4K ROM `LOAD` command does not take an argument, picozx81 will display the contents of the current directory when the loader program is run. Select the main program from the directory list and it will load and run, using the colour data loaded earlier
 # Building
 **Notes:**
-+ Prebuilt executable files for the 7 supported board types can be found [here](uf2/)
-+ If a **zip** of the source files is downloaded from GitHub, it will be **incomplete**, as the zip will not contain the submodules. Zip files of the submodules would have to be downloaded separately from GitHub. It is easier to clone recursive the repository, as described in the following section
++ Prebuilt executable files for the 9 supported board types can be found [here](uf2/)
++ If a **zip** of the source files is downloaded from GitHub, it will be **incomplete**, as the zip will not contain the submodules. Zip files of the submodules would have to be downloaded separately from GitHub. It is easier to recursively clone the repository, as described in the following section
 ### To build:
 1. Install the Raspberry Pi Pico toolchain and SDK. SDK 2.x must be used
 
@@ -576,7 +578,7 @@ This will be named `picozx81_vga_rp2040.uf2`
 7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
 
 **Notes:**
-+ To build for the RP2350 append -DPICO_MCU=rp2350 to the CMake command. The resulting `uf2` file will include rp2355 in its name
++ To build for the RP2350 append -DPICO_MCU=rp2350 to the CMake command. The resulting `uf2` file will include rp2350 in its name
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported combinations of mcu and board types
 + To debug using OpenOCD build and install OpenOCD as described in [Getting Started with Raspberry Pi Pico-series](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf)
 + If debugging using MS Visual Studio Code then install the Raspberry Pi Pico extension. Commands loaded by this extension are used to determine the active MCU type in `launch.json`
@@ -744,6 +746,7 @@ This emulator offers the following over MCUME:
 + Emulation runs at full speed of a 3.25MHz ZX81
 + Ability to save files
 + Ability to load a program without reset
++ Ability to save ans load snapshots
 + Support for Hi-res and pseudo Hi-res graphics
 + Support for multiple DVI, VGA and LCD boards
 + Support for Chroma 80 and Chroma 81
