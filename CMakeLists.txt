@@ -160,6 +160,7 @@ else()
 endif()
 
 # Determine video system and name uf2
+set (EXTRA_CHECK "-Wextra")
 if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     target_compile_definitions(${PROJECT} PUBLIC
                                 -DDVI_1BPP_BIT_REVERSE=1
@@ -197,6 +198,7 @@ elseif ((${PICO_BOARD} STREQUAL "lcdmakerboard"))
     pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/spi_lcd.pio)
     set(NAME_ROOT "picozx81_lcdmaker")
 else()
+    set (EXTRA_CHECK "")
     if (${PICO_BOARD} STREQUAL "vgaboard")
         set(NAME_ROOT "picozx81_vga")
     elseif (${PICO_BOARD} STREQUAL "picomitevgaboard")
@@ -244,7 +246,7 @@ endif()
 # always support Chroma
 target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA -DLOAD_AND_SAVE)
 
-target_compile_options(${PROJECT} PRIVATE -Wall -Wextra)
+target_compile_options(${PROJECT} PRIVATE -Wall ${EXTRA_CHECK})
 
 target_link_libraries(${PROJECT}
                       pico_multicore

@@ -16,6 +16,10 @@
 #include "ini.h"
 #include "iopins.h"
 
+#ifdef PICO_SPI_LCD_SD_SHARE
+#include "display.h"
+#endif
+
 /********************************
  * Menu file loader UI
  ********************************/
@@ -627,6 +631,8 @@ void emu_SetSound(int soundType)
   general.sound = soundType;
   specific.sound = soundType;
 #else
+  (void)soundType;
+
   general.sound = SOUND_TYPE_NONE;
   specific.sound = SOUND_TYPE_NONE;
 #endif
