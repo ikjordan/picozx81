@@ -814,6 +814,14 @@ static void set_mem_attribute_and_ptr(void)
 
 void z8x_Init(void)
 {
+  // Load the specific data for a snapshot
+  if (load_snap)
+  {
+      strcpy(fname, emu_GetDirectory());
+      strcat(fname, tapename);
+      emu_loadSnapshotSpecific(tapename, fname);
+  }
+
   // Get machine type and memory
   zx80 = emu_ZX80Requested();
   rom4k = emu_ROM4KRequested();
@@ -864,9 +872,7 @@ void z8x_Init(void)
 
   if (load_snap)
   {
-      strcpy(fname, emu_GetDirectory());
-      strcat(fname, tapename);
-      emu_loadSnapshot(tapename, fname);
+      emu_loadSnapshotData(fname);
       load_snap = false;
   }
 }

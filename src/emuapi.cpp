@@ -169,117 +169,6 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
   return true;
 }
 
-#define SNAPSHOT_ID       0x50414E53          // Little endian 'SNAP'
-#define SUPPORTED_VERSION 0x00010001          // Major and minor versions
-
-bool emu_loadSnapshot(const char* filename, const char* fullpathname)
-{
-  bool ret = false;
-  FiveSevenSix_T state;
-  printf("loadSnapshot %s \n", fullpathname);
-
-  EMU_LOCK_SDCARD
-  if (!(f_open(&file, fullpathname, FA_READ)))
-  {
-    // Check identifer
-    uint32_t id;
-    if (!emu_FileReadBytes(&id, sizeof(id)) || id != SNAPSHOT_ID)
-    {
-      printf("emu_loadSnapshot wrong id\n");
-    }
-    else if (!emu_FileReadBytes(&id, sizeof(id)) || id != SUPPORTED_VERSION)
-    {
-      printf("emu_loadSnapshot wrong version\n");
-    }
-    else if (!emu_FileReadBytes(&state, sizeof(state)) || state != emu_576Requested())
-    {
-      printf("wrong display type - triggering reboot\n");
-      emu_SetRebootMode(state, emu_GetDirectory(), filename);
-    }
-    else if (!display_load_snap())
-    {
-      printf("display_load_snap failed\n");
-    }
-    else if (!load_snap_z80())
-    {
-      printf("load_snap_z80 failed\n");
-    }
-    else if (!load_snap_zx8x())
-    {
-      printf("load_snap_zx8x failed\n");
-    }
-    else if (!emu_sndLoadSnap())
-    {
-      printf("emu_sndLoadSnap failed\n");
-    }
-    else
-    {
-      ret = true;
-    }
-    f_close(&file);
-  }
-  else
-  {
-    printf("file open failed\n");
-  }
-  EMU_UNLOCK_SDCARD
-  return ret;
-}
-
-bool emu_saveSnapshot(const char* filepath)
-{
-  bool ret = false;
-  FiveSevenSix_T state = emu_576Requested();
-
-  printf("saveSnapshot %s \n", filepath);
-
-  EMU_LOCK_SDCARD
-  if (!(f_open(&file, filepath, FA_CREATE_ALWAYS | FA_WRITE)))
-  {
-    // write identifer
-    uint32_t id = SNAPSHOT_ID;
-    uint32_t version = SUPPORTED_VERSION;
-    if (!emu_FileWriteBytes(&id, sizeof(id)))
-    {
-      printf("emu_saveSnapshot write id failed\n");
-    }
-    else if (!emu_FileWriteBytes(&version, sizeof(version)))
-    {
-      printf("emu_saveSnapshot write version failed\n");
-    }
-    else if (!emu_FileWriteBytes(&state, sizeof(state)))
-    {
-      printf("emu_saveSnapshot write display state failed\n");
-    }
-    else if (!display_save_snap())
-    {
-      printf("display_save_snap failed\n");
-    }
-    else if (!save_snap_z80())
-    {
-      printf("save_snap_z80 failed\n");
-    }
-    else if (!save_snap_zx8x())
-    {
-      printf("save_snap_zx8x failed\n");
-    }
-    else if (!emu_sndSaveSnap())
-    {
-      printf("emu_sndSaveSnap failed\n");
-    }
-    else
-    {
-      ret = true;
-    }
-    f_close(&file);
-  }
-  else
-  {
-    printf("file open failed\n");
-  }
-  EMU_UNLOCK_SDCARD
-  return ret;
-}
 
 /********************************
  * Initialization
@@ -824,10 +713,18 @@ void emu_SetRebootMode(FiveSevenSix_T mode, const char* dirname, const char* fil
     }
     f_close(&file);
 
+    EMU_UNLOCK_SDCARD
+
     // Set the watchdog to trigger a reboot
     watchdog_enable(10, true);
+
+    // Stop until reboot
+    sleep_ms(50);
   }
-  EMU_UNLOCK_SDCARD
+  else
+  {
+    EMU_UNLOCK_SDCARD
+  }
 }
 
 static char convert(const char *val)
@@ -1279,6 +1176,174 @@ void emu_ReadSpecificValues(const char *filename)
                     (specific.QSUDG != used.QSUDG) ||
                     (specific.lowRAM != used.lowRAM));
   }
+}
+
+/********************************
+ * Snapshot
+ ********************************/
+#define SNAPSHOT_ID       0x50414E53          // Little endian 'SNAP'
+#define SUPPORTED_VERSION 0x00010001          // Major and minor versions
+#define SECOND_OFFSET     57                  // Start of second data section
+
+bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
+{
+  bool ret = false;
+  FiveSevenSix_T state;
+  printf("emu_loadSnapshotSpecific %s \n", fullpathname);
+
+  EMU_LOCK_SDCARD
+  if (!(f_open(&file, fullpathname, FA_READ)))
+  {
+    // Check identifer
+    uint32_t id;
+    if (!emu_FileReadBytes(&id, sizeof(id)) || id != SNAPSHOT_ID)
+    {
+      printf("emu_loadSnapshotSpecific wrong id\n");
+    }
+    else if (!emu_FileReadBytes(&id, sizeof(id)) || id != SUPPORTED_VERSION)
+    {
+      printf("emu_loadSnapshotSpecific wrong version\n");
+    }
+    else if (!emu_FileReadBytes(&state, sizeof(state)) || state != emu_576Requested())
+    {
+      printf("emu_loadSnapshotSpecific wrong display type - triggering reboot\n");
+      emu_SetRebootMode(state, emu_GetDirectory(), filename);
+    }
+    else if (!emu_FileReadBytes(&specific, sizeof(specific)))
+    {
+      printf("emu_loadSnapshotSpecific read specific failed\n");
+    }
+    else if (f_tell(&file) != SECOND_OFFSET)
+    {
+      printf("emu_loadSnapshotSpecific wrong data size %lli\n", f_tell(&file));
+    }
+    else
+    {
+      ret = true;
+    }
+    f_close(&file);
+  }
+  else
+  {
+    printf("file open failed\n");
+  }
+  EMU_UNLOCK_SDCARD
+  return ret;
+}
+
+bool emu_loadSnapshotData(const char* fullpathname)
+{
+  bool ret = false;
+  printf("emu_loadSnapshotData %s \n", fullpathname);
+
+  EMU_LOCK_SDCARD
+  if (!(f_open(&file, fullpathname, FA_READ)))
+  {
+    // Check identifer
+    uint32_t id;
+    if (!emu_FileReadBytes(&id, sizeof(id)) || id != SNAPSHOT_ID)
+    {
+      printf("emu_loadSnapshotData wrong id\n");
+    }
+    else if (!emu_FileReadBytes(&id, sizeof(id)) || id != SUPPORTED_VERSION)
+    {
+      printf("emu_loadSnapshotData wrong version\n");
+    }
+    else if (f_lseek(&file, SECOND_OFFSET) || (f_tell(&file) != SECOND_OFFSET))
+    {
+      printf("emu_loadSnapshotData move to start of second data failed\n");
+    }
+    else if (!display_load_snap())
+    {
+      printf("display_load_snap failed\n");
+    }
+    else if (!load_snap_z80())
+    {
+      printf("load_snap_z80 failed\n");
+    }
+    else if (!load_snap_zx8x())
+    {
+      printf("load_snap_zx8x failed\n");
+    }
+    else if (!emu_sndLoadSnap())
+    {
+      printf("emu_sndLoadSnap failed\n");
+    }
+    else
+    {
+      ret = true;
+    }
+    f_close(&file);
+  }
+  else
+  {
+    printf("file open failed\n");
+  }
+  EMU_UNLOCK_SDCARD
+  return ret;
+}
+
+bool emu_saveSnapshot(const char* fullpathname)
+{
+  bool ret = false;
+  FiveSevenSix_T state = emu_576Requested();
+
+  printf("saveSnapshot %s \n", fullpathname);
+
+  EMU_LOCK_SDCARD
+  if (!(f_open(&file, fullpathname, FA_CREATE_ALWAYS | FA_WRITE)))
+  {
+    // write identifer
+    uint32_t id = SNAPSHOT_ID;
+    uint32_t version = SUPPORTED_VERSION;
+    if (!emu_FileWriteBytes(&id, sizeof(id)))
+    {
+      printf("emu_saveSnapshot write id failed\n");
+    }
+    else if (!emu_FileWriteBytes(&version, sizeof(version)))
+    {
+      printf("emu_saveSnapshot write version failed\n");
+    }
+    else if (!emu_FileWriteBytes(&state, sizeof(state)))
+    {
+      printf("emu_saveSnapshot write display state failed\n");
+    }
+    else if (!emu_FileWriteBytes(&specific, sizeof(specific)))
+    {
+      printf("emu_saveSnapshot write specific failed\n");
+    }
+    else if (f_tell(&file) != SECOND_OFFSET)
+    {
+      printf("emu_saveSnapshot wrong offset - %lli\n", f_tell(&file));
+    }
+    else if (!display_save_snap())
+    {
+      printf("display_save_snap failed\n");
+    }
+    else if (!save_snap_z80())
+    {
+      printf("save_snap_z80 failed\n");
+    }
+    else if (!save_snap_zx8x())
+    {
+      printf("save_snap_zx8x failed\n");
+    }
+    else if (!emu_sndSaveSnap())
+    {
+      printf("emu_sndSaveSnap failed\n");
+    }
+    else
+    {
+      ret = true;
+    }
+    f_close(&file);
+  }
+  else
+  {
+    printf("file open failed\n");
+  }
+  EMU_UNLOCK_SDCARD
+  return ret;
 }
 
 /********************************

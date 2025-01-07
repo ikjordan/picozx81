@@ -45,8 +45,9 @@ extern unsigned int emu_FileSize(const char * filepath);
 extern bool emu_SaveFile(const char * filepath, void * buf, int size);
 extern bool emu_EndsWith(const char * s, const char * suffix);
 
-extern bool emu_loadSnapshot(const char* filename, const char* fullpathname);
-extern bool emu_saveSnapshot(const char* filepath);
+extern bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname);
+extern bool emu_loadSnapshotData(const char* fullpathname);
+extern bool emu_saveSnapshot(const char* fullpathname);
 
 extern const char* emu_GetLoadName(void);
 extern void emu_SetLoadName(const char* name);
