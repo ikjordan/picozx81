@@ -1095,7 +1095,7 @@ void snapMenu(void)
             }
 
             // Write the data
-            if (!emu_saveSnapshot((const char*)snap_path))
+            if (!emu_saveSnapshot(snap_path))
             {
                 printf("emu_saveSnapshot failed\n");
             }
