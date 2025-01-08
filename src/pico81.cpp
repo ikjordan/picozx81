@@ -119,8 +119,8 @@ static void mainLoop(void)
                     break;
 
                     case HID_KEY_F8:
+                        // May not return from this call
                         rebootMenu();
-                        // Never return from this call
                     break;
 
                     case HID_KEY_F9:

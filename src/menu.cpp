@@ -1065,8 +1065,8 @@ void rebootMenu(void)
     } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
 
     debounceExit(key == HID_KEY_ENTER);
-    endMenu(false);
 
+    // Check here to avoid briefly displaying old screen before reboot
     if (key == HID_KEY_ENTER)
     {
         if (initialMode != mode)
@@ -1075,6 +1075,7 @@ void rebootMenu(void)
             emu_SetRebootMode(mode, NULL, NULL);
         }
     }
+    endMenu(false);
 }
 
 // Save a snapshot (f9)
