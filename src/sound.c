@@ -427,11 +427,12 @@ static void sound_beeper_reset(void)
   beeper_tick_incr=(1<<24)/SAMPLE_FREQ;
 }
 
+static int rng=1;
+static int noise_toggle=1;
+static int env_level=0;
+
 static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
 {
-  static int rng=1;
-  static int noise_toggle=1;
-  static int env_level=0;
   int tone_level[3];
   int mixer,envshape;
   int f,g,level;
@@ -613,9 +614,14 @@ bool sound_save_snap(void)
   if (!emu_FileWriteBytes(&change, sizeof(change))) return false;
   if (!emu_FileWriteBytes(&ay_change_count, sizeof(ay_change_count))) return false;
 
+  if (!emu_FileWriteBytes(&rng, sizeof(rng))) return false;
+  if (!emu_FileWriteBytes(&noise_toggle, sizeof(noise_toggle))) return false;
+  if (!emu_FileWriteBytes(&env_level, sizeof(env_level))) return false;
+
   if (!emu_FileWriteBytes(ay_tone_levels, sizeof(uint16_t) * 16)) return false;
   if (!emu_FileWriteBytes(ay_tone_tick, sizeof(unsigned int) * 3)) return false;
   if (!emu_FileWriteBytes(ay_tone_period, sizeof(unsigned int) * 3)) return false;
+  if (!emu_FileWriteBytes(sound_ay_registers, sizeof(unsigned char) * 16)) return false;
   return true;
 }
 
@@ -643,8 +649,14 @@ bool sound_load_snap(uint32_t version)
   if (!emu_FileReadBytes(&change, sizeof(change))) return false;
   if (!emu_FileReadBytes(&ay_change_count, sizeof(ay_change_count))) return false;
 
+  if (!emu_FileReadBytes(&rng, sizeof(rng))) return false;
+  if (!emu_FileReadBytes(&noise_toggle, sizeof(noise_toggle))) return false;
+  if (!emu_FileReadBytes(&env_level, sizeof(env_level))) return false;
+
   if (!emu_FileReadBytes(ay_tone_levels, sizeof(uint16_t) * 16)) return false;
   if (!emu_FileReadBytes(ay_tone_tick, sizeof(unsigned int) * 3)) return false;
   if (!emu_FileReadBytes(ay_tone_period, sizeof(unsigned int) * 3)) return false;
+  if (!emu_FileReadBytes(sound_ay_registers, sizeof(unsigned char) * 16)) return false;
+
   return true;
 }
