@@ -924,6 +924,22 @@ static int handler(void *user, const char *section, const char *name,
         // Defaults to off
         c->conf->extendFile = isEnabled(value);
     }
+    else if (!strcasecmp(name, "FiveSevenSix"))
+    {
+      if (!strcasecmp(value, "Match"))
+      {
+        c->conf->fiveSevenSix = MATCH;
+      }
+      else if (isEnabled(value))
+      {
+        c->conf->fiveSevenSix = ON;
+      }
+      else
+      {
+        // Defaults to off
+        c->conf->fiveSevenSix = OFF;
+      }
+    }
     else if ((!strcasecmp(section, "default")) && c->root)
     {
       // Following only allowed in default section of root config
@@ -959,22 +975,6 @@ static int handler(void *user, const char *section, const char *name,
           res = 1;
         }
         c->conf->menuBorder = res;
-      }
-      else if (!strcasecmp(name, "FiveSevenSix"))
-      {
-        if (!strcasecmp(value, "Match"))
-        {
-          c->conf->fiveSevenSix = MATCH;
-        }
-        else if (isEnabled(value))
-        {
-          c->conf->fiveSevenSix = ON;
-        }
-        else
-        {
-          // Defaults to off
-          c->conf->fiveSevenSix = OFF;
-        }
       }
       else if ((!strcasecmp(name, "NinePinJoystick")))
       {
@@ -1145,6 +1145,8 @@ void emu_ReadDefaultValues(void)
 }
 
 // Note this should be called after the filename has been validated
+// If a display resolution or refresh change is needed this may trigger
+// a reboot
 void emu_ReadSpecificValues(const char *filename)
 {
   ConfHandler_T hand;
@@ -1169,6 +1171,15 @@ void emu_ReadSpecificValues(const char *filename)
     strcat(config, CONFIG_FILE);
 
     ini_parse_fatfs(config, handler, &hand);
+
+    // Determine whether a reboot is required
+    if (specific.fiveSevenSix != used.fiveSevenSix)
+    {
+      emu_SetRebootMode(specific.fiveSevenSix, emu_GetDirectory(), &filename[strlen(dirPath)]);
+      // emu_SetRebootMode will never return
+      // The board will reboot and load the file
+    }
+
     // determine whether a reset is required
     resetNeeded =  ((specific.M1NOT != used.M1NOT) ||
                     (specific.loadUsingROM != used.loadUsingROM) ||

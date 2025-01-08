@@ -205,6 +205,8 @@ The following can be configured:
 | ACB | Enables ACB stereo if sound card enabled | Off |  |
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 25 | See notes below|
+| FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz `On` , or 720x576p display @ 50.65Hz `Match`. If set to `Off` a 640x480 display @ 60Hz is produced | Off |
+
 
 **Notes:**
 1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if `QSUDG` is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400 to 0x87ff)
@@ -214,6 +216,7 @@ The following can be configured:
 5. The "Big Bang" ROM can double the speed of BASIC programs
 6. The Waveshare LCD 2.8 board has no sound capabilities
 7. The `TV` sound option emulates the sound generated through the TV speaker by VSYNC pulses. The `CHROMA` sound option emulates the sound generated through the TV speaker by the Chroma interface when VSYNC pulses are not frame synchronised
+8. When `FiveSevenSix` is specified in the `[default]` section of the `config.ini` file in the root directory of the SD Card it sets the display resolution and refresh rate of picozx81 at start-up. If set for a specific program, then the resolution and refresh rate is set when the program is loaded. If necessary,picozx81 will reset and restart with the requested display before the program is loaded
 
 ### Joystick
 In addition a USB joystick,and on some boards a 9-pin joystick, can be configured to generated key presses
@@ -228,10 +231,9 @@ In addition a USB joystick,and on some boards a 9-pin joystick, can be configure
 
 Notes: ENTER and SPACE can be used to represent the New Line and Space keys, respectively
 ### Extra configuration options
-Eight extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
+Nine extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
 | Item | Description | Default Value |
 | --- | --- | --- |
-| FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz `On` , or 720x576p display @ 50.65Hz `Match`. If set to `Off` a 640x480 display @ 60Hz is produced | Off |
 | Dir | Sets the initial default directory to load and save programs | / |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
