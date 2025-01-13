@@ -726,6 +726,26 @@ Code to convert a ZX8x keyboard to USB can be found at [ZX81_USB_KBD](https://gi
 To access the function menus from a ZX80/81 keyboard the `doubleshift` configuration option must be enabled
 
 The picozx board does support keyboard and joystick. This is achieved by using every available GPIO pin, and using VGA222 with CSYNC, together with mono audio
+## Snapshot file
+The snapshot (`.s`) file stores the state of the emulator, so that excution can continue at a later date, potentially on an instance of picozx81 running on a different board type. To achieve this most of the picozx81 variables are saved. The 64 kB of emulated memory is also saved, together with the state of the AY and beeper sound emaulators.
+
+The display mode (resolution, refresh rate, NTSC vs PAL, whether the display is blanked etc) is saved, but the actual video buffers are not. The rationale for this is 3 fold:
+1. The display buffers differ between LCD and non LCD displays, storing them would make supporting moving between board types more difficult
+2. Storing 4 display and 4 chroma buffers would more than double the size of the `.s` file
+3. The emulator recreates the display every 1/50th of a second from the data that is saved in the `.s` file
+
+Clearly, the `.s` file is dependent on the internal picozx81 variables. Future changes to the picozx81 code may result in a change to the format of a `.s` file. To allow newer versions of picozx81 to load older versions of `.s` file, the `.s` file stores version information in its header
+
+### File header format
+Data is stored in little endian format. The first 3 values in the snapshot format are:
+#### Identifier
+`S` `N` `A` `P` in ASCII (4 * 8 bit)
+#### Version
+Major (16 bits) and minor (16 bit) version numbers
+### Video Mode
+Identifies resolution and refresh rate (8 bit)
+
+The header is followed by the state data. A full `.s` file is roughly 66kB in size
 
 ## Performance and constraints
 In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
@@ -748,7 +768,7 @@ This emulator offers the following over MCUME:
 + Emulation runs at full speed of a 3.25MHz ZX81
 + Ability to save files
 + Ability to load a program without reset
-+ Ability to save ans load snapshots
++ Ability to save and load snapshots
 + Support for Hi-res and pseudo Hi-res graphics
 + Support for multiple DVI, VGA and LCD boards
 + Support for Chroma 80 and Chroma 81
