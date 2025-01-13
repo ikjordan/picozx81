@@ -726,8 +726,8 @@ Code to convert a ZX8x keyboard to USB can be found at [ZX81_USB_KBD](https://gi
 To access the function menus from a ZX80/81 keyboard the `doubleshift` configuration option must be enabled
 
 The picozx board does support keyboard and joystick. This is achieved by using every available GPIO pin, and using VGA222 with CSYNC, together with mono audio
-## Snapshot file
-The snapshot (`.s`) file stores the state of the emulator, so that excution can continue at a later date, potentially on an instance of picozx81 running on a different board type. To achieve this most of the picozx81 variables are saved. The 64 kB of emulated memory is also saved, together with the state of the AY and beeper sound emaulators.
+## Snapshot file format
+The snapshot (`.s`) file format stores the state of the emulator, so that excution can continue at a later date, potentially on an instance of picozx81 running on a different board type. To achieve this most of the picozx81 variables are saved. The 64 kB of emulated memory is also saved, together with the state of the AY and beeper sound emaulators.
 
 The display mode (resolution, refresh rate, NTSC vs PAL, whether the display is blanked etc) is saved, but the actual video buffers are not. The rationale for this is 3 fold:
 1. The display buffers differ between LCD and non LCD displays, storing them would make supporting moving between board types more difficult
