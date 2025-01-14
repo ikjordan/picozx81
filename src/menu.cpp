@@ -1367,13 +1367,13 @@ static void showSave(const char* name, uint len, uint cursor, uint col, uint row
     writeChar(' ', col, row);
 }
 
-// Waits for 12th of a second
+// Waits for 120 ms
 static void delay(void)
 {
-    emu_WaitFor50HzTimer();
-    emu_WaitFor50HzTimer();
-    emu_WaitFor50HzTimer();
-    emu_WaitFor50HzTimer();
+    for (int i=0; i<6; ++i)
+    {
+        emu_WaitFor50HzTimer();
+    }
 }
 
 static void debounceExit(bool selected)
