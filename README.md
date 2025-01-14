@@ -275,7 +275,9 @@ The original ZX80/ZX81 40 key keyboard does not have function keys. A "double sh
 
 This mechanism is enabled by default. To disable it set `DoubleShift` to `Off` in the configuration file
 ### F1 - Reset
-Hard resets the emulator. It is equivalent to removing and reconnecting the power
+Hard resets the emulator. It is equivalent to removing and reconnecting the power from the emulated computer. Note that the configuration of the computer remains unchanged, so it will restart with the same memory size, sound settings, display settings, ROM type etc that it had prior to the reset.
+
+The current directory on the SD Card is  not changed by pressing F1
 ### F2 - Load
 A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. Any sound that is playing is paused. Directory names are prepended by `<` and appended by `>` e.g. `<NAME>`
 
