@@ -475,26 +475,38 @@ static bool setDirectory(const char* dir)
 {
   bool retVal = false;
 
-  if (dir!=NULL && dir[0])
+  if (dir!=NULL)
   {
-    if (dir[strlen(dir) - 1] != '/')
+    if (dir[0])
     {
-      if (strncasecmp(dirPath, dir, strlen(dir) - 1) ||
-          (strlen(dir) != (strlen(dirPath) - 1)))
+      if (dir[strlen(dir) - 1] != '/')
       {
-        strncpy(dirPath, dir, MAX_DIRECTORY_LEN-2);
-        dirPath[MAX_DIRECTORY_LEN-2] = 0;
-        strcat(dirPath, "/");
-        retVal = true;
+        if (strncasecmp(dirPath, dir, strlen(dir) - 1) ||
+            (strlen(dir) != (strlen(dirPath) - 1)))
+        {
+          strncpy(dirPath, dir, MAX_DIRECTORY_LEN-2);
+          dirPath[MAX_DIRECTORY_LEN-2] = 0;
+          strcat(dirPath, "/");
+          retVal = true;
+        }
+      }
+      else
+      {
+        if (strncasecmp(dirPath, dir, strlen(dir)) ||
+            (strlen(dir) != strlen(dirPath)))
+        {
+          strncpy(dirPath, dir, MAX_DIRECTORY_LEN-1);
+          dirPath[MAX_DIRECTORY_LEN-1] = 0;
+          retVal = true;
+        }
       }
     }
     else
     {
-      if (strncasecmp(dirPath, dir, strlen(dir)) ||
-          (strlen(dir) != strlen(dirPath)))
+      if (dirPath[0])
       {
-        strncpy(dirPath, dir, MAX_DIRECTORY_LEN-1);
-        dirPath[MAX_DIRECTORY_LEN-1] = 0;
+        // Moving to root directory
+        dirPath[0] = 0;
         retVal = true;
       }
     }

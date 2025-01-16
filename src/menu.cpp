@@ -550,7 +550,14 @@ bool statusMenu(void)
     }
 
     writeString("Directory:", lhs, ++lcount);
-    writeString(emu_GetDirectory(), rhs, lcount++);
+    if (!emu_GetDirectory()[0])
+    {
+        writeString("<ROOT>", rhs, lcount++);
+    }
+    else
+    {
+        writeString(emu_GetDirectory(), rhs, lcount++);
+    }
 
 #ifdef NINEPIN_JOYSTICK
     writeString("Nine Pin JS:", lhs, lcount);
