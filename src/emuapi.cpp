@@ -499,6 +499,12 @@ static bool setDirectory(const char* dir)
       }
     }
   }
+  else if (!dir[0])
+  {
+    // Root directory
+    dirPath[0] = 0;
+    retVal = true;
+  }
   return retVal;
 }
 
