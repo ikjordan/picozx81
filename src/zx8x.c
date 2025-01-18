@@ -356,9 +356,16 @@ bool load_p(int name_addr, bool defer_rom)
     // so adjust, if file was not picked from menu
     if (!from_menu)
     {
+      // Extract the directory
       char* nameStrt = strrchr(fname, '/');
+
+      // Temporarily null terminate to isolate the directory
       if (nameStrt)  *nameStrt = 0;
-      emu_SetDirectory(nameStrt ? fname : "/");
+
+      // Set the directory,allowing for case when in root directory
+      emu_SetDirectory(nameStrt ? fname : "");
+
+      // Restore the original full path and name
       if (nameStrt) *nameStrt = '/';
     }
     // Load the settings for this file

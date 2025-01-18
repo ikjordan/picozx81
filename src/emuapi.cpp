@@ -540,6 +540,7 @@ static bool setDirectory(const char* dir)
   {
     if (dir[0])
     {
+      // Append a final forward slash if necessary
       if (dir[strlen(dir) - 1] != '/')
       {
         if (strncasecmp(dirPath, dir, strlen(dir) - 1) ||
@@ -570,6 +571,57 @@ static bool setDirectory(const char* dir)
         dirPath[0] = 0;
         retVal = true;
       }
+    }
+
+    // If changed, prune the directory of any navigation, do this after
+    // the copy, as the string passed in is const
+    if (retVal)
+    {
+      char* updir = 0;
+      do
+      {
+        // search for "../"
+        // Note that if "../" is present then we know that the path is valid
+        updir = strstr(dirPath, "../");
+
+        if (updir)
+        {
+          // manually search back for the previous directory separator
+          // There will not be one for root
+          char* start = updir-2;
+
+          while ((*start != '/') && (start != dirPath))
+          {
+            --start;
+          }
+
+          // Start of path does not have '/'
+          start += (start != dirPath) ? 1 : 0;
+
+          // Now close the gap, copying up to and including the null terminator
+          do
+          {
+            *start++ = updir[3];
+          } while (updir++[3]);
+        }
+      } while (updir != 0);   // In case moved up multiple directories
+
+      // Strip out all "./"
+      do
+      {
+        updir = strstr(dirPath, "./");
+
+        if (updir)
+        {
+          // Close the gap
+          do
+          {
+            updir[0] = updir[2];
+          } while (updir++[2]);
+
+          printf("Modified . dir %s\n", dirPath);
+        }
+      } while (updir != 0);
     }
   }
   return retVal;
