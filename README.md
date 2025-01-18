@@ -285,7 +285,7 @@ If the name of a file or directory is too long to display in full it is truncate
 + Press `enter` when a file is selected to load that file
 + Press `Escape`, `space`, `Q` or `0` to return to the emulation without changing directory or loading a new program
 ### F3 - View Emulator Configuration
-Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press `Escape`, `space`, `Q` or `0` to exit back to the running emulator
+Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press `Escape`, `space`, `Q` or `0` to exit back to the running emulator. Note that the displayed directory path may be truncated due to space constraints
 ### F4 - Pause
 Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press `Escape`, `space`, `Q` or `0` to end the pause and return to the running emulator
 ### F5 - Display Keyboard Overlay
@@ -600,7 +600,7 @@ This will be named `picozx81_vga_rp2040.uf2`
 + The Waveshare Pico-ResTouch-LCD-2.8 board has a touch controller, but the emulator does not support its use
 ### Olimex RP2040-PICO-PC
 + The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
-+ If SJ1 is shorted the board may be back powered by some TVs. This can cause the board to not start correctly. If this happens either connect the power before attaching the HDMI cable, or press the reset button on the board
++ If SJ1 is shorted the board may be back powered by some TVs. This can cause the board to not start correctly. If this happens either connect the power before attaching the HDMI cable, or press the reset button on the board. It may be possible to avoid back powering by connecting a diode across the SJ1 connections, rather than shorting them
 
 ### Cytron Maker
 + The Cytron Maker Pi Pico has an onboard piezo buzzer. The audio quality is poor, but it can be used instead of speakers. If the buzzer is enabled (using the switch on the maker board) ensure that ACB Stereo is disabled
@@ -660,7 +660,7 @@ By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rot
 With boards with connectors supplied for enough free GPIO pins it is possible to attach a 9 pin connector and then plug-in and use "in period" 9-pin joysticks
 
 ### Supported Boards
-The lcdmaker, vgamaker222c, picomitevga, pizero and picozx builds support the connection of a 9-pin joystick connector
+The lcdmaker, vgamaker222c, picomitevga, pizero Olimexpc and picozx builds support the connection of a 9-pin joystick connector
 
 ### Obtaining a 9-pin interface
 Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://www.amazon.co.uk/sourcing-map-Breakout-Connector-Solderless/dp/B07MMMGGXP)
@@ -672,8 +672,20 @@ Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://ww
 | vgamaker222c | GP20 | GP21 | GP22 | GP26 | GP27 | Ground |
 | picomitevga | GP3 | GP4 | GP5 | GP22 | GP26 | Ground |
 | pizero | GP11 | GP12 | GP10 | GP15 | GP13 | Ground |
+| Olimexpc | GP20 | GP21 | GP8 | GP9 | GP5 | Ground |
 
 The picozx board has a 9-pin joystick port connector built in
+#### Olimex UEXT1 connections
+For the RP2040-PICO-PC the pins required for the joystick connection are on the UEXT1 connector. The mapping is:
+| Joystick Pin number | UEXT1 Pin Number |
+| --- | --- |
+| 1 | 3 |
+| 2 | 4 |
+| 3 | 6 |
+| 4 | 5 |
+| 6 | 10 |
+| 8 | 2 |
+
 ### Enabling the joystick
 To enable the nine pin joystick set `NinePinJoystick` to `On` in the `[default]` section of the `config.ini` file in the root directory
 

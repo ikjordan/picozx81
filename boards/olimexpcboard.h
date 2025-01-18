@@ -59,6 +59,14 @@
 #define PICO_AUDIO_PWM_R_PIN OLIMEXPCBOARD_PWM_R_PIN
 #endif
 
+#define NINEPIN_JOYSTICK
+
+#define NINEPIN_UP      20      // UEXT1 Pin 3
+#define NINEPIN_DOWN    21      // UEXT1 Pin 4
+#define NINEPIN_LEFT    8       // UEXT1 Pin 6
+#define NINEPIN_RIGHT   9       // UEXT1 Pin 5
+#define NINEPIN_BUTTON  5       // UEXT1 Pin 10
+                                // UEXT1 Pin 2 is Ground
 
 #define PICO_OLIMEXPC_BOARD
 
