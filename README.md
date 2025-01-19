@@ -544,7 +544,10 @@ To enable chroma support set LowRAM on, and Memory to 48kB
 ### To build:
 1. Install the Raspberry Pi Pico toolchain and SDK. SDK 2.x must be used
 
-    Instructions to do this for several operating systems can be found by downloading [this pdf](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf). Chapter 2 covers installation on the Raspberry Pi, chapter 9 describes the process for other operating systems
+    Instructions to do this for several operating systems can be found by downloading [this pdf](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf). Chapter 2 covers installation on the Raspberry Pi, chapter 9 describes the process for other operating systems.
+
+    **Note:** At time of writing SDK2.1 had two issues that impacted picozx81. To build using SDK 2.1 use the develop branch, and revert the TinyUSB submodule to that included in SDK 2.0. Alternatively use SDK 2.0
+
 2. The vga display uses the `pico_scanvideo` library, which is part of the `pico-extras` repository. Clone this repository, including submodules
 
     `git clone --recursive https://github.com/raspberrypi/pico-extras.git`
