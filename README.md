@@ -679,7 +679,7 @@ By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rot
 With boards with connectors supplied for enough free GPIO pins it is possible to attach a 9 pin connector and then plug-in and use "in period" 9-pin joysticks
 
 ### Supported Boards
-The lcdmaker, vgamaker222c, picomitevga, pizero Olimexpc and picozx builds support the connection of a 9-pin joystick connector
+The lcdmaker, vgamaker222c, picomitevga, pizero, Olimexpc and picozx builds support the connection of a 9-pin joystick connector
 
 ### Obtaining a 9-pin interface
 Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://www.amazon.co.uk/sourcing-map-Breakout-Connector-Solderless/dp/B07MMMGGXP)
