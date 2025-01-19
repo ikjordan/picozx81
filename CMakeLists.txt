@@ -160,6 +160,7 @@ else()
 endif()
 
 # Determine video system and name uf2
+set (EXTRA_CHECK "-Wextra")
 if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     target_compile_definitions(${PROJECT} PUBLIC
                                 -DDVI_1BPP_BIT_REVERSE=1
@@ -221,6 +222,7 @@ else()
         target_link_libraries(${PROJECT} mod_scanvideo_dpi)
     else ()
         target_link_libraries(${PROJECT} pico_scanvideo_dpi)
+        set (EXTRA_CHECK "")
     endif()
 endif()
 
@@ -244,7 +246,7 @@ endif()
 # always support Chroma
 target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA -DLOAD_AND_SAVE)
 
-target_compile_options(${PROJECT} PRIVATE -Wall)
+target_compile_options(${PROJECT} PRIVATE -Wall ${EXTRA_CHECK})
 
 target_link_libraries(${PROJECT}
                       pico_multicore

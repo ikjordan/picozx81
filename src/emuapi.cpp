@@ -7,14 +7,18 @@
 #include <string.h>
 #include "tusb.h"
 #include "hid_usb.h"
-#include "display.h"
 
 #include "emuapi.h"
 #include "emuvideo.h"
+#include "emusound.h"
 #include "emupriv.h"
 
 #include "ini.h"
 #include "iopins.h"
+
+#ifdef PICO_SPI_LCD_SD_SHARE
+#include "display.h"
+#endif
 
 /********************************
  * Menu file loader UI
@@ -29,11 +33,12 @@ static bool fsinit = false;
  ********************************/
 bool emu_FileOpen(const char *filepath, const char *mode)
 {
-  (void)mode;   // Ignore mode, always open as read only
+  BYTE access = (*mode == 'w') ? (FA_WRITE | FA_CREATE_ALWAYS) : FA_READ;
+
   bool retval = false;
 
   printf("FileOpen %s\n", filepath);
-  FRESULT res = f_open(&file, filepath, FA_READ);
+  FRESULT res = f_open(&file, filepath, access);
   if (res == FR_OK)
   {
     retval = true;
@@ -45,7 +50,7 @@ bool emu_FileOpen(const char *filepath, const char *mode)
   return (retval);
 }
 
-int emu_FileRead(void *buf, int size, int offset)
+int emu_FileRead(void* buf, int size, int offset)
 {
   unsigned int read = 0;
 
@@ -60,7 +65,7 @@ int emu_FileRead(void *buf, int size, int offset)
       }
     }
 
-    if (f_read(&file, (void *)buf, size, &read) != FR_OK)
+    if (f_read(&file, buf, size, &read) != FR_OK)
     {
       printf("emu_FileRead read failed\n");
       read = 0;
@@ -68,9 +73,64 @@ int emu_FileRead(void *buf, int size, int offset)
   }
   else
   {
-    printf("emu_FileRead negative size %i\n", size);
+    printf("emu_FileRead illegal size %i\n", size);
   }
   return read;
+}
+
+int emu_FileReadBytes(void* buf, unsigned int size)
+{
+  unsigned int read = 0;
+
+  if (size > 0)
+  {
+
+    if (f_read(&file, buf, size, &read) != FR_OK)
+    {
+      printf("emu_FileReadBytes read failed\n");
+      read = 0;
+    }
+    else
+    {
+      if (size != read)
+      {
+        printf("emu_FileReadBytes, not all read\n");
+      }
+    }
+  }
+  else
+  {
+    printf("emu_FileReadBytes illegal size %i\n", size);
+  }
+  return read;
+}
+
+int emu_FileWriteBytes(const void* buf, unsigned int size)
+{
+  unsigned int write = 0;
+
+  if (size > 0)
+  {
+
+    if (f_write(&file, buf, size, &write) != FR_OK)
+    {
+      printf("emu_FileWriteBytes write failed\n");
+      write = 0;
+
+    }
+    else
+    {
+      if (size != write)
+      {
+        printf("emu_FileWriteBytes, not all written\n");
+      }
+    }
+  }
+  else
+  {
+    printf("emu_FileReadBytes illegal size %i\n", size);
+  }
+  return write;
 }
 
 void emu_FileClose(void)
@@ -109,6 +169,7 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
   }
   return true;
 }
+
 
 /********************************
  * Initialization
@@ -479,6 +540,7 @@ static bool setDirectory(const char* dir)
   {
     if (dir[0])
     {
+      // Append a final forward slash if necessary
       if (dir[strlen(dir) - 1] != '/')
       {
         if (strncasecmp(dirPath, dir, strlen(dir) - 1) ||
@@ -509,6 +571,57 @@ static bool setDirectory(const char* dir)
         dirPath[0] = 0;
         retVal = true;
       }
+    }
+
+    // If changed, prune the directory of any navigation, do this after
+    // the copy, as the string passed in is const
+    if (retVal)
+    {
+      char* updir = 0;
+      do
+      {
+        // search for "../"
+        // Note that if "../" is present then we know that the path is valid
+        updir = strstr(dirPath, "../");
+
+        if (updir)
+        {
+          // manually search back for the previous directory separator
+          // There will not be one for root
+          char* start = updir-2;
+
+          while ((*start != '/') && (start != dirPath))
+          {
+            --start;
+          }
+
+          // Start of path does not have '/'
+          start += (start != dirPath) ? 1 : 0;
+
+          // Now close the gap, copying up to and including the null terminator
+          do
+          {
+            *start++ = updir[3];
+          } while (updir++[3]);
+        }
+      } while (updir != 0);   // In case moved up multiple directories
+
+      // Strip out all "./"
+      do
+      {
+        updir = strstr(dirPath, "./");
+
+        if (updir)
+        {
+          // Close the gap
+          do
+          {
+            updir[0] = updir[2];
+          } while (updir++[2]);
+
+          printf("Modified . dir %s\n", dirPath);
+        }
+      } while (updir != 0);
     }
   }
   return retVal;
@@ -570,6 +683,8 @@ void emu_SetSound(int soundType)
   general.sound = soundType;
   specific.sound = soundType;
 #else
+  (void)soundType;
+
   general.sound = SOUND_TYPE_NONE;
   specific.sound = SOUND_TYPE_NONE;
 #endif
@@ -623,7 +738,7 @@ void emu_SetCHR128(bool chr128)
   specific.CHR128 = chr128;
 }
 
-void emu_SetRebootMode(FiveSevenSix_T mode)
+void emu_SetRebootMode(FiveSevenSix_T mode, const char* dirname, const char* filename)
 {
   char filepath[MAX_FULLPATH_LEN];
 
@@ -640,12 +755,31 @@ void emu_SetRebootMode(FiveSevenSix_T mode)
     f_write(&file, filepath, strlen(filepath), &bw);
     sprintf(filepath, "FiveSevenSix = %s\n", (mode == MATCH) ? "MATCH" : (mode == ON) ? "ON" : "OFF");
     f_write(&file, filepath, strlen(filepath), &bw);
+    if (filename)
+    {
+      sprintf(filepath, "Load = %s\n", filename);
+      f_write(&file, filepath, strlen(filepath), &bw);
+
+      if (dirname)
+      {
+        sprintf(filepath, "Dir = %s\n", dirname);
+        f_write(&file, filepath, strlen(filepath), &bw);
+      }
+    }
     f_close(&file);
+
+    EMU_UNLOCK_SDCARD
 
     // Set the watchdog to trigger a reboot
     watchdog_enable(10, true);
+
+    // Stop until reboot
+    sleep_ms(50);
   }
-  EMU_UNLOCK_SDCARD
+  else
+  {
+    EMU_UNLOCK_SDCARD
+  }
 }
 
 static char convert(const char *val)
@@ -842,6 +976,22 @@ static int handler(void *user, const char *section, const char *name,
         // Defaults to off
         c->conf->extendFile = isEnabled(value);
     }
+    else if (!strcasecmp(name, "FiveSevenSix"))
+    {
+      if (!strcasecmp(value, "Match"))
+      {
+        c->conf->fiveSevenSix = MATCH;
+      }
+      else if (isEnabled(value))
+      {
+        c->conf->fiveSevenSix = ON;
+      }
+      else
+      {
+        // Defaults to off
+        c->conf->fiveSevenSix = OFF;
+      }
+    }
     else if ((!strcasecmp(section, "default")) && c->root)
     {
       // Following only allowed in default section of root config
@@ -877,22 +1027,6 @@ static int handler(void *user, const char *section, const char *name,
           res = 1;
         }
         c->conf->menuBorder = res;
-      }
-      else if (!strcasecmp(name, "FiveSevenSix"))
-      {
-        if (!strcasecmp(value, "Match"))
-        {
-          c->conf->fiveSevenSix = MATCH;
-        }
-        else if (isEnabled(value))
-        {
-          c->conf->fiveSevenSix = ON;
-        }
-        else
-        {
-          // Defaults to off
-          c->conf->fiveSevenSix = OFF;
-        }
       }
       else if ((!strcasecmp(name, "NinePinJoystick")))
       {
@@ -1063,6 +1197,8 @@ void emu_ReadDefaultValues(void)
 }
 
 // Note this should be called after the filename has been validated
+// If a display resolution or refresh change is needed this may trigger
+// a reboot
 void emu_ReadSpecificValues(const char *filename)
 {
   ConfHandler_T hand;
@@ -1087,6 +1223,15 @@ void emu_ReadSpecificValues(const char *filename)
     strcat(config, CONFIG_FILE);
 
     ini_parse_fatfs(config, handler, &hand);
+
+    // Determine whether a reboot is required
+    if (specific.fiveSevenSix != used.fiveSevenSix)
+    {
+      emu_SetRebootMode(specific.fiveSevenSix, emu_GetDirectory(), &filename[strlen(dirPath)]);
+      // emu_SetRebootMode will never return
+      // The board will reboot and load the file
+    }
+
     // determine whether a reset is required
     resetNeeded =  ((specific.M1NOT != used.M1NOT) ||
                     (specific.loadUsingROM != used.loadUsingROM) ||
@@ -1097,6 +1242,190 @@ void emu_ReadSpecificValues(const char *filename)
                     (specific.QSUDG != used.QSUDG) ||
                     (specific.lowRAM != used.lowRAM));
   }
+}
+
+/********************************
+ * Snapshot
+ ********************************/
+#define SNAPSHOT_ID       0x50414E53          // Little endian 'SNAP'
+#define SUPPORTED_VERSION 0x00010001          // Major and minor versions
+#define SECOND_OFFSET     57                  // Start of second data section
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern bool save_snap_zx8x(void);
+extern bool load_snap_zx8x(uint32_t version);
+extern bool save_snap_z80(void);
+extern bool load_snap_z80(uint32_t version);
+extern bool display_save_snap(void);
+extern bool display_load_snap(uint32_t version);
+
+#ifdef __cplusplus
+}
+#endif
+
+bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
+{
+  bool ret = false;
+  FiveSevenSix_T state;
+  printf("emu_loadSnapshotSpecific %s \n", fullpathname);
+
+  EMU_LOCK_SDCARD
+  if (!(f_open(&file, fullpathname, FA_READ)))
+  {
+    // Check identifer
+    uint32_t id;
+    if (!emu_FileReadBytes(&id, sizeof(id)) || id != SNAPSHOT_ID)
+    {
+      printf("emu_loadSnapshotSpecific wrong id\n");
+    }
+    else if (!emu_FileReadBytes(&id, sizeof(id)) || (id != SUPPORTED_VERSION))
+    {
+      printf("emu_loadSnapshotSpecific wrong version %li\n", id);
+    }
+    else if (!emu_FileReadBytes(&state, sizeof(state)) || state != emu_576Requested())
+    {
+      printf("emu_loadSnapshotSpecific wrong display type - triggering reboot\n");
+      emu_SetRebootMode(state, emu_GetDirectory(), filename);
+    }
+    else if (!emu_FileReadBytes(&specific, sizeof(specific)))
+    {
+      printf("emu_loadSnapshotSpecific read specific failed\n");
+    }
+    else if (f_tell(&file) != SECOND_OFFSET)
+    {
+      printf("emu_loadSnapshotSpecific wrong data size %lli\n", f_tell(&file));
+    }
+    else
+    {
+      ret = true;
+    }
+    f_close(&file);
+  }
+  else
+  {
+    printf("file open failed\n");
+  }
+  EMU_UNLOCK_SDCARD
+  return ret;
+}
+
+bool emu_loadSnapshotData(const char* fullpathname)
+{
+  bool ret = false;
+  printf("emu_loadSnapshotData %s \n", fullpathname);
+
+  EMU_LOCK_SDCARD
+  if (!(f_open(&file, fullpathname, FA_READ)))
+  {
+    // Check identifer
+    uint32_t id;
+    uint32_t version;
+
+    if (!emu_FileReadBytes(&id, sizeof(id)) || id != SNAPSHOT_ID)
+    {
+      printf("emu_loadSnapshotData wrong id\n");
+    }
+    else if (!emu_FileReadBytes(&version, sizeof(version)) || version != SUPPORTED_VERSION)
+    {
+      printf("emu_loadSnapshotData wrong version %li\n", version);
+    }
+    else if (f_lseek(&file, SECOND_OFFSET) || (f_tell(&file) != SECOND_OFFSET))
+    {
+      printf("emu_loadSnapshotData move to start of second data failed\n");
+    }
+    else if (!display_load_snap(version))
+    {
+      printf("display_load_snap failed\n");
+    }
+    else if (!load_snap_z80(version))
+    {
+      printf("load_snap_z80 failed\n");
+    }
+    else if (!load_snap_zx8x(version))
+    {
+      printf("load_snap_zx8x failed\n");
+    }
+    else if (!emu_sndLoadSnap(version))
+    {
+      printf("emu_sndLoadSnap failed\n");
+    }
+    else
+    {
+      ret = true;
+    }
+    f_close(&file);
+  }
+  else
+  {
+    printf("file open failed\n");
+  }
+  EMU_UNLOCK_SDCARD
+  return ret;
+}
+
+bool emu_saveSnapshot(const char* fullpathname)
+{
+  bool ret = false;
+  FiveSevenSix_T state = emu_576Requested();
+
+  printf("saveSnapshot %s \n", fullpathname);
+
+  EMU_LOCK_SDCARD
+  if (!(f_open(&file, fullpathname, FA_CREATE_ALWAYS | FA_WRITE)))
+  {
+    // write identifer
+    uint32_t id = SNAPSHOT_ID;
+    uint32_t version = SUPPORTED_VERSION;
+    if (!emu_FileWriteBytes(&id, sizeof(id)))
+    {
+      printf("emu_saveSnapshot write id failed\n");
+    }
+    else if (!emu_FileWriteBytes(&version, sizeof(version)))
+    {
+      printf("emu_saveSnapshot write version failed\n");
+    }
+    else if (!emu_FileWriteBytes(&state, sizeof(state)))
+    {
+      printf("emu_saveSnapshot write display state failed\n");
+    }
+    else if (!emu_FileWriteBytes(&specific, sizeof(specific)))
+    {
+      printf("emu_saveSnapshot write specific failed\n");
+    }
+    else if (f_tell(&file) != SECOND_OFFSET)
+    {
+      printf("emu_saveSnapshot wrong offset - %lli\n", f_tell(&file));
+    }
+    else if (!display_save_snap())
+    {
+      printf("display_save_snap failed\n");
+    }
+    else if (!save_snap_z80())
+    {
+      printf("save_snap_z80 failed\n");
+    }
+    else if (!save_snap_zx8x())
+    {
+      printf("save_snap_zx8x failed\n");
+    }
+    else if (!emu_sndSaveSnap())
+    {
+      printf("emu_sndSaveSnap failed\n");
+    }
+    else
+    {
+      ret = true;
+    }
+    f_close(&file);
+  }
+  else
+  {
+    printf("file open failed\n");
+  }
+  EMU_UNLOCK_SDCARD
+  return ret;
 }
 
 /********************************

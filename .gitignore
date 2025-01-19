@@ -47,3 +47,10 @@ build/*
 
 # Allow example file
 !examples/ZX80-4K/simple.o
+
+# Exclude extra build directories
+build_2040/*
+build_2350/*
+
+#Code counter
+.VSCodeCounter/*

@@ -1,12 +1,23 @@
 #!/bin/bash
+# Get the build type - in case different build types are needed for Pico and Pico 2 in the future
+build_type()
+{
+  if [[ $1 == "rp2040" ]]
+  then
+    echo "Release"
+  else
+   echo "Release"
+  fi
+}
 
 #build a board type
 build_uf2()
 {
   board=$1"board .."
   uf2="picozx81_"$1"_"$2".uf2"
+  type=$(build_type $2)
 
-  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
+  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }
@@ -14,10 +25,10 @@ build_uf2()
 build_uf2_hdmi()
 {
   board=$1"board .."
-  mcu=$2
   uf2="picozx81_"$1"_hdmi_sound_"$2".uf2"
+  type=$(build_type $2)
 
-  cmake -DHDMI_SOUND=ON -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
+  cmake -DHDMI_SOUND=ON -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }
@@ -25,23 +36,25 @@ build_uf2_hdmi()
 build_uf2_lcd()
 {
   board=$1"board .."
-  mcu=$2
   uf2="picozx81_"$1"_lcd_"$2".uf2"
+  type=$(build_type $2)
 
-  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=ON -DCMAKE_BUILD_TYPE=Release -DTIME_SPARE=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
+  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=ON -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2 
   make -j4
   cp ./${uf2} ../uf2/${uf2}
 }
 
-# Create the directories
-mkdir -p build_2040
-mkdir -p build_2350
+# Create the directories from scratch
+rm -rf build_2040
+rm -rf build_2350
+mkdir build_2040
+mkdir build_2350
 mkdir -p uf2
 
 # Build all PicoZX81 variants for rp2040
 cd build_2040
 
-build_uf2 vga rp2040
+build_uf2 vga rp2040 
 build_uf2 dvi rp2040
 build_uf2 picomitevga rp2040
 build_uf2 olimexpc rp2040

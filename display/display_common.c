@@ -8,6 +8,7 @@
 #include "display_priv.h"
 #include "zx80bmp.h"
 #include "zx81bmp.h"
+#include "../src/emusnap.h"
 
 #ifdef SUPPORT_CHROMA
 // Structure for chroma buffers
@@ -421,6 +422,28 @@ void __not_in_flash_func(newFrame)(void)
     displayGetChromaBufferUsed(&cbuffer, curr_buff);
 #endif
     mutex_exit(&next_frame_mutex);
+}
+
+bool display_save_snap(void)
+{
+    if (!emu_FileWriteBytes(&blank, sizeof(blank))) return false;
+    if (!emu_FileWriteBytes(&blank_colour, sizeof(blank_colour))) return false;
+    if (!emu_FileWriteBytes(&keyboard, sizeof(keyboard))) return false;
+    if (!emu_FileWriteBytes(&showKeyboard, sizeof(showKeyboard))) return false;
+    if (!emu_FileWriteBytes(&interlace, sizeof(interlace))) return false;
+    if (!emu_FileWriteBytes(&no_skip, sizeof(no_skip))) return false;
+    return true;
+}
+
+bool display_load_snap(void)
+{
+    if (!emu_FileReadBytes(&blank, sizeof(blank))) return false;
+    if (!emu_FileReadBytes(&blank_colour, sizeof(blank_colour))) return false;
+    if (!emu_FileReadBytes(&keyboard, sizeof(keyboard))) return false;
+    if (!emu_FileReadBytes(&showKeyboard, sizeof(showKeyboard))) return false;
+    if (!emu_FileReadBytes(&interlace, sizeof(interlace))) return false;
+    if (!emu_FileReadBytes(&no_skip, sizeof(no_skip))) return false;
+    return true;
 }
 
 //

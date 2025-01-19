@@ -139,9 +139,9 @@ int loadPGetBit(void)
                     pulse_count++;
 
                     // Determine what comes after the 0 pulse
-                    int max_count = (bit_state == ZERO_BIT) ? LOADP_ZERO_COUNT : LOADP_ONE_COUNT;
+                    uint32_t max_count = (bit_state == ZERO_BIT) ? LOADP_ZERO_COUNT : LOADP_ONE_COUNT;
 
-                    if (max_count  == pulse_count)
+                    if (max_count == pulse_count)
                     {
                         pulse_state = SILENCE_PULSE;
                         pulse_length_max = LOADP_SILENCE_LENGTH;

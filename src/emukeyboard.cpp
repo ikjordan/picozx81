@@ -180,6 +180,8 @@ void emu_KeyboardScan(void* data)
         }
     }
 #endif
+#else
+    (void)(data);
 #endif
 }
 
@@ -245,6 +247,8 @@ static inline void  __not_in_flash_func(device_keyscan_row)(void)
 
 static bool  __not_in_flash_func(timer_callback)(repeating_timer_t *rt)
 {
+    (void)rt;
+
     device_keyscan_row();
     return true;
 }

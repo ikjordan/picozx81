@@ -232,6 +232,7 @@ static void __not_in_flash_func(pwmInterruptHandler)()
 
 static bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t)
 {
+  (void)(t);
   static uint32_t call_count = 0;
   static int cnt = 0;
 
@@ -454,4 +455,22 @@ void emu_sndSilence(void)
   {
     soundBuffer16[i] = ZEROSOUND;
   }
+}
+
+bool emu_sndSaveSnap(void)
+{
+  if (!sound_save_snap()) return false;
+  if (!emu_FileWriteBytes(&queued_sound_type, sizeof(queued_sound_type))) return false;
+  if (!emu_FileWriteBytes(&queued_play, sizeof(queued_play))) return false;
+
+  return true;
+}
+
+bool emu_sndLoadSnap(uint32_t version)
+{
+  if (!sound_load_snap(version)) return false;
+  if (!emu_FileReadBytes(&queued_sound_type, sizeof(queued_sound_type))) return false;
+  if (!emu_FileReadBytes(&queued_play, sizeof(queued_play))) return false;
+
+  return true;
 }

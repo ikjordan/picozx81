@@ -46,6 +46,7 @@
 #include "sound.h"
 #include "z80.h"
 #include "iopins.h"
+#include "emusnap.h"
 
 /* configuration */
 /* Always generate two channels, even if mono */
@@ -53,7 +54,7 @@
 int sound_enabled=0;
 int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 
-/* sound_type is in common.c */
+/* sound_type is in z80.c */
 
 #define AY_CLOCK_QUICKSILVA (3250000>>2)
 
@@ -426,11 +427,12 @@ static void sound_beeper_reset(void)
   beeper_tick_incr=(1<<24)/SAMPLE_FREQ;
 }
 
+static int rng=1;
+static int noise_toggle=1;
+static int env_level=0;
+
 static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
 {
-  static int rng=1;
-  static int noise_toggle=1;
-  static int env_level=0;
   int tone_level[3];
   int mixer,envshape;
   int f,g,level;
@@ -588,4 +590,73 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
       ay_noise_tick-=ay_noise_period;
     }
   }
+}
+
+bool sound_save_snap(void)
+{
+  if (!emu_FileWriteBytes(&sound_enabled, sizeof(sound_enabled))) return false;
+  if (!emu_FileWriteBytes(&sound_stereo_acb, sizeof(sound_stereo_acb))) return false;
+  if (!emu_FileWriteBytes(&beeper_tick, sizeof(beeper_tick))) return false;
+  if (!emu_FileWriteBytes(&beeper_tick_incr, sizeof(beeper_tick_incr))) return false;
+  if (!emu_FileWriteBytes(&sound_oldpos, sizeof(sound_oldpos))) return false;
+  if (!emu_FileWriteBytes(&sound_fillpos, sizeof(sound_fillpos))) return false;
+  if (!emu_FileWriteBytes(&sound_oldval, sizeof(sound_oldval))) return false;
+  if (!emu_FileWriteBytes(&sound_oldval_orig, sizeof(sound_oldval_orig))) return false;
+  if (!emu_FileWriteBytes(&beeper_last_subpos, sizeof(beeper_last_subpos))) return false;
+  if (!emu_FileWriteBytes(&ay_noise_tick, sizeof(ay_noise_tick))) return false;
+  if (!emu_FileWriteBytes(&ay_env_tick, sizeof(ay_env_tick))) return false;
+  if (!emu_FileWriteBytes(&ay_env_subcycles, sizeof(ay_env_subcycles))) return false;
+  if (!emu_FileWriteBytes(&ay_tick_incr, sizeof(ay_tick_incr))) return false;
+  if (!emu_FileWriteBytes(&ay_noise_period, sizeof(ay_noise_period))) return false;
+  if (!emu_FileWriteBytes(&ay_env_period, sizeof(ay_env_period))) return false;
+  if (!emu_FileWriteBytes(&env_held, sizeof(env_held))) return false;
+  if (!emu_FileWriteBytes(&env_alternating, sizeof(env_alternating))) return false;
+  if (!emu_FileWriteBytes(&change, sizeof(change))) return false;
+  if (!emu_FileWriteBytes(&ay_change_count, sizeof(ay_change_count))) return false;
+
+  if (!emu_FileWriteBytes(&rng, sizeof(rng))) return false;
+  if (!emu_FileWriteBytes(&noise_toggle, sizeof(noise_toggle))) return false;
+  if (!emu_FileWriteBytes(&env_level, sizeof(env_level))) return false;
+
+  if (!emu_FileWriteBytes(ay_tone_levels, sizeof(uint16_t) * 16)) return false;
+  if (!emu_FileWriteBytes(ay_tone_tick, sizeof(unsigned int) * 3)) return false;
+  if (!emu_FileWriteBytes(ay_tone_period, sizeof(unsigned int) * 3)) return false;
+  if (!emu_FileWriteBytes(sound_ay_registers, sizeof(unsigned char) * 16)) return false;
+  return true;
+}
+
+bool sound_load_snap(uint32_t version)
+{
+  (void)version;
+
+  if (!emu_FileReadBytes(&sound_enabled, sizeof(sound_enabled))) return false;
+  if (!emu_FileReadBytes(&sound_stereo_acb, sizeof(sound_stereo_acb))) return false;
+  if (!emu_FileReadBytes(&beeper_tick, sizeof(beeper_tick))) return false;
+  if (!emu_FileReadBytes(&beeper_tick_incr, sizeof(beeper_tick_incr))) return false;
+  if (!emu_FileReadBytes(&sound_oldpos, sizeof(sound_oldpos))) return false;
+  if (!emu_FileReadBytes(&sound_fillpos, sizeof(sound_fillpos))) return false;
+  if (!emu_FileReadBytes(&sound_oldval, sizeof(sound_oldval))) return false;
+  if (!emu_FileReadBytes(&sound_oldval_orig, sizeof(sound_oldval_orig))) return false;
+  if (!emu_FileReadBytes(&beeper_last_subpos, sizeof(beeper_last_subpos))) return false;
+  if (!emu_FileReadBytes(&ay_noise_tick, sizeof(ay_noise_tick))) return false;
+  if (!emu_FileReadBytes(&ay_env_tick, sizeof(ay_env_tick))) return false;
+  if (!emu_FileReadBytes(&ay_env_subcycles, sizeof(ay_env_subcycles))) return false;
+  if (!emu_FileReadBytes(&ay_tick_incr, sizeof(ay_tick_incr))) return false;
+  if (!emu_FileReadBytes(&ay_noise_period, sizeof(ay_noise_period))) return false;
+  if (!emu_FileReadBytes(&ay_env_period, sizeof(ay_env_period))) return false;
+  if (!emu_FileReadBytes(&env_held, sizeof(env_held))) return false;
+  if (!emu_FileReadBytes(&env_alternating, sizeof(env_alternating))) return false;
+  if (!emu_FileReadBytes(&change, sizeof(change))) return false;
+  if (!emu_FileReadBytes(&ay_change_count, sizeof(ay_change_count))) return false;
+
+  if (!emu_FileReadBytes(&rng, sizeof(rng))) return false;
+  if (!emu_FileReadBytes(&noise_toggle, sizeof(noise_toggle))) return false;
+  if (!emu_FileReadBytes(&env_level, sizeof(env_level))) return false;
+
+  if (!emu_FileReadBytes(ay_tone_levels, sizeof(uint16_t) * 16)) return false;
+  if (!emu_FileReadBytes(ay_tone_tick, sizeof(unsigned int) * 3)) return false;
+  if (!emu_FileReadBytes(ay_tone_period, sizeof(unsigned int) * 3)) return false;
+  if (!emu_FileReadBytes(sound_ay_registers, sizeof(unsigned char) * 16)) return false;
+
+  return true;
 }

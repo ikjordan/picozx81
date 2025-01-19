@@ -22,10 +22,11 @@
 + Emulates user defined graphics, including CHR$128 and QS User Defined Graphics
 + Emulates the [Chroma 80](http://www.fruitcake.plus.com/Sinclair/ZX80/Chroma/ZX80_ChromaInterface.htm) and [Chroma 81](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface.htm) interfaces to allow a colour display. Also supports the enhanced TV sound provided by Chroma
 + Emulation runs at accurate speed of a 3.25MHz ZX81
++ Supports saving of snapshots. No need to restart from the beginning after you die in a game!
 + Optionally emulates real-time ZX81/80 program load and save with realistic sound and graphics
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
-+ Load `.p`, `.81`, `.o`, `.80` and `.p81` files from micro SD Card. Save `.p` and `.o` files
++ Load `.p`, `.81`, `.o`, `.s` (picozx81 snapshot), `.80` and `.p81` files from micro SD Card. Save `.p`, `.o` and `.s` files
 + Can display at 640x480 or 720x576 (for an authentic display on a UK TV)
 + 720x576 can be configured to run at a frame rate to match the "real" ZX81 (~50.65 Hz).
 + An interlaced mode can be selected to display interlaced images with minimal flicker
@@ -204,6 +205,8 @@ The following can be configured:
 | ACB | Enables ACB stereo if sound card enabled | Off |  |
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 25 | See notes below|
+| FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz `On` , or 720x576p display @ 50.65Hz `Match`. If set to `Off` a 640x480 display @ 60Hz is produced | Off |
+
 
 **Notes:**
 1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if `QSUDG` is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400 to 0x87ff)
@@ -213,6 +216,7 @@ The following can be configured:
 5. The "Big Bang" ROM can double the speed of BASIC programs
 6. The Waveshare LCD 2.8 board has no sound capabilities
 7. The `TV` sound option emulates the sound generated through the TV speaker by VSYNC pulses. The `CHROMA` sound option emulates the sound generated through the TV speaker by the Chroma interface when VSYNC pulses are not frame synchronised
+8. When `FiveSevenSix` is specified in the `[default]` section of the `config.ini` file in the root directory of the SD Card it sets the display resolution and refresh rate of picozx81 at start-up. If set for a specific program, then the resolution and refresh rate is set when the program is loaded. If necessary,picozx81 will reset and restart with the requested display before the program is loaded
 
 ### Joystick
 In addition a USB joystick,and on some boards a 9-pin joystick, can be configured to generated key presses
@@ -227,14 +231,13 @@ In addition a USB joystick,and on some boards a 9-pin joystick, can be configure
 
 Notes: ENTER and SPACE can be used to represent the New Line and Space keys, respectively
 ### Extra configuration options
-Eight extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
+Nine extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
 | Item | Description | Default Value |
 | --- | --- | --- |
-| FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz `On` , or 720x576p display @ 50.65Hz `Match`. If set to `Off` a 640x480 display @ 60Hz is produced | Off |
 | Dir | Sets the initial default directory to load and save programs | / |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
-| AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.81`, `.80` and `.p81` are initially displayed|Off|
+| AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.s`, `.81`, `.80` and `.p81` are initially displayed|Off|
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2| 1 |
 | LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated | OFF |
 | SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated | OFF |
@@ -268,11 +271,13 @@ The original ZX80/ZX81 40 key keyboard does not have function keys. A "double sh
 2. Shift is released, without another key being pressed
 3. Within one second shift is pressed again
 4. Shift is released, without another key being pressed
-5. To generate a function key, within one second, a numeric key in the range `1` to `8` is pressed without shift being pressed. If `0` is pressed `Escape` is generated
+5. To generate a function key, within one second, a numeric key in the range `1` to `9` is pressed without shift being pressed. If `0` is pressed `Escape` is generated
 
 This mechanism is enabled by default. To disable it set `DoubleShift` to `Off` in the configuration file
 ### F1 - Reset
-Hard resets the emulator. It is equivalent to removing and reconnecting the power
+Hard resets the emulator. It is equivalent to removing and reconnecting the power from the emulated computer. Note that the configuration of the computer remains unchanged, so it will restart with the same memory size, sound settings, display settings, ROM type etc that it had prior to the reset.
+
+The current directory on the SD Card is  not changed by pressing F1
 ### F2 - Load
 A menu displaying directories and files that can be loaded is displayed, using the ZX81 font. Any sound that is playing is paused. Directory names are prepended by `<` and appended by `>` e.g. `<NAME>`
 
@@ -280,12 +285,12 @@ If the name of a file or directory is too long to display in full it is truncate
 
 + The display can be navigated using the `up`, `down` and `enter` keys. The `7` key also generates `up` and the `6` key also generates `down`
 + For directories with a large number of files it is possible to move to the next page of files by using the `right`, `Page Down` or `8` key. To move to the previous page of files use the `left`, `Page Up` or `5` key
-+ Press `A` to display all files in the directory. Press `P` to only display files with extensions `.p`, `.o`, `.81`, `.80` and .`p81`
++ Press `A` to display all files in the directory. Press `P` to only display files with extensions `.p`, `.o`, `.s`, `.81`, `.80` and .`p81`
 + Press `enter` whilst a directory entry is selected to move to that directory
 + Press `enter` when a file is selected to load that file
 + Press `Escape`, `space`, `Q` or `0` to return to the emulation without changing directory or loading a new program
 ### F3 - View Emulator Configuration
-Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press `Escape`, `space`, `Q` or `0` to exit back to the running emulator
+Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press `Escape`, `space`, `Q` or `0` to exit back to the running emulator. Note that the displayed directory path may be truncated due to space constraints
 ### F4 - Pause
 Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press `Escape`, `space`, `Q` or `0` to end the pause and return to the running emulator
 ### F5 - Display Keyboard Overlay
@@ -306,13 +311,22 @@ The changes are *not* written back to the config files, so will be lost when the
 Allows the impact of changes to display resolution and frequency to be seen without editing config files. If a change is made and the menu is then exited by pressing `Enter` the Pico will reboot and use the new display mode. The changes are *not* written back to the main config files, so any changes will be lost on subsequent reboots.
 
 On the LCD builds the display resolution is fixed and only the frequency can be changed
+
+### F9 - Save snapshot
+Saves a snapshot of the current running program to SD-Card. The file is saved to the current directory. A screen is displayed to allow a filename to be entered. If the filename does not end with `.s` it is automatically appended. If a file of the specified name already exists in the current directory, it is overwritten
+without warning. Snapshot files are designed so that they can be loaded onto any device running picozx81.
+
+Use the `F2` command and select the file to reload the snapshot. If necessary the pico will reboot to set the correct display resolution and frequency
+
 ## Loading and saving options
-The emulator supports loading `.p`, `.81`, `.o`, `.80` and `.p81` files from micro SD Card. It can save in `.p` and `.o` format.
+The emulator supports loading `.p`, `.81`, `.o`, `.s`, `.80` and `.p81` files from micro SD Card. It can save in `.p`, `.o` and `.s` formats. ``.o` and `.p` are the standard ZX81 formats. `.s` is a snapshot format specific to picozx81.
 Files to be loaded should only contain characters that are in the ZX81 or ZX80 character set
 ### Load
 There are 3 ways to load files:
 #### 1. Via the F2 menu
 The user can navigate the SD card directory and select a file to load. The emulator is configured to the settings specified for the file in the `config.ini` files, reset and the new file loaded
+
+**Note:** This is the only supported way to load snapshot (`.s`) files. The configuration information is stored as part of the snapshot file, it is not loaded separately from `config.ini`
 #### 2. Via `LOAD ""` (ZX81) or `LOAD` (ZX80)
 If the user enters the `LOAD` command without specifying a file name the SD Card directory menu is displayed and a file to load can be selected. The emulator is configured to the settings specified for the file in the `config.ini` files. Unlike for option 1, the emulator is only reset if the configuration differs. This, for example, allows for RAMTOP to be manually set before loading a program
 #### 3. Via `LOAD "program-name"` (ZX81 only)
@@ -321,7 +335,7 @@ If a file name is specified, then `.p` is appended and an attempt is made to loa
 If the supplied filename, with `.p` appended, does not exist, then the `LOAD` fails with error `D`. This is similar to a "real" ZX81, where if a named file is not on a tape, the computer will attempt to load until the user aborts by pressing `BREAK`, generating error `D`
 ### Save
 #### ZX81
-To save a program the `SAVE "Filename"` command is used. If `"Filename"` has no extension then `.p` is appended to the supplied file name. The file is saved in the current directory. If a file of the specified name already exists, it is overwritten
+To save a program the `SAVE "Filename"` command is used. If `"Filename"` has no extension then `.p` is appended to the supplied file name. The file is saved in the current directory. If a file of the specified name already exists, it is overwritten without warning.
 
 #### ZX80
 To save a program the `SAVE` command is used. `SAVE` does not take a file name, so mechanisms are provided to supply a file name. When `SAVE` is executed the emulator scans the program for a `REM` statement of the form:
@@ -337,6 +351,8 @@ The ZX80 keyboard image is automatically displayed to make it easier to enter no
 Press `ENTER` to exit the screen and use the filename, `.o` is appended if not supplied. Press `Esc` or `SHIFT 1` to leave the screen without setting a filename
 
 The program is saved to the current directory. If no valid file name is supplied a default filename of `"zx80prog.o"` is used. Any existing file with the same name is overwritten
+#### Snapshots
+The only way to save a snapshot of a running ZX80 or ZX81 program is by pressing `F9`
 
 ### Loading and Saving Memory Blocks
 When emulating a ZX81, extensions are provided to `LOAD` and `SAVE` to support the loading and saving of memory blocks. The syntax is similar to that used by [ZXpand](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual)
@@ -523,12 +539,15 @@ To enable chroma support set LowRAM on, and Memory to 48kB
   + The Chroma 80 4K ROM versions use a loader program to set the colour data and then load the main program. The loader available in the supplied links uses a custom tape load routine that is not detected by picozx81. To create a compatible loader that uses that standard 4K ROM load routine use the [Chroma Program Enhancement Creator](http://www.fruitcake.plus.com/Sinclair/ZX81/Chroma/ChromaInterface_Software_ChromaProgramEnhancementCreator.htm). As the 4K ROM `LOAD` command does not take an argument, picozx81 will display the contents of the current directory when the loader program is run. Select the main program from the directory list and it will load and run, using the colour data loaded earlier
 # Building
 **Notes:**
-+ Prebuilt executable files for the 7 supported board types can be found [here](uf2/)
-+ If a **zip** of the source files is downloaded from GitHub, it will be **incomplete**, as the zip will not contain the submodules. Zip files of the submodules would have to be downloaded separately from GitHub. It is easier to clone recursive the repository, as described in the following section
++ Prebuilt executable files for the 9 supported board types can be found [here](uf2/)
++ If a **zip** of the source files is downloaded from GitHub, it will be **incomplete**, as the zip will not contain the submodules. Zip files of the submodules would have to be downloaded separately from GitHub. It is easier to recursively clone the repository, as described in the following section
 ### To build:
 1. Install the Raspberry Pi Pico toolchain and SDK. SDK 2.x must be used
 
-    Instructions to do this for several operating systems can be found by downloading [this pdf](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf). Chapter 2 covers installation on the Raspberry Pi, chapter 9 describes the process for other operating systems
+    Instructions to do this for several operating systems can be found by downloading [this pdf](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf). Chapter 2 covers installation on the Raspberry Pi, chapter 9 describes the process for other operating systems.
+
+    **Note:** At time of writing SDK2.1 had two issues that impacted picozx81. To build using SDK 2.1 use the develop branch, and revert the TinyUSB submodule to that included in SDK 2.0. Alternatively use SDK 2.0
+
 2. The vga display uses the `pico_scanvideo` library, which is part of the `pico-extras` repository. Clone this repository, including submodules
 
     `git clone --recursive https://github.com/raspberrypi/pico-extras.git`
@@ -566,7 +585,7 @@ This will be named `picozx81_vga_rp2040.uf2`
 7. Populate a micro SD Card with files you wish to run. Optionally add `config.ini` files to the SD Card. See [here](examples) for examples of config files
 
 **Notes:**
-+ To build for the RP2350 append -DPICO_MCU=rp2350 to the CMake command. The resulting `uf2` file will include rp2355 in its name
++ To build for the RP2350 append -DPICO_MCU=rp2350 to the CMake command. The resulting `uf2` file will include rp2350 in its name
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported combinations of mcu and board types
 + To debug using OpenOCD build and install OpenOCD as described in [Getting Started with Raspberry Pi Pico-series](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf)
 + If debugging using MS Visual Studio Code then install the Raspberry Pi Pico extension. Commands loaded by this extension are used to determine the active MCU type in `launch.json`
@@ -600,7 +619,7 @@ This will be named `picozx81_vga_rp2040.uf2`
 + The Waveshare Pico-ResTouch-LCD-2.8 board has a touch controller, but the emulator does not support its use
 ### Olimex RP2040-PICO-PC
 + The Olimex RP2040-PICO-PC board does not supply 5v to DVI pin 18. This may result in the board not being detected by some TVs. If necessary short the SJ1 connector so 5V is supplied
-+ If SJ1 is shorted the board may be back powered by some TVs. This can cause the board to not start correctly. If this happens either connect the power before attaching the HDMI cable, or press the reset button on the board
++ If SJ1 is shorted the board may be back powered by some TVs. This can cause the board to not start correctly. If this happens either connect the power before attaching the HDMI cable, or press the reset button on the board. It may be possible to avoid back powering by connecting a diode across the SJ1 connections, rather than shorting them
 
 ### Cytron Maker
 + The Cytron Maker Pi Pico has an onboard piezo buzzer. The audio quality is poor, but it can be used instead of speakers. If the buzzer is enabled (using the switch on the maker board) ensure that ACB Stereo is disabled
@@ -660,7 +679,7 @@ By default the display for the Waveshare Pico-ResTouch-LCD-2.8 is configured rot
 With boards with connectors supplied for enough free GPIO pins it is possible to attach a 9 pin connector and then plug-in and use "in period" 9-pin joysticks
 
 ### Supported Boards
-The lcdmaker, vgamaker222c, picomitevga, pizero and picozx builds support the connection of a 9-pin joystick connector
+The lcdmaker, vgamaker222c, picomitevga, pizero, Olimexpc and picozx builds support the connection of a 9-pin joystick connector
 
 ### Obtaining a 9-pin interface
 Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://www.amazon.co.uk/sourcing-map-Breakout-Connector-Solderless/dp/B07MMMGGXP)
@@ -672,8 +691,20 @@ Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://ww
 | vgamaker222c | GP20 | GP21 | GP22 | GP26 | GP27 | Ground |
 | picomitevga | GP3 | GP4 | GP5 | GP22 | GP26 | Ground |
 | pizero | GP11 | GP12 | GP10 | GP15 | GP13 | Ground |
+| Olimexpc | GP20 | GP21 | GP8 | GP9 | GP5 | Ground |
 
 The picozx board has a 9-pin joystick port connector built in
+#### Olimex UEXT1 connections
+For the RP2040-PICO-PC the pins required for the joystick connection are on the UEXT1 connector. The mapping is:
+| Joystick Pin number | UEXT1 Pin Number |
+| --- | --- |
+| 1 | 3 |
+| 2 | 4 |
+| 3 | 6 |
+| 4 | 5 |
+| 6 | 10 |
+| 8 | 2 |
+
 ### Enabling the joystick
 To enable the nine pin joystick set `NinePinJoystick` to `On` in the `[default]` section of the `config.ini` file in the root directory
 
@@ -700,6 +731,26 @@ Code to convert a ZX8x keyboard to USB can be found at [ZX81_USB_KBD](https://gi
 To access the function menus from a ZX80/81 keyboard the `doubleshift` configuration option must be enabled
 
 The picozx board does support keyboard and joystick. This is achieved by using every available GPIO pin, and using VGA222 with CSYNC, together with mono audio
+## Snapshot file format
+The snapshot (`.s`) file format stores the state of the emulator, so that excution can continue at a later date, potentially on an instance of picozx81 running on a different board type. To achieve this most of the picozx81 variables are saved. The 64 kB of emulated memory is also saved, together with the state of the AY and beeper sound emaulators.
+
+The display mode (resolution, refresh rate, NTSC vs PAL, whether the display is blanked etc) is saved, but the actual video buffers are not. The rationale for this is 3 fold:
+1. The display buffers differ between LCD and non LCD displays, storing them would make supporting moving between board types more difficult
+2. Storing 4 display and 4 chroma buffers would more than double the size of the `.s` file
+3. The emulator recreates the display every 1/50th of a second from the data that is saved in the `.s` file
+
+Clearly, the `.s` file is dependent on the internal picozx81 variables. Future changes to the picozx81 code may result in a change to the format of a `.s` file. To allow newer versions of picozx81 to load older versions of `.s` file, the `.s` file stores version information in its header
+
+### File header format
+Data is stored in little endian format. The first 3 values in the snapshot format are:
+#### Identifier
+`S` `N` `A` `P` in ASCII (4 * 8 bit)
+#### Version
+Major (16 bits) and minor (16 bit) version numbers
+### Video Mode
+Identifies resolution and refresh rate (8 bit)
+
+The header is followed by the state data. A full `.s` file is roughly 66kB in size
 
 ## Performance and constraints
 In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
@@ -722,6 +773,7 @@ This emulator offers the following over MCUME:
 + Emulation runs at full speed of a 3.25MHz ZX81
 + Ability to save files
 + Ability to load a program without reset
++ Ability to save and load snapshots
 + Support for Hi-res and pseudo Hi-res graphics
 + Support for multiple DVI, VGA and LCD boards
 + Support for Chroma 80 and Chroma 81

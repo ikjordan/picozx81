@@ -39,6 +39,7 @@ extern void execZX80(void);
 
 extern void setDisplayBoundaries(void);
 extern void setEmulatedTV(bool fiftyHz, uint16_t vtol);
+
 #ifdef SUPPORT_CHROMA
 void adjustChroma(bool start);
 #endif

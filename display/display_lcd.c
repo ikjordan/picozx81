@@ -326,7 +326,7 @@ static void __not_in_flash_func(render_loop)()
                         }
 
                         // 256 pixels of keyboard, 2 bits per pixel
-                        for (int i=0; i<(keyboard->width >> 2); ++i)
+                        for (unsigned int i=0; i<(keyboard->width >> 2); ++i)
                         {
                             uint8_t byte = keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2) + i];
                             for (int x=6; x>=2; x-=4)
@@ -372,7 +372,7 @@ static void __not_in_flash_func(render_loop)()
                         }
 
                         // 256 pixels of keyboard, 2 bits per pixel
-                        for (int i=0; i<(keyboard->width >> 2); ++i)
+                        for (unsigned int i=0; i<(keyboard->width >> 2); ++i)
                         {
                             uint8_t byte = keyboard->pixel_data[(y - keyboard_y) * (keyboard->width>>2) + i];
                             for (int x=6; x>=2; x-=4)
@@ -512,6 +512,8 @@ void core1_main(void)
 
 static bool  __not_in_flash_func(timer_callback)(repeating_timer_t *rt)
 {
+    (void)rt;
+    
     // Trigger new frame
     sem_release(&frame_sync);
     return true;
