@@ -51,6 +51,7 @@ build/*
 # Exclude extra build directories
 build_2040/*
 build_2350/*
+convert_rom/build/*
 
 #Code counter
 .VSCodeCounter/*
