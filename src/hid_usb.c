@@ -210,6 +210,10 @@ bool hidNavigateMenu(uint8_t* key)
                     *key = HID_KEY_A;
                     return true;
 
+                case HID_KEY_B:
+                    *key = HID_KEY_B;
+                    return true;
+
                 case HID_KEY_P:
                     *key = HID_KEY_P;
                     return true;
