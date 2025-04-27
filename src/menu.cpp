@@ -93,6 +93,8 @@ static void showRestart(PositionF7_T pos, RestartF7_T* restart);
 static void showReboot(FiveSevenSix_T mode);
 static void showSave(const char* name, uint len, uint cursor, uint col, uint row);
 static void setConvert(bool zx80);
+static bool endsWithKnownExtension(const char* filename);
+static void removeKnownExtension(char* filename);
 
 static bool wasBlank = false;
 static bool wasBlack = false;
@@ -607,11 +609,44 @@ void pauseMenu(void)
     invertChar('P', (disp.width >> 3) - border - 1, border);
     invertChar('P', (disp.width >> 3) - border - 1, (disp.height >> 3) - border - 1);
 
-    // Just wait for ESC to be pressed
+    // Wait for Enter or ESC to be pressed - or to capture an image
+    bool captured = wasBlank || (!emu_fsInitialised());
+
+    char bmp_path[MAX_FULLPATH_LEN];
+
     do
     {
         tuh_task();
         hidNavigateMenu(&key);
+        if (!captured && (key == HID_KEY_B))
+        {
+            // Write bitmap
+            strcpy(bmp_path, emu_GetDirectory());
+            if (emu_GetLoadName())
+            {
+                strcat(bmp_path, emu_GetLoadName());
+                removeKnownExtension(bmp_path);
+            }
+            else
+            {
+                strcat(bmp_path, "screenshot");
+            }
+            strcat(bmp_path, ".bmp");
+
+            printf("Capture bitmap: %s\n", bmp_path);
+
+            // open file in current directory, overwriting if necessary
+            if (emu_FileOpen(bmp_path, "w"))
+            {
+                // write test text
+                emu_FileWriteBytes("Hello world\n", 12);
+
+                // close file
+                emu_FileClose();
+            }
+
+            captured = true;
+        }
         emu_WaitFor50HzTimer();
     } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
 
@@ -1589,9 +1624,7 @@ static int populateFiles(const char* path, uint first)
             if (res != FR_OK || fno.fname[0] == 0) break;   /* Break on error or end of entries */
 
             if ((!(fno.fattrib & AM_DIR) && (strlen(fno.fname) < MAX_FILENAME_LEN)) &&
-                ((emu_EndsWith(fno.fname, ".o") || emu_EndsWith(fno.fname, ".p") ||
-                  emu_EndsWith(fno.fname, ".80") || emu_EndsWith(fno.fname, ".81") ||
-                  emu_EndsWith(fno.fname, ".p81") || emu_EndsWith(fno.fname, ".s") || allfiles)))
+                (endsWithKnownExtension(fno.fname) || allfiles))
             {
                 if ((count >= first) && (count < (first + fullrow)))
                 {
@@ -1696,9 +1729,7 @@ static bool getFile(char* inout, uint index, bool* direct)
             if (!(fno.fattrib & AM_DIR))
             {
                 if ((strlen(fno.fname) < MAX_FILENAME_LEN) &&
-                    ((emu_EndsWith(fno.fname, ".o") || emu_EndsWith(fno.fname, ".p") ||
-                      emu_EndsWith(fno.fname, ".80") || emu_EndsWith(fno.fname, ".81")) ||
-                      emu_EndsWith(fno.fname, ".p81") || emu_EndsWith(fno.fname, ".s") || allfiles))
+                    (endsWithKnownExtension(fno.fname) || allfiles))
                 {
                     ++count;
                 }
@@ -1715,5 +1746,32 @@ static bool getFile(char* inout, uint index, bool* direct)
     EMU_UNLOCK_SDCARD
 
     return ret;
+}
+
+static bool endsWithKnownExtension(const char* filename)
+{
+    return (emu_EndsWith(filename, ".o") || emu_EndsWith(filename, ".p") ||
+            emu_EndsWith(filename, ".80") || emu_EndsWith(filename, ".81") ||
+            emu_EndsWith(filename, ".p81") || emu_EndsWith(filename, ".s"));
+}
+
+static void removeKnownExtension(char* filename)
+{
+    size_t len = strlen(filename);
+
+    if (emu_EndsWith(filename, ".o") ||
+        emu_EndsWith(filename, ".p") ||
+        emu_EndsWith(filename, ".s"))
+    {
+        filename[len - 2] = 0;
+    }
+    else if (emu_EndsWith(filename, ".80") ||
+             emu_EndsWith(filename, ".81"))
+    {
+        filename[len - 3] = 0;
+    } else if (emu_EndsWith(filename, ".p81"))
+    {
+        filename[len - 4] = 0;
+    }
 }
 
