@@ -637,12 +637,11 @@ void pauseMenu(void)
             }
             strcat(bmp_path, ".bmp");
 
-            printf("Capture bitmap: %s\n", bmp_path);
+            uint8_t* c_ptr = NULL;
 #ifdef SUPPORT_CHROMA
-            emu_VideoWriteBitmap(bmp_path, currBuff, chroma_curr);
-#else
-            emu_VideoWriteBitmap(bmp_path, currBuff, NULL);
+            if (chromamode) c_ptr = chroma_curr;
 #endif
+            emu_VideoWriteBitmap(bmp_path, currBuff, c_ptr);
             captured = true;
         }
         emu_WaitFor50HzTimer();
