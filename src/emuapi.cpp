@@ -170,6 +170,24 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
   return true;
 }
 
+bool emu_fileExists(const char* file_name)
+{
+  FILINFO entry;
+  FRESULT fr = f_stat(file_name, &entry);
+  return (fr == FR_OK);
+}
+
+bool emu_GetScreenShotDir(char* directory)
+{
+  FRESULT res = f_mkdir ("/screenshots/");
+
+  if((res == FR_EXIST) || (res == FR_OK))
+  {
+    strcpy(directory, "/screenshots/");
+    return true;
+  }
+  return false;
+}
 
 /********************************
  * Initialization

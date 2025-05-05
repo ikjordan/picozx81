@@ -622,7 +622,7 @@ void pauseMenu(void)
     {
         tuh_task();
         hidNavigateMenu(&key);
-        if (key == HID_KEY_S)
+        if ((key == HID_KEY_S) && (!captured))
         {
             // Check that a capture is possible
             if (wasBlank)
@@ -630,19 +630,19 @@ void pauseMenu(void)
                 writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
                 writeInvertString("In fast mode", (disp.width >> 4) - 6, (disp.height >> 4) + 1, true);
             }
-            else if (captured)
-            {
-                writeInvertString("Screen already captured", (disp.width >> 4) - 11, disp.height >> 4, true);
-            }
             else if (!emu_fsInitialised())
             {
                 writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
                 writeInvertString("SD Card not detected", (disp.width >> 4) - 10, (disp.height >> 4) + 1, true);
             }
+            else if (!emu_GetScreenShotDir(bmp_path))
+            {
+                writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
+                writeInvertString("Directory does not exist", (disp.width >> 4) - 13, (disp.height >> 4) + 1, true);
+            }
             else
             {
-                // Write bitmap
-                strcpy(bmp_path, emu_GetDirectory());
+                // Save the screenshot
                 if (emu_GetLoadName())
                 {
                     strcat(bmp_path, emu_GetLoadName());
@@ -652,7 +652,29 @@ void pauseMenu(void)
                 {
                     strcat(bmp_path, "screenshot");
                 }
-                strcat(bmp_path, ".bmp");
+
+                // Attempt to find a free slot to save
+                // search from 1 to 9
+                // If free slot use the lowest number
+                // if no free slots overwrite 1
+                char *num = bmp_path + strlen(bmp_path) + 1;
+                bool empty = false;
+                strcat(bmp_path, "-x.bmp");
+
+                for (char c = '1'; c <= '9'; ++c)
+                {
+                    *num = c;
+                    if(!emu_fileExists(bmp_path))
+                    {
+                        empty = true;
+                        break;
+                    }
+                }
+
+                if (!empty)
+                {
+                    *num = '1';
+                }
 
                 uint8_t* c_ptr = NULL;
 #ifdef SUPPORT_CHROMA
@@ -660,7 +682,6 @@ void pauseMenu(void)
 #endif
                 if (!emu_VideoWriteBitmap(bmp_path, currBuff, c_ptr))
                 {
-                    // display capture failed as file could not be saved
                     writeInvertString("Screen capture failed", (disp.width >> 4) - 10, disp.height >> 4, true);
                     writeInvertString("File could not be saved", (disp.width >> 4) - 11, (disp.height >> 4) + 1, true);
                 }

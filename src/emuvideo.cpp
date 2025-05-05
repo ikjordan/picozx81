@@ -201,8 +201,6 @@ static void write_pixel_data(const uint8_t* pixel_data, const uint8_t* chroma_da
 
 bool emu_VideoWriteBitmap(const char* file_name, const uint8_t* pixel_data, const uint8_t* chroma_data)
 {
-
-    // open file
     if (emu_FileOpen(file_name, "w"))
     {
         printf("In emu_VideoWriteBitmap: writing BMP file: %s\n", file_name);
