@@ -1,6 +1,8 @@
 /*******************************************************************
  Video
 *******************************************************************/
+#include <stdio.h>
+#include <memory.h>
 #include "pico.h"
 #include "emuapi.h"
 #include "emusound.h"
@@ -17,7 +19,41 @@
 #define DISPLAY_START_Y_720      0  // Y Offset to first pixel with no centring
 #define DISPLAY_ADJUST_X_720     2  // The number of pixels to adjust in X dimension to centre the display
 
-Display_T disp;                     // Dimension information for the display
+#pragma pack(push, 1)  // Ensures that the structures are packed without padding
+// BMP File Header Structure
+typedef struct {
+    char signature[2];         // 'BM'
+    unsigned int file_size;    // Size of the file
+    unsigned short reserved1;  // Reserved field
+    unsigned short reserved2;  // Reserved field
+    unsigned int data_offset;  // Offset where pixel data begins
+} BMPFileHeader;
+
+// BMP Info Header Structure
+typedef struct {
+    unsigned int header_size;  // Size of this header (40 bytes)
+    int width;                 // Image width
+    int height;                // Image height
+    unsigned short planes;     // Number of color planes (must be 1)
+    unsigned short bits_per_pixel;  // Bits per pixel (8 for indexed color)
+    unsigned int compression;  // Compression method (0 for none)
+    unsigned int image_size;   // Image size (0 for no compression)
+    int x_resolution;          // Horizontal resolution (pixels per meter)
+    int y_resolution;          // Vertical resolution (pixels per meter)
+    unsigned int colors_used;  // Number of colors in the color table (256 for 8-bit color)
+    unsigned int important_colors;  // Important colors (0 means all colors are important)
+} BMPInfoHeader;
+
+// Color table entry structure (4 bytes per color)
+typedef struct {
+    unsigned char blue;
+    unsigned char green;
+    unsigned char red;
+    unsigned char reserved;
+} RGBQuad;
+#pragma pack(pop)               // Reset the packing alignment to default
+
+Display_T disp;                 // Dimension information for the display
 
 uint emu_VideoInit(void)
 {
@@ -72,3 +108,118 @@ void emu_VideoSetInterlace(void)
 {
     displaySetInterlace(emu_FrameSyncRequested() == SYNC_ON_INTERLACED);
 }
+
+#define FOURBPP 16
+
+static void write_file_header(void)
+{
+    BMPFileHeader file_header;
+
+    // Set File Header
+    file_header.signature[0] = 'B';
+    file_header.signature[1] = 'M';
+    file_header.file_size = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader) + (FOURBPP * sizeof(RGBQuad)) + ((disp.width * disp.height) >> 1);
+    file_header.reserved1 = 0;
+    file_header.reserved2 = 0;
+    file_header.data_offset = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader) + (FOURBPP * sizeof(RGBQuad));
+
+    emu_FileWriteBytes(&file_header, sizeof(BMPFileHeader));
+}
+
+static void write_info_header(void)
+{
+    BMPInfoHeader info_header;
+
+    // Set Info Header
+    info_header.header_size = sizeof(BMPInfoHeader);
+    info_header.width = disp.width;
+    info_header.height = disp.height;
+    info_header.planes = 1;                 // Always 1 for BMP
+    info_header.bits_per_pixel = 4;         // 4-bit indexed color
+    info_header.compression = 0;            // No compression
+    info_header.image_size = (disp.width * disp.height) >> 1;  // Image size (in bytes)
+    info_header.x_resolution = 2835;        // 72 DPI * 39.3701 (conversion to pixels per metre)
+    info_header.y_resolution = 2835;        // Same for vertical resolution
+    info_header.colors_used = FOURBPP;      // 16 colours in the colour table
+    info_header.important_colors = 0;       // 0 means all colours are important
+
+    // Write headers to the file
+    emu_FileWriteBytes(&info_header, sizeof(BMPInfoHeader));
+}
+
+static void write_colour_table(void)
+{
+    RGBQuad colour_table[FOURBPP] = { {0x00, 0x00, 0x00, 0x00},
+                                      {0xaa, 0x00, 0x00, 0x00},
+                                      {0x00, 0x00, 0xaa, 0x00},
+                                      {0xaa, 0x00, 0xaa, 0x00},
+                                      {0x00, 0xaa, 0x00, 0x00},
+                                      {0xaa, 0xaa, 0x00, 0x00},
+                                      {0x00, 0xaa, 0xaa, 0x00},
+                                      {0xaa, 0xaa, 0xaa, 0x00},
+                                      {0x00, 0x00, 0x00, 0x00},
+                                      {0xff, 0x00, 0x00, 0x00},
+                                      {0x00, 0x00, 0xff, 0x00},
+                                      {0xff, 0x00, 0xff, 0x00},
+                                      {0x00, 0xff, 0x00, 0x00},
+                                      {0xff, 0xff, 0x00, 0x00},
+                                      {0x00, 0xff, 0xff, 0x00},
+                                      {0xff, 0xff, 0xff, 0x00}};
+
+    // Write the color table (16 entries, 4 bytes each)
+    emu_FileWriteBytes(colour_table, sizeof(colour_table));
+}
+
+static void write_pixel_data(const uint8_t* pixel_data, const uint8_t* chroma_data)
+{
+    // Need to handle x and y offsets
+    (void)chroma_data;
+    const uint8_t* pixel_store = pixel_data;
+
+    // Write the data, one line at a time, from bottom to top
+    pixel_data += disp.stride_byte * (disp.height -1);
+
+    uint8_t line_bytes[disp.width >> 1];
+
+    for (int i = 0; i < disp.height; ++i)
+    {
+        // Populate the line: 8 pixels generate 4 bytes
+        for (int j = 0; j < (disp.width >> 1); j += 4)
+        {
+            uint8_t pixels = *pixel_data++;
+
+            for (int k = 0; k < 4; ++k)
+            {
+                line_bytes[j + k] = (((pixels << (k << 1)) & 0x80) ? 0 : 0xf0);
+                line_bytes[j + k] += (((pixels << (k << 1)) & 0x40) ? 0 : 0x0f);
+            }
+        }
+        emu_FileWriteBytes(line_bytes, disp.width >> 1);
+        pixel_data -= (2 * disp.stride_byte - disp.padding);    // Move to start of previous line
+    }
+    printf("Written pixel data: H: %d W: %d WB: %d P: %d\n", disp.height, disp.width, (disp.width >> 3), pixel_data - pixel_store);
+}
+
+bool emu_VideoWriteBitmap(const char* file_name, const uint8_t* pixel_data, const uint8_t* chroma_data)
+{
+
+    // open file
+    if (emu_FileOpen(file_name, "w"))
+    {
+        printf("In emu_VideoWriteBitmap: writing BMP file: %s\n", file_name);
+        write_file_header();
+        write_info_header();
+        write_colour_table();                       // Write the colour palette
+        write_pixel_data(pixel_data, chroma_data);  // Write the pixel data
+
+        // close file
+        emu_FileClose();
+    }
+    else
+    {
+        printf("In emu_VideoWriteBitmap: Error creating BMP file: %s\n", file_name);
+        return false;
+    }
+    return true;
+}
+
