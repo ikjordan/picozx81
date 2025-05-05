@@ -614,7 +614,7 @@ void pauseMenu(void)
     invertChar('P', (disp.width >> 3) - border - 1, (disp.height >> 3) - border - 1);
 
     // Wait for Enter or ESC to be pressed - or to capture an image
-    bool captured = wasBlank || (!emu_fsInitialised());
+    bool captured = false;
 
     char bmp_path[MAX_FULLPATH_LEN];
 
@@ -622,27 +622,63 @@ void pauseMenu(void)
     {
         tuh_task();
         hidNavigateMenu(&key);
-        if (!captured && (key == HID_KEY_B))
+        if (key == HID_KEY_S)
         {
-            // Write bitmap
-            strcpy(bmp_path, emu_GetDirectory());
-            if (emu_GetLoadName())
+            // Check that a capture is possible
+            if (wasBlank)
             {
-                strcat(bmp_path, emu_GetLoadName());
-                removeKnownExtension(bmp_path);
+                writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
+                writeInvertString("In fast mode", (disp.width >> 4) - 6, (disp.height >> 4) + 1, true);
+            }
+            else if (captured)
+            {
+                writeInvertString("Screen already captured", (disp.width >> 4) - 11, disp.height >> 4, true);
+            }
+            else if (!emu_fsInitialised())
+            {
+                writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
+                writeInvertString("SD Card not detected", (disp.width >> 4) - 10, (disp.height >> 4) + 1, true);
             }
             else
             {
-                strcat(bmp_path, "screenshot");
-            }
-            strcat(bmp_path, ".bmp");
+                // Write bitmap
+                strcpy(bmp_path, emu_GetDirectory());
+                if (emu_GetLoadName())
+                {
+                    strcat(bmp_path, emu_GetLoadName());
+                    removeKnownExtension(bmp_path);
+                }
+                else
+                {
+                    strcat(bmp_path, "screenshot");
+                }
+                strcat(bmp_path, ".bmp");
 
-            uint8_t* c_ptr = NULL;
+                uint8_t* c_ptr = NULL;
 #ifdef SUPPORT_CHROMA
-            if (chromamode) c_ptr = chroma_curr;
+                if (chromamode) c_ptr = chroma_curr;
 #endif
-            emu_VideoWriteBitmap(bmp_path, currBuff, c_ptr);
-            captured = true;
+                if (!emu_VideoWriteBitmap(bmp_path, currBuff, c_ptr))
+                {
+                    // display capture failed as file could not be saved
+                    writeInvertString("Screen capture failed", (disp.width >> 4) - 10, disp.height >> 4, true);
+                    writeInvertString("File could not be saved", (disp.width >> 4) - 11, (disp.height >> 4) + 1, true);
+                }
+                else
+                {
+                    writeInvertString("Screen captured", (disp.width >> 4) - 7, disp.height >> 4, true);
+                    captured = true;
+                }
+            }
+
+            // debounce the S key
+            do
+            {
+                tuh_task();
+                emu_WaitFor50HzTimer();
+                hidNavigateMenu(&key);
+            }
+            while (key == HID_KEY_S);
         }
         emu_WaitFor50HzTimer();
     } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
@@ -1516,7 +1552,8 @@ static void writeChar(char c, uint col, uint row)
 static void invertChar(char c, uint col, uint row)
 {
     uint8_t* pos = menuscreen + row * disp.stride_bit + col;
-    uint16_t offset = 0x1e00;
+    const unsigned char* rom = (zx80font ? zx80rom : zx81rom);
+    uint16_t offset = zx80font ? 0x0e00 : 0x1e00;   // Start of characters in ROM
 
     // Convert from ascii to ZX
     if ((c >= 32) && (c < 128))
@@ -1527,17 +1564,17 @@ static void invertChar(char c, uint col, uint row)
     // Find the offset in the ROM
     for (uint i=0; i<8; ++i)
     {
-        *pos = (zx81rom[offset+i] ^ 0xff);
+        *pos = (rom[offset+i] ^ 0xff);
         pos += disp.stride_byte;
     }
 
-    // Update chroma foreground, so inverse char is visible
+    // Update chroma foreground and background, so inverse char is visible
     if (menuchroma)
     {
         pos = menuchroma + row * disp.stride_bit + col;
         for (uint i=0; i<8; ++i)
         {
-            *pos = (*pos ^ 0xf0);
+            *pos = 0xf0;
             pos += disp.stride_byte;
         }
     }
