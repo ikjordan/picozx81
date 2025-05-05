@@ -27,6 +27,7 @@ extern Display_T disp;
 
 extern uint emu_VideoInit(void);
 extern void emu_VideoSetInterlace(void);
+extern bool emu_VideoWriteBitmap(const char* file_name, const uint8_t* pixel_data, const uint8_t* chroma_data);
 
 #ifdef __cplusplus
 }

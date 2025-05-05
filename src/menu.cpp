@@ -99,6 +99,10 @@ static void removeKnownExtension(char* filename);
 static bool wasBlank = false;
 static bool wasBlack = false;
 static uint8_t* currBuff = 0;
+#ifdef SUPPORT_CHROMA
+static uint8_t* chroma_curr = 0;
+#endif
+
 
 static uint8_t* menuscreen = 0;
 static uint8_t* menuchroma = 0;
@@ -634,17 +638,11 @@ void pauseMenu(void)
             strcat(bmp_path, ".bmp");
 
             printf("Capture bitmap: %s\n", bmp_path);
-
-            // open file in current directory, overwriting if necessary
-            if (emu_FileOpen(bmp_path, "w"))
-            {
-                // write test text
-                emu_FileWriteBytes("Hello world\n", 12);
-
-                // close file
-                emu_FileClose();
-            }
-
+#ifdef SUPPORT_CHROMA
+            emu_VideoWriteBitmap(bmp_path, currBuff, chroma_curr);
+#else
+            emu_VideoWriteBitmap(bmp_path, currBuff, NULL);
+#endif
             captured = true;
         }
         emu_WaitFor50HzTimer();
@@ -1145,10 +1143,6 @@ void snapMenu(void)
 /* Build the menu. If clone is true, then copy the current menu, including any possible chroma buffer */
 static bool buildMenu(bool clone)
 {
-#ifdef SUPPORT_CHROMA
-    uint8_t* chroma_curr = 0;
-#endif
-
     // Obtain a display buffer
     displayGetFreeBuffer(&menuscreen);
     menuchroma = 0;
