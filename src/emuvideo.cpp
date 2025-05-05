@@ -172,14 +172,11 @@ static void write_colour_table(void)
 
 static void write_pixel_data(const uint8_t* pixel_data, const uint8_t* chroma_data)
 {
-    // Need to handle x and y offsets
-    (void)chroma_data;
-    const uint8_t* pixel_store = pixel_data;
+    uint8_t line_bytes[disp.width >> 1];
 
     // Write the data, one line at a time, from bottom to top
     pixel_data += disp.stride_byte * (disp.height -1);
-
-    uint8_t line_bytes[disp.width >> 1];
+    if (chroma_data) chroma_data += disp.stride_byte * (disp.height -1);
 
     for (int i = 0; i < disp.height; ++i)
     {
@@ -187,17 +184,19 @@ static void write_pixel_data(const uint8_t* pixel_data, const uint8_t* chroma_da
         for (int j = 0; j < (disp.width >> 1); j += 4)
         {
             uint8_t pixels = *pixel_data++;
-
+            uint8_t chroma = chroma_data ? *chroma_data++ : 0xf0;
+            uint8_t background = (chroma & 0xf0) >> 4;
+            uint8_t foreground = chroma & 0x0f;
             for (int k = 0; k < 4; ++k)
             {
-                line_bytes[j + k] = (((pixels << (k << 1)) & 0x80) ? 0 : 0xf0);
-                line_bytes[j + k] += (((pixels << (k << 1)) & 0x40) ? 0 : 0x0f);
+                line_bytes[j + k] = (((pixels << (k << 1)) & 0x80) ? foreground : background) << 4;
+                line_bytes[j + k] += (((pixels << (k << 1)) & 0x40) ? foreground : background);
             }
         }
         emu_FileWriteBytes(line_bytes, disp.width >> 1);
         pixel_data -= (2 * disp.stride_byte - disp.padding);    // Move to start of previous line
+        if (chroma_data) chroma_data -= (2 * disp.stride_byte - disp.padding);
     }
-    printf("Written pixel data: H: %d W: %d WB: %d P: %d\n", disp.height, disp.width, (disp.width >> 3), pixel_data - pixel_store);
 }
 
 bool emu_VideoWriteBitmap(const char* file_name, const uint8_t* pixel_data, const uint8_t* chroma_data)
