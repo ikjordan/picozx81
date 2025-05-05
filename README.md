@@ -32,6 +32,7 @@
 + An interlaced mode can be selected to display interlaced images with minimal flicker
 + Supports loading and saving of memory blocks using [ZXpand like syntax](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual#load)
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
++ Save BMP screenshots to SD-Card. Prove that you reached that level!
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
 + Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME) and for a RGB 222 board with CSYNC similar to [PICOZX](https://hackaday.io/project/186039-pico-zx-spectrum-128k)
 ## Supported Hardware
@@ -206,6 +207,7 @@ The following can be configured:
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 25 | See notes below|
 | FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz `On` , or 720x576p display @ 50.65Hz `Match`. If set to `Off` a 640x480 display @ 60Hz is produced | Off |
+| ScreenshotDir | Sets the directory where screenshots are saved | `/screenshots/` | `/` pre and post-pended if necessary |
 
 
 **Notes:**
@@ -292,7 +294,9 @@ If the name of a file or directory is too long to display in full it is truncate
 ### F3 - View Emulator Configuration
 Displays the current emulator status. Any sound that is playing is paused. Note that this display is read only, no changes to the configuration can be made. Press `Escape`, `space`, `Q` or `0` to exit back to the running emulator. Note that the displayed directory path may be truncated due to space constraints
 ### F4 - Pause
-Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press `Escape`, `space`, `Q` or `0` to end the pause and return to the running emulator
+Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press `Escape`, `space`, `Q` or `0` to end the pause and return to the running emulator.
+
+Whilst paused a screenshot can be saved to the directory specified in the `[defaults]` section of the ini file. Press `S` to save a screenshot as a 16 colour BMP file
 ### F5 - Display Keyboard Overlay
 The ZX80 and ZX81 use single key press BASIC entry. Pressing `F5` displays a 4 colour image (VGA) or a grey scale image (DVI / HDMI) representing the keyboard of the computer being emulated, so that the correct key presses can be determined. The image was taken from [sz81](https://github.com/SegHaxx/sz81). It is possible to enter commands whilst the keyboard is displayed
 
