@@ -32,7 +32,7 @@
 + An interlaced mode can be selected to display interlaced images with minimal flicker
 + Supports loading and saving of memory blocks using [ZXpand like syntax](https://github.com/charlierobson/ZXpand-Vitamins/wiki/ZXpand---Online-Manual#load)
 + Set-up of emulator (computer type, RAM, Hi-Res graphics, sound, joystick control etc) configurable on a per program basis, using config files
-+ Save BMP screenshots to SD-Card. Prove that you reached that level!
++ Save BMP screenshots to the SD-Card. Prove that you reached that level!
 + Optionally displays graphic of keyboard (taken from [sz81](https://github.com/SegHaxx/sz81)). Can type in code with keyboard visible
 + Can be extended for other board types. Code support included for a custom VGA RGB 332 board similar to that supported by [MCUME](https://github.com/Jean-MarcHarvengt/MCUME) and for a RGB 222 board with CSYNC similar to [PICOZX](https://hackaday.io/project/186039-pico-zx-spectrum-128k)
 ## Supported Hardware
@@ -296,7 +296,7 @@ Displays the current emulator status. Any sound that is playing is paused. Note 
 ### F4 - Pause
 Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press `Escape`, `space`, `Q` or `0` to end the pause and return to the running emulator.
 
-Whilst paused a screenshot can be saved to the directory specified in the `[defaults]` section of the ini file. Press `S` to save a screenshot as a 16 colour BMP file
+Whilst paused a screenshot can be saved to the SD-Card into the directory specified in the `[defaults]` section of the ini file. Press `S` to save the screenshot as a 16 colour BMP file
 ### F5 - Display Keyboard Overlay
 The ZX80 and ZX81 use single key press BASIC entry. Pressing `F5` displays a 4 colour image (VGA) or a grey scale image (DVI / HDMI) representing the keyboard of the computer being emulated, so that the correct key presses can be determined. The image was taken from [sz81](https://github.com/SegHaxx/sz81). It is possible to enter commands whilst the keyboard is displayed
 
