@@ -27,6 +27,7 @@
 static FATFS fatfs;
 static FIL file;
 static bool fsinit = false;
+static char screen_dir[MAX_DIRECTORY_LEN] = "/screenshots/";
 
 /********************************
  * File IO
@@ -179,11 +180,11 @@ bool emu_fileExists(const char* file_name)
 
 bool emu_GetScreenShotDir(char* directory)
 {
-  FRESULT res = f_mkdir ("/screenshots/");
+  FRESULT res = f_mkdir (screen_dir);
 
   if((res == FR_EXIST) || (res == FR_OK))
   {
-    strcpy(directory, "/screenshots/");
+    strcpy(directory, screen_dir);
     return true;
   }
   return false;
@@ -645,6 +646,23 @@ static bool setDirectory(const char* dir)
   return retVal;
 }
 
+static void setScreenshotDirectory(const char* dir)
+{
+  // Prepend a slash if necessary
+  if (dir[0] != '/')
+  {
+    strcpy(screen_dir, "/");
+    strncat(screen_dir, dir, MAX_DIRECTORY_LEN-1);
+    screen_dir[MAX_DIRECTORY_LEN-1] = 0;
+
+    // And the end too
+    if ((dir[strlen(dir) - 1] != '/') && (strlen(screen_dir) < MAX_DIRECTORY_LEN-1))
+    {
+      strcat(screen_dir,"/");
+    }
+  }
+}
+
 void emu_SetRom4K(bool Rom4k)
 {
   if (Rom4k)
@@ -1020,6 +1038,11 @@ static int handler(void *user, const char *section, const char *name,
       else if (!strcasecmp(name, "Dir"))
       {
         setDirectory(value);
+      }
+      else if (!strcasecmp(name, "ScreenshotDir"))
+      {
+        setScreenshotDirectory(value);
+
       }
       else if (!strcasecmp(name, "doubleShift"))
       {
