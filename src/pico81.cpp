@@ -41,7 +41,7 @@ int main(void)
     displayStart();
 
     // Set the autoload name (if any)
-    z8x_Start(emu_GetLoadName());
+    z8x_Start(emu_GetFileName());
 
     // initialise usb
     tuh_init(BOARD_TUH_RHPORT);
@@ -81,13 +81,14 @@ static void mainLoop(void)
                 switch (s)
                 {
                     case HID_KEY_F1: // reset
+                        emu_SetFileName(NULL);
                         return;
                     break;
 
                     case HID_KEY_F2:
                         if (loadMenu())
                         {
-                            z8x_Start(emu_GetLoadName());
+                            z8x_Start(emu_GetFileName());
                             return;
                         }
                     break;

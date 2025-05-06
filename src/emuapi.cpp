@@ -168,6 +168,9 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
     printf("file open failed\n");
     return false;
   }
+
+  // Save the file name, so can be used in screenshots
+  emu_SetFileName(filepath);
   return true;
 }
 
@@ -522,7 +525,7 @@ const char* emu_GetDirectory(void)
   return dirPath;
 }
 
-const char* emu_GetLoadName(void)
+const char* emu_GetFileName(void)
 {
   if (selection[0])
     return selection;
@@ -530,11 +533,15 @@ const char* emu_GetLoadName(void)
     return NULL;
 }
 
-void emu_SetLoadName(const char* name)
+void emu_SetFileName(const char* name)
 {
-  if (name!=NULL && name[0])
+  if (name != NULL && name[0])
   {
-    strncpy(selection, name, MAX_FILENAME_LEN-1);
+    // Extract the file name from the full path
+    const char* nameStrt = strrchr(name, '/');
+    nameStrt = (nameStrt == NULL) ? name : nameStrt + 1;
+
+    strncpy(selection, nameStrt, MAX_FILENAME_LEN-1);
     selection[MAX_FILENAME_LEN-1] = 0;
   }
   else

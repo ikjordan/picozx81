@@ -252,7 +252,7 @@ bool loadMenu(void)
                                 // Load the name file and (possibly) new directory
                                 EMU_LOCK_SDCARD
                                 emu_SetDirectory(newdir);
-                                emu_SetLoadName(working);
+                                emu_SetFileName(working);
                                 EMU_UNLOCK_SDCARD
                                 exit = true;
                             }
@@ -643,9 +643,9 @@ void pauseMenu(void)
             else
             {
                 // Save the screenshot
-                if (emu_GetLoadName())
+                if (emu_GetFileName())
                 {
-                    strcat(bmp_path, emu_GetLoadName());
+                    strcat(bmp_path, emu_GetFileName());
                     removeKnownExtension(bmp_path);
                 }
                 else
