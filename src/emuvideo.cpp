@@ -19,37 +19,40 @@
 #define DISPLAY_START_Y_720      0  // Y Offset to first pixel with no centring
 #define DISPLAY_ADJUST_X_720     2  // The number of pixels to adjust in X dimension to centre the display
 
+#include <stdio.h>
+#include <stdint.h>
+
 #pragma pack(push, 1)  // Ensures that the structures are packed without padding
 // BMP File Header Structure
 typedef struct {
-    char signature[2];         // 'BM'
-    unsigned int file_size;    // Size of the file
-    unsigned short reserved1;  // Reserved field
-    unsigned short reserved2;  // Reserved field
-    unsigned int data_offset;  // Offset where pixel data begins
+    int8_t   signature[2];   // 'BM'
+    uint32_t file_size;     // Size of the file
+    uint16_t reserved1;     // Reserved field
+    uint16_t reserved2;     // Reserved field
+    uint32_t data_offset;   // Offset where pixel data begins
 } BMPFileHeader;
 
 // BMP Info Header Structure
 typedef struct {
-    unsigned int header_size;  // Size of this header (40 bytes)
-    int width;                 // Image width
-    int height;                // Image height
-    unsigned short planes;     // Number of color planes (must be 1)
-    unsigned short bits_per_pixel;  // Bits per pixel (8 for indexed color)
-    unsigned int compression;  // Compression method (0 for none)
-    unsigned int image_size;   // Image size (0 for no compression)
-    int x_resolution;          // Horizontal resolution (pixels per meter)
-    int y_resolution;          // Vertical resolution (pixels per meter)
-    unsigned int colors_used;  // Number of colors in the color table (256 for 8-bit color)
-    unsigned int important_colors;  // Important colors (0 means all colors are important)
+    uint32_t header_size;       // Size of this header (40 bytes)
+    int32_t  width;             // Image width
+    int32_t  height;            // Image height
+    uint16_t planes;            // Number of color planes (must be 1)
+    uint16_t bits_per_pixel;    // Bits per pixel (8 for indexed color)
+    uint32_t compression;       // Compression method (0 for none)
+    uint32_t image_size;        // Image size (0 for no compression)
+    int32_t  x_resolution;      // Horizontal resolution (pixels per meter)
+    int32_t  y_resolution;      // Vertical resolution (pixels per meter)
+    uint32_t colors_used;       // Number of colors in the color table (256 for 8-bit color)
+    uint32_t important_colors;  // Important colors (0 means all colors are important)
 } BMPInfoHeader;
 
 // Color table entry structure (4 bytes per color)
 typedef struct {
-    unsigned char blue;
-    unsigned char green;
-    unsigned char red;
-    unsigned char reserved;
+    uint8_t blue;
+    uint8_t green;
+    uint8_t red;
+    uint8_t reserved;
 } RGBQuad;
 #pragma pack(pop)               // Reset the packing alignment to default
 

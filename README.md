@@ -207,7 +207,6 @@ The following can be configured:
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 25 | See notes below|
 | FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz `On` , or 720x576p display @ 50.65Hz `Match`. If set to `Off` a 640x480 display @ 60Hz is produced | Off |
-| ScreenshotDir | Sets the directory where screenshots are saved | `/screenshots/` | `/` pre and post-pended if necessary |
 
 
 **Notes:**
@@ -233,10 +232,11 @@ In addition a USB joystick,and on some boards a 9-pin joystick, can be configure
 
 Notes: ENTER and SPACE can be used to represent the New Line and Space keys, respectively
 ### Extra configuration options
-Nine extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
+Ten extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
 | Item | Description | Default Value |
 | --- | --- | --- |
 | Dir | Sets the initial default directory to load and save programs | / |
+| ScreenshotDir | Sets the directory where screenshots are saved | `/screenshots/` | `/` pre and post-pended if necessary |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.s`, `.81`, `.80` and `.p81` are initially displayed|Off|
@@ -296,7 +296,11 @@ Displays the current emulator status. Any sound that is playing is paused. Note 
 ### F4 - Pause
 Pauses the emulation. Handy if the phone rings during a gaming session! `P` is XORed into the 4 corners of the display to indicate that the emulator is paused. Press `Escape`, `space`, `Q` or `0` to end the pause and return to the running emulator.
 
-Whilst paused a screenshot can be saved to the SD-Card into the directory specified in the `[defaults]` section of the ini file. Press `S` to save the screenshot as a 16 colour BMP file
+Whilst paused, a screenshot can be saved to the SD-Card into the directory specified in the `[defaults]` section of the ini file. Press `S` to save the screenshot as a 16 colour BMP file. The resulting screenshot is saved with the name `file_name_x.bmp` where:
+
++ `file_name` is replaced by the name last used to save or load the current program. If no load or save has occured `filename` is set to `screenshot`
++ `x` is replaced by a number from 1 to 9. The lowest number that does not form a name of an existing file is used. If all numbers form the name of an an existing file then `1` is used, and the previous contents of the file is overwritten
+
 ### F5 - Display Keyboard Overlay
 The ZX80 and ZX81 use single key press BASIC entry. Pressing `F5` displays a 4 colour image (VGA) or a grey scale image (DVI / HDMI) representing the keyboard of the computer being emulated, so that the correct key presses can be determined. The image was taken from [sz81](https://github.com/SegHaxx/sz81). It is possible to enter commands whilst the keyboard is displayed
 
