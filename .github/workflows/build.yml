@@ -1,13 +1,13 @@
 name: Build UF2 Files with Raspberry Pi Pico SDK
 
 on:
-  push:
-    branches:
-      - test-actions
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build:
