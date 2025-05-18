@@ -1,0 +1,49 @@
+name: Build UF2 Files with Raspberry Pi Pico SDK
+
+on:
+  pull_request:
+    branches:
+      - main  # Adjust based on your workflow
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0  # Ensures submodules are checked out at the correct commit
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake ninja git
+
+      - name: Install Raspberry Pi Pico SDK and Extras
+        run: |
+          mkdir -p ~/pico
+          cd ~/pico
+          git clone --depth=1 https://github.com/raspberrypi/pico-sdk.git
+          git clone --depth=1 https://github.com/raspberrypi/pico-extras.git
+          cd pico-sdk
+          git submodule update --init
+          cd ../pico-extras
+          git submodule update --init
+          echo "export PICO_SDK_PATH=$HOME/pico/pico-sdk" >> ~/.bashrc
+          echo "export PICO_EXTRAS_PATH=$HOME/pico/pico-extras" >> ~/.bashrc
+          source ~/.bashrc
+
+      - name: Make build script executable
+        run: chmod +x buildall
+
+      - name: Run build script
+        run: ./buildall
+
+      - name: Upload UF2 artifacts only
+        uses: actions/upload-artifact@v4
+        with:
+          name: uf2-files
+          path: |
+            build_2040/*.uf2
+            build_2350/*.uf2
