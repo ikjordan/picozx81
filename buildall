@@ -18,7 +18,13 @@ build_uf2()
   type=$(build_type $2)
 
   cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
-  make -j4
+  make -j4 2>&1 | tee build.log
+
+  # Check for errors and warnings
+  if grep -iE "error|warning" build.log; then
+    echo "Build failed due to errors or warnings."
+    exit 1
+  fi
   cp ./${uf2} ../uf2/${uf2}
 }
 
@@ -29,7 +35,13 @@ build_uf2_hdmi()
   type=$(build_type $2)
 
   cmake -DHDMI_SOUND=ON -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
-  make -j4
+  make -j4 2>&1 | tee build.log
+
+  # Check for errors and warnings
+  if grep -iE "error|warning" build.log; then
+    echo "Build failed due to errors or warnings."
+    exit 1
+  fi
   cp ./${uf2} ../uf2/${uf2}
 }
 
@@ -40,7 +52,13 @@ build_uf2_lcd()
   type=$(build_type $2)
 
   cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=ON -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2 
-  make -j4
+  make -j4 2>&1 | tee build.log
+
+  # Check for errors and warnings
+  if grep -iE "error|warning" build.log; then
+    echo "Build failed due to errors or warnings."
+    exit 1
+  fi
   cp ./${uf2} ../uf2/${uf2}
 }
 
