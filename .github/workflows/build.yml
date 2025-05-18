@@ -20,10 +20,12 @@ jobs:
           submodules: true
           fetch-depth: 0  # Ensures submodules are checked out at the correct commit
 
-      - name: Install dependencies
+      - name: Install full Pico SDK dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential cmake ninja-build git
+          sudo apt install -y cmake python3 build-essential \
+            gcc-arm-none-eabi libnewlib-arm-none-eabi \
+            libstdc++-arm-none-eabi-newlib ninja-build git
 
       - name: Install Raspberry Pi Pico SDK and Extras
         run: |
@@ -38,6 +40,7 @@ jobs:
         run: |
           echo "PICO_SDK_PATH=$HOME/pico/pico-sdk" >> $GITHUB_ENV
           echo "PICO_EXTRAS_PATH=$HOME/pico/pico-extras" >> $GITHUB_ENV
+          echo "PICO_TOOLCHAIN_PATH=/usr/bin" >> $GITHUB_ENV
 
       - name: Make build script executable
         run: chmod +x buildall
