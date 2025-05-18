@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential cmake ninja git
+          sudo apt install -y build-essential cmake ninja-build git
 
       - name: Install Raspberry Pi Pico SDK and Extras
         run: |
