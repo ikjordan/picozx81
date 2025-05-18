@@ -18,10 +18,10 @@ build_uf2()
   type=$(build_type $2)
 
   cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
-  make -j4 2>&1 | tee build.log
+  make -j4 2>&1 | tee -a ../build.log
 
   # Check for errors and warnings
-  if grep -iE "error|warning" build.log; then
+  if grep -iE "error|warning" ../build.log; then
     echo "Build failed due to errors or warnings."
     exit 1
   fi
@@ -35,10 +35,10 @@ build_uf2_hdmi()
   type=$(build_type $2)
 
   cmake -DHDMI_SOUND=ON -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
-  make -j4 2>&1 | tee build.log
+  make -j4 2>&1 | tee -a ../build.log
 
   # Check for errors and warnings
-  if grep -iE "error|warning" build.log; then
+  if grep -iE "error|warning" ../build.log; then
     echo "Build failed due to errors or warnings."
     exit 1
   fi
@@ -52,10 +52,10 @@ build_uf2_lcd()
   type=$(build_type $2)
 
   cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=ON -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2 
-  make -j4 2>&1 | tee build.log
+  make -j4 2>&1 | tee -a ../build.log
 
   # Check for errors and warnings
-  if grep -iE "error|warning" build.log; then
+  if grep -iE "error|warning" ../build.log; then
     echo "Build failed due to errors or warnings."
     exit 1
   fi
@@ -69,10 +69,14 @@ mkdir build_2040
 mkdir build_2350
 mkdir -p uf2
 
+# Create the build directory
+rm build.log
+touch build.log
+
 # Build all PicoZX81 variants for rp2040
 cd build_2040
 
-build_uf2 vga rp2040 
+build_uf2 vga rp2040
 build_uf2 dvi rp2040
 build_uf2 picomitevga rp2040
 build_uf2 olimexpc rp2040
