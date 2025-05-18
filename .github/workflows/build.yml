@@ -39,14 +39,8 @@ jobs:
           echo "PICO_SDK_PATH=$HOME/pico/pico-sdk" >> $GITHUB_ENV
           echo "PICO_EXTRAS_PATH=$HOME/pico/pico-extras" >> $GITHUB_ENV
 
-      - name: Verify PICO_SDK_PATH
-        run: ls -l $PICO_SDK_PATH/external/pico_sdk_import.cmake
-
       - name: Make build script executable
         run: chmod +x buildall
-
-      - name: Run CMake with PICO_SDK_PATH
-        run: cmake -DPICO_SDK_PATH=$PICO_SDK_PATH ..
 
       - name: Run build script
         run: ./buildall
