@@ -58,27 +58,3 @@ jobs:
           path: |
             build_2040/*.uf2
             build_2350/*.uf2
-
-        run: ./buildall
-
-      - name: Upload UF2 artifacts only
-        uses: actions/upload-artifact@v4
-        with:
-          name: uf2-files
-          path: |
-            build_2040/*.uf2
-            build_2350/*.uf2
-
-      - name: Make build script executable
-        run: chmod +x buildall
-
-      - name: Run build script
-        run: ./buildall
-
-      - name: Upload UF2 artifacts only
-        uses: actions/upload-artifact@v4
-        with:
-          name: uf2-files
-          path: |
-            build_2040/*.uf2
-            build_2350/*.uf2
