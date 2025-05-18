@@ -1,9 +1,12 @@
 name: Build UF2 Files with Raspberry Pi Pico SDK
 
 on:
+  push:
+    branches:
+      - test-github-actions  # For testing
   pull_request:
     branches:
-      - main  # Adjust based on your workflow
+      - main  # Also runs when a PR is opened against main
 
 jobs:
   build:
