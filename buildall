@@ -1,76 +1,50 @@
 #!/bin/bash
-# Get the build type - in case different build types are needed for Pico and Pico 2 in the future
-build_type()
-{
-  if [[ $1 == "rp2040" ]]
-  then
-    echo "Release"
-  else
-   echo "Release"
-  fi
+set -e  # Ensures the script exits on failure
+
+# Get the build type
+build_type() {
+  echo "Release"  # Can be expanded for future variations
 }
 
-#build a board type
-build_uf2()
-{
-  board=$1"board .."
-  uf2="picozx81_"$1"_"$2".uf2"
-  type=$(build_type $2)
+# Centralized function for CMake and Build
+run_cmake_and_build() {
+  local board=$1"board .."
+  local chip_type=$2
+  local hdmi=$3
+  local lcd=$4
+  local uf2="picozx81_${1}_$( [[ "$hdmi" == "ON" ]] && echo "hdmi_sound_" )$( [[ "$lcd" == "ON" ]] && echo "lcd_" )${chip_type}.uf2"
 
-  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
+  cmake -DHDMI_SOUND=$hdmi -DPICOZX_LCD=$lcd -DCMAKE_BUILD_TYPE=$(build_type "$chip_type") -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=$board -DPICO_MCU=$chip_type
   make -j4 2>&1 | tee -a ../build.log
 
-  # Check for errors and warnings
-  if grep -iE "error|warning" ../build.log  | grep -v "Built target errors"; then
-    echo "Build failed due to errors or warnings."
-    exit 1
-  fi
-  cp ./${uf2} ../uf2/${uf2}
-}
-
-build_uf2_hdmi()
-{
-  board=$1"board .."
-  uf2="picozx81_"$1"_hdmi_sound_"$2".uf2"
-  type=$(build_type $2)
-
-  cmake -DHDMI_SOUND=ON -DPICOZX_LCD=OFF -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2
-  make -j4 2>&1 | tee -a ../build.log
-
-  # Check for errors and warnings
+  # Check for errors and warnings - excluding the target errors step in picotoolBuild
   if grep -iE "error|warning" ../build.log | grep -v "Built target errors"; then
     echo "Build failed due to errors or warnings."
     exit 1
   fi
+
   cp ./${uf2} ../uf2/${uf2}
 }
 
-build_uf2_lcd()
-{
-  board=$1"board .."
-  uf2="picozx81_"$1"_lcd_"$2".uf2"
-  type=$(build_type $2)
+# Functions for different build variants
+build_uf2() {
+  run_cmake_and_build "$1" "$2" OFF OFF
+}
 
-  cmake -DHDMI_SOUND=OFF -DPICOZX_LCD=ON -DCMAKE_BUILD_TYPE=${type} -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=${board} -DPICO_MCU=$2 
-  make -j4 2>&1 | tee -a ../build.log
+build_uf2_hdmi() {
+  run_cmake_and_build "$1" "$2" ON OFF
+}
 
-  # Check for errors and warnings
-  if grep -iE "error|warning" ../build.log | grep -v "Built target errors"; then
-    echo "Build failed due to errors or warnings."
-    exit 1
-  fi
-  cp ./${uf2} ../uf2/${uf2}
+build_uf2_lcd() {
+  run_cmake_and_build "$1" "$2" OFF ON
 }
 
 # Create the directories from scratch
-rm -rf build_2040
-rm -rf build_2350
-mkdir build_2040
-mkdir build_2350
-mkdir -p uf2
+rm -rf build_2040 build_2350
+mkdir build_2040 build_2350 uf2
 
 # Create the build directory
-rm build.log
+rm -f build.log
 touch build.log
 
 # Build all PicoZX81 variants for rp2040
@@ -91,7 +65,7 @@ build_uf2_hdmi olimexpc rp2040
 build_uf2_hdmi wspizero rp2040
 build_uf2_lcd picozx rp2040
 
-# Build all PicoZX81 variants that can take a rp2350
+# Build all PicoZX81 variants for rp2350
 cd ../build_2350
 
 build_uf2 vga rp2350
