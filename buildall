@@ -39,11 +39,14 @@ build_uf2_lcd() {
   run_cmake_and_build "$1" "$2" OFF ON
 }
 
-# Create the directories from scratch
+# Create the build directories from scratch
 rm -rf build_2040 build_2350
-mkdir build_2040 build_2350 uf2
+mkdir build_2040 build_2350
 
-# Create the build directory
+# Make the uf2 directory if it does not already exist
+mkdir -p build_2040 build_2350 uf2
+
+# Create an empty build log
 rm -f build.log
 touch build.log
 
