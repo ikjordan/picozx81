@@ -21,7 +21,7 @@ build_uf2()
   make -j4 2>&1 | tee -a ../build.log
 
   # Check for errors and warnings
-  if grep -iE "error|warning" ../build.log; then
+  if grep -iE "error|warning" ../build.log  | grep -v "Built target errors"; then
     echo "Build failed due to errors or warnings."
     exit 1
   fi
@@ -38,7 +38,7 @@ build_uf2_hdmi()
   make -j4 2>&1 | tee -a ../build.log
 
   # Check for errors and warnings
-  if grep -iE "error|warning" ../build.log; then
+  if grep -iE "error|warning" ../build.log | grep -v "Built target errors"; then
     echo "Build failed due to errors or warnings."
     exit 1
   fi
@@ -55,7 +55,7 @@ build_uf2_lcd()
   make -j4 2>&1 | tee -a ../build.log
 
   # Check for errors and warnings
-  if grep -iE "error|warning" ../build.log; then
+  if grep -iE "error|warning" ../build.log | grep -v "Built target errors"; then
     echo "Build failed due to errors or warnings."
     exit 1
   fi
