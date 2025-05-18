@@ -3,11 +3,11 @@ name: Build UF2 Files with Raspberry Pi Pico SDK
 on:
   push:
     branches:
-      - test-actions  # Ensures workflow runs when changes are pushed to this branch
+      - test-actions
   pull_request:
     branches:
-      - main  # Also runs when a PR is opened against main
-  workflow_dispatch:  # Allows manual triggering from GitHub UI
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-          fetch-depth: 0  # Ensures submodules are checked out at the correct commit
+          fetch-depth: 0
 
       - name: Install full Pico SDK dependencies
         run: |
@@ -47,6 +47,13 @@ jobs:
 
       - name: Run build script
         run: ./buildall
+
+      - name: Upload Build Log
+        if: always()  # Ensures log is uploaded whether the build fails or succeeds
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: Upload UF2 artifacts only
         uses: actions/upload-artifact@v4
