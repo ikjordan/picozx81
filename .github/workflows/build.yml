@@ -1,0 +1,64 @@
+name: Build UF2 Files with Raspberry Pi Pico SDK
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Install full Pico SDK dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y cmake python3 build-essential \
+            gcc-arm-none-eabi libnewlib-arm-none-eabi \
+            libstdc++-arm-none-eabi-newlib ninja-build git
+
+      - name: Install Raspberry Pi Pico SDK and Extras
+        run: |
+          mkdir -p ~/pico
+          cd ~/pico
+          git clone --depth=1 https://github.com/raspberrypi/pico-sdk.git
+          git clone --depth=1 https://github.com/raspberrypi/pico-extras.git
+          cd pico-sdk && git submodule update --init
+          cd ../pico-extras && git submodule update --init
+
+      - name: Set Environment Variables
+        run: |
+          echo "PICO_SDK_PATH=$HOME/pico/pico-sdk" >> $GITHUB_ENV
+          echo "PICO_EXTRAS_PATH=$HOME/pico/pico-extras" >> $GITHUB_ENV
+          echo "PICO_TOOLCHAIN_PATH=/usr/bin" >> $GITHUB_ENV
+
+      - name: Make build script executable
+        run: chmod +x buildall
+
+      - name: Run build script
+        run: ./buildall
+
+      - name: Upload Build Log
+        if: always()  # Ensures log is uploaded whether the build fails or succeeds
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+
+      - name: Upload UF2 artifacts only
+        uses: actions/upload-artifact@v4
+        with:
+          name: uf2-files
+          path: |
+            build_2040/*.uf2
+            build_2350/*.uf2
