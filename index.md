@@ -1,3 +1,4 @@
+theme: hacker
 # A Sinclair ZX81 and ZX80 Emulator for the Raspberry Pi Pico
 # Contents
 + [Features](#features)
