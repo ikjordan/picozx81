@@ -127,6 +127,7 @@ A ZX81 disguised as a Spectrum!
 ## Quick Start
 
 The fastest way to get started is to:
+
 1. Write data onto a Micro SD Card
 2. Install the pre-built binary onto your Pico
 3. Connect your board to a keyboard and start exploring
@@ -206,6 +207,7 @@ The capabilities of the emulator are set using configuration files stored on the
 
 Configuration attributes (described in the following sections) are set via `config.ini` files. When a program is loaded the emulation configuration is read, and set for the program before it is run.
 The order for configuring an item for a given program (e.g. `prog.p`) is as follows:
+
 1. Search for `config.ini` in the directory that contains `prog.p`
 2. If it exists, configure items specified in a `[prog.p]` section
 3. If it exists, configure items not yet specified, that exist in a `[default]` section
@@ -218,6 +220,7 @@ The order for configuring an item for a given program (e.g. `prog.p`) is as foll
 #### Main Attributes
 
 The following can be configured:
+
 | Item | Description | Default Value | Notes |
 | --- | --- | --- | --- |
 | Computer | Selects ZX81, ZX81x2, ZX80-4K or ZX80-8K | ZX81 | ZX80-4K selects ZX80 with the original 4kB ROM. ZX80-8K selects a ZX80 that has been upgraded with an 8K ROM. ZX81x2 selects a ZX81 with the ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM for faster BASIC |
@@ -237,6 +240,7 @@ The following can be configured:
 | FiveSevenSix | Enables the generation of a 720x576p display @ 50Hz `On` , or 720x576p display @ 50.65Hz `Match`. If set to `Off` a 640x480 display @ 60Hz is produced | Off |
 
 **Notes:**
+
 1. The "real" QS UDG board had a manual switch to enable / disable. In the emulator, if `QSUDG` is selected, it is assumed to be switched on after the first write to the memory mapped address range (0x8400 to 0x87ff)
 2. To emulate other standard UDG graphics cards that reside between 0x2000 and 0x3fff set `LowRAM` to `On` and `WRX` to `Off`. This setting is needed to run e.g. [Galaxians with user defined graphics](https://sinclairzxworld.com/viewtopic.php?f=4&t=4388). If emulation of CHR128 UDG graphics is required set `CHR128` to `On`. This setting is needed to run e.g. [zedgragon](https://github.com/charlierobson/zedragon)
 3. If `NTSC` is set to `On` and `Centre` is set to `Off` then a black vsync bar will be seen at the bottom of the display for programs that generate a typical 192 line display
@@ -267,7 +271,7 @@ Ten extra options apply across all programs and can only be set in the `[default
 | Item | Description | Default Value |
 | --- | --- | --- |
 | Dir | Sets the initial default directory to load and save programs | / |
-| ScreenshotDir | Sets the directory where screenshots are saved | `/screenshots/` | `/` pre and post-pended if necessary |
+| ScreenshotDir | Sets the directory where screenshots are saved | `/screenshots/` |
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.s`, `.81`, `.80` and `.p81` are initially displayed|Off|
@@ -279,9 +283,10 @@ Ten extra options apply across all programs and can only be set in the `[default
 
 **Notes:**
 
-1. By default the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
-2. The LCD supported displays all have a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for these displays (50 Hz, 50.65 Hz or 60 Hz)
-3. Due to the low speed of the ZX8x cassette interface, files can take many minutes to load and save when `LoadUsingROM` and `SaveUsingROM` is enabled
+1. If necessary, `/` is pre and post-pended to the `ScreenshotDir`
+2. By default, the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
+3. The LCD supported displays all have a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for these displays (50 Hz, 50.65 Hz or 60 Hz)
+4. Due to the low speed of the ZX8x cassette interface, files can take many minutes to load and save when `LoadUsingROM` and `SaveUsingROM` is enabled
 
 #### Examples
 
@@ -555,11 +560,12 @@ Testing the emulator has been a great way to experience some classic ZX81 games 
   + The assembler routine runs in 1K, but the BASIC demo program that draws concentric circles does not, as it requires more than 1K of RAM. This can be verified by using the BASIC listing tool in EightyOne to check the memory address of each line of BASIC. It will run in 2K
 + [zedit](https://forum.tlienhard.com/phpBB3/download/file.php?id=6795)
 
-##### ARX
+#### ARX
 
 Set `WRX` to `Off` and `CHR128` to `on`
+
 + [ARX_Demo](https://www.sinclairzxworld.com/viewtopic.php?f=6&t=5448) Demonstrates ARX graphics
-+ [ARX Hangman](https://sinclairzxworld.com/viewtopic.php?p=47308#p47308) Replicates the "off by 1 error" seen on real hardware and discussed [here](https://www.sinclairzxworld.com/viewtopic.php?f=6&t=5448)
++ [ARX Hangman](https://sinclairzxworld.com/viewtopic.php?p=47308#p47308) Replicates the "off by 1 error" seen on real hardware and discussed [in forums](https://www.sinclairzxworld.com/viewtopic.php?f=6&t=5448)
 
 #### QS UDG Graphics
 
@@ -645,7 +651,7 @@ Both generate a display more than 320 pixels wide, so some information is not di
 + [rezurrection](https://bodo4all.fortunecity.ws/zx/rezurrection.html)
   + The initial fast horizontal scrolling highlights the non-synchronised screen drawing of the emulator when running in 640 by 480 mode with `FrameSync` set to `Off`, leading to visible tearing
 
-#### Interlaced Images
+##### Interlaced Images
 
 + [Ilena](https://www.sinclairzxworld.com/viewtopic.php?p=16058)
   + Best viewed with `FrameSync` set to `Interlaced`
@@ -873,7 +879,7 @@ Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://ww
 
 The picozx board has a 9-pin joystick port connector built in
 
-##### Olimex UEXT1 connections
+#### Olimex UEXT1 connections
 
 For the RP2040-PICO-PC the pins required for the joystick connection are on the UEXT1 connector. The mapping is:
 
@@ -896,7 +902,7 @@ It is not necessary to create a `NinePinJoystick` entry to use the joystick port
 
 ### Acknowledgements
 
-One intention of this project was to show what can be quickly achieved by leveraging other open source projects. The following excellent Open source projects have been used for source code and inspiration:
+One intention of this project was to show what can be quickly achieved by leveraging other open source projects. The following excellent open source projects have been used for source code and inspiration:
 
 + [sz81](https://github.com/SegHaxx/sz81)
 + EightyOne [Releases](https://sourceforge.net/projects/eightyone-sinclair-emulator/) [source](https://github.com/charlierobson/EightyOne)
@@ -951,7 +957,7 @@ The header is followed by the state data. A full `.s` file is roughly 66kB in si
 
 ### Performance and constraints
 
-In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). [applications tested](#applications-tested) gives a list of applications tested
+In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
 The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 83% of the available RP2040 CPU clock cycles with sound disabled and 87% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation. Figures are much lower for the RP2350 (56.5% without sound, 59% with sound)
 
