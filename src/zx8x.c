@@ -319,7 +319,7 @@ bool load_p(int name_addr, bool defer_rom)
       if (loadMenu())
       {
         strcpy(fname, emu_GetDirectory());
-        strcat(fname, emu_GetLoadName());
+        strcat(fname, emu_GetFileName());
         from_menu = true;
       }
     }
@@ -371,16 +371,13 @@ bool load_p(int name_addr, bool defer_rom)
     // Load the settings for this file
     emu_ReadSpecificValues(fname);
 
+    // Set the load name, so that can be used for screenshots
+    emu_SetFileName(fname);
+
     if (emu_ResetNeeded())
     {
       // Have to schedule an autoload, which will trigger the reset
-
-      // Extract the file name from the full path
-      char* nameStrt = strrchr(fname, '/');
-      nameStrt = (nameStrt == NULL) ? fname : nameStrt + 1;
-
-      emu_SetLoadName(nameStrt);
-      z8x_Start(emu_GetLoadName());
+      z8x_Start(emu_GetFileName());
       resetRequired = true;
       EMU_UNLOCK_SDCARD
       return defer;

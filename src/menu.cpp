@@ -93,10 +93,16 @@ static void showRestart(PositionF7_T pos, RestartF7_T* restart);
 static void showReboot(FiveSevenSix_T mode);
 static void showSave(const char* name, uint len, uint cursor, uint col, uint row);
 static void setConvert(bool zx80);
+static bool endsWithKnownExtension(const char* filename);
+static void removeKnownExtension(char* filename);
 
 static bool wasBlank = false;
 static bool wasBlack = false;
 static uint8_t* currBuff = 0;
+#ifdef SUPPORT_CHROMA
+static uint8_t* chroma_curr = 0;
+#endif
+
 
 static uint8_t* menuscreen = 0;
 static uint8_t* menuchroma = 0;
@@ -246,7 +252,7 @@ bool loadMenu(void)
                                 // Load the name file and (possibly) new directory
                                 EMU_LOCK_SDCARD
                                 emu_SetDirectory(newdir);
-                                emu_SetLoadName(working);
+                                emu_SetFileName(working);
                                 EMU_UNLOCK_SDCARD
                                 exit = true;
                             }
@@ -607,11 +613,94 @@ void pauseMenu(void)
     invertChar('P', (disp.width >> 3) - border - 1, border);
     invertChar('P', (disp.width >> 3) - border - 1, (disp.height >> 3) - border - 1);
 
-    // Just wait for ESC to be pressed
+    // Wait for Enter or ESC to be pressed - or to capture an image
+    bool captured = false;
+
+    char bmp_path[MAX_FULLPATH_LEN];
+
     do
     {
         tuh_task();
         hidNavigateMenu(&key);
+        if ((key == HID_KEY_S) && (!captured))
+        {
+            // Check that a capture is possible
+            if (wasBlank)
+            {
+                writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
+                writeInvertString("In fast mode", (disp.width >> 4) - 6, (disp.height >> 4) + 1, true);
+            }
+            else if (!emu_fsInitialised())
+            {
+                writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
+                writeInvertString("SD Card not detected", (disp.width >> 4) - 10, (disp.height >> 4) + 1, true);
+            }
+            else if (!emu_GetScreenShotDir(bmp_path))
+            {
+                writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
+                writeInvertString("Directory does not exist", (disp.width >> 4) - 13, (disp.height >> 4) + 1, true);
+            }
+            else
+            {
+                // Save the screenshot
+                if (emu_GetFileName())
+                {
+                    strcat(bmp_path, emu_GetFileName());
+                    removeKnownExtension(bmp_path);
+                }
+                else
+                {
+                    strcat(bmp_path, "screenshot");
+                }
+
+                // Attempt to find a free slot to save
+                // search from 1 to 9
+                // If free slot use the lowest number
+                // if no free slots overwrite 1
+                char *num = bmp_path + strlen(bmp_path) + 1;
+                bool empty = false;
+                strcat(bmp_path, "-x.bmp");
+
+                for (char c = '1'; c <= '9'; ++c)
+                {
+                    *num = c;
+                    if(!emu_fileExists(bmp_path))
+                    {
+                        empty = true;
+                        break;
+                    }
+                }
+
+                if (!empty)
+                {
+                    *num = '1';
+                }
+
+                uint8_t* c_ptr = NULL;
+#ifdef SUPPORT_CHROMA
+                if (chromamode) c_ptr = chroma_curr;
+#endif
+                if (!emu_VideoWriteBitmap(bmp_path, currBuff, c_ptr))
+                {
+                    writeInvertString("Screen capture failed", (disp.width >> 4) - 10, disp.height >> 4, true);
+                    writeInvertString("File could not be saved", (disp.width >> 4) - 11, (disp.height >> 4) + 1, true);
+                }
+                else
+                {
+                    writeInvertString("Screen captured", (disp.width >> 4) - 7, disp.height >> 4, true);
+                    captured = true;
+                }
+            }
+
+            // debounce the S key
+            do
+            {
+                tuh_task();
+                emu_WaitFor50HzTimer();
+                hidNavigateMenu(&key);
+            }
+            while (key == HID_KEY_S);
+        }
         emu_WaitFor50HzTimer();
     } while ((key != HID_KEY_ENTER) && (key != HID_KEY_ESCAPE));
 
@@ -1110,10 +1199,6 @@ void snapMenu(void)
 /* Build the menu. If clone is true, then copy the current menu, including any possible chroma buffer */
 static bool buildMenu(bool clone)
 {
-#ifdef SUPPORT_CHROMA
-    uint8_t* chroma_curr = 0;
-#endif
-
     // Obtain a display buffer
     displayGetFreeBuffer(&menuscreen);
     menuchroma = 0;
@@ -1488,7 +1573,8 @@ static void writeChar(char c, uint col, uint row)
 static void invertChar(char c, uint col, uint row)
 {
     uint8_t* pos = menuscreen + row * disp.stride_bit + col;
-    uint16_t offset = 0x1e00;
+    const unsigned char* rom = (zx80font ? zx80rom : zx81rom);
+    uint16_t offset = zx80font ? 0x0e00 : 0x1e00;   // Start of characters in ROM
 
     // Convert from ascii to ZX
     if ((c >= 32) && (c < 128))
@@ -1499,17 +1585,17 @@ static void invertChar(char c, uint col, uint row)
     // Find the offset in the ROM
     for (uint i=0; i<8; ++i)
     {
-        *pos = (zx81rom[offset+i] ^ 0xff);
+        *pos = (rom[offset+i] ^ 0xff);
         pos += disp.stride_byte;
     }
 
-    // Update chroma foreground, so inverse char is visible
+    // Update chroma foreground and background, so inverse char is visible
     if (menuchroma)
     {
         pos = menuchroma + row * disp.stride_bit + col;
         for (uint i=0; i<8; ++i)
         {
-            *pos = (*pos ^ 0xf0);
+            *pos = 0xf0;
             pos += disp.stride_byte;
         }
     }
@@ -1589,9 +1675,7 @@ static int populateFiles(const char* path, uint first)
             if (res != FR_OK || fno.fname[0] == 0) break;   /* Break on error or end of entries */
 
             if ((!(fno.fattrib & AM_DIR) && (strlen(fno.fname) < MAX_FILENAME_LEN)) &&
-                ((emu_EndsWith(fno.fname, ".o") || emu_EndsWith(fno.fname, ".p") ||
-                  emu_EndsWith(fno.fname, ".80") || emu_EndsWith(fno.fname, ".81") ||
-                  emu_EndsWith(fno.fname, ".p81") || emu_EndsWith(fno.fname, ".s") || allfiles)))
+                (endsWithKnownExtension(fno.fname) || allfiles))
             {
                 if ((count >= first) && (count < (first + fullrow)))
                 {
@@ -1696,9 +1780,7 @@ static bool getFile(char* inout, uint index, bool* direct)
             if (!(fno.fattrib & AM_DIR))
             {
                 if ((strlen(fno.fname) < MAX_FILENAME_LEN) &&
-                    ((emu_EndsWith(fno.fname, ".o") || emu_EndsWith(fno.fname, ".p") ||
-                      emu_EndsWith(fno.fname, ".80") || emu_EndsWith(fno.fname, ".81")) ||
-                      emu_EndsWith(fno.fname, ".p81") || emu_EndsWith(fno.fname, ".s") || allfiles))
+                    (endsWithKnownExtension(fno.fname) || allfiles))
                 {
                     ++count;
                 }
@@ -1715,5 +1797,32 @@ static bool getFile(char* inout, uint index, bool* direct)
     EMU_UNLOCK_SDCARD
 
     return ret;
+}
+
+static bool endsWithKnownExtension(const char* filename)
+{
+    return (emu_EndsWith(filename, ".o") || emu_EndsWith(filename, ".p") ||
+            emu_EndsWith(filename, ".80") || emu_EndsWith(filename, ".81") ||
+            emu_EndsWith(filename, ".p81") || emu_EndsWith(filename, ".s"));
+}
+
+static void removeKnownExtension(char* filename)
+{
+    size_t len = strlen(filename);
+
+    if (emu_EndsWith(filename, ".o") ||
+        emu_EndsWith(filename, ".p") ||
+        emu_EndsWith(filename, ".s"))
+    {
+        filename[len - 2] = 0;
+    }
+    else if (emu_EndsWith(filename, ".80") ||
+             emu_EndsWith(filename, ".81"))
+    {
+        filename[len - 3] = 0;
+    } else if (emu_EndsWith(filename, ".p81"))
+    {
+        filename[len - 4] = 0;
+    }
 }
 

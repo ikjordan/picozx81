@@ -48,8 +48,11 @@ extern bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathn
 extern bool emu_loadSnapshotData(const char* fullpathname);
 extern bool emu_saveSnapshot(const char* fullpathname);
 
-extern const char* emu_GetLoadName(void);
-extern void emu_SetLoadName(const char* name);
+extern bool emu_fileExists(const char* file_name);
+extern bool emu_GetScreenShotDir(char* directory);
+
+extern const char* emu_GetFileName(void);
+extern void emu_SetFileName(const char* name);
 extern const char* emu_GetDirectory(void);
 extern void emu_SetDirectory(const char* dir);
 extern void emu_ReadDefaultValues(void);
