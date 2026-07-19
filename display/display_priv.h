@@ -1,6 +1,6 @@
 #ifndef _DISPLAY_PRIV_H_
 #define _DISPLAY_PRIV_H_
-#if !(defined (PICO_DVI_BOARD) || defined (PICO_OLIMEXPC_BOARD) || defined (PICO_WSPIZERO_BOARD) || defined (PICO_LCD_CS_PIN))
+#if !(defined (PICO_DVI_BOARD) || defined (PICO_OLIMEXPC_BOARD) || defined (PICO_OLIMEXRP2350PC_BOARD) || defined (PICO_WSPIZERO_BOARD) || defined (PICO_LCD_CS_PIN))
 #include "pico/scanvideo.h"
 #endif
 #include "pico/sync.h"

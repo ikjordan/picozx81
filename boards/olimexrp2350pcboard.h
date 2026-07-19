@@ -1,0 +1,72 @@
+// -----------------------------------------------------
+// NOTE: THIS HEADER IS ALSO INCLUDED BY ASSEMBLER SO
+//       SHOULD ONLY CONSIST OF PREPROCESSOR DIRECTIVES
+// -----------------------------------------------------
+
+#ifndef _BOARDS_OLIMEXRP2350PCBOARD_H
+#define _BOARDS_OLIMEXRP2350PCBOARD_H
+
+// For board detection
+#define RASPBERRYPI_BOARDS_OLIMEXRP2350PCBOARD
+
+#define PICO_DEFAULT_LED_PIN            25
+
+#define OLIMEXRP2350PCBOARD_SD_CLK_PIN  10
+#define OLIMEXRP2350PCBOARD_SD_CMD_PIN  11
+#define OLIMEXRP2350PCBOARD_SD_DAT0_PIN 24
+#define OLIMEXRP2350PCBOARD_SD_CS_PIN   9
+
+#ifndef PICO_DEFAULT_UART
+#define PICO_DEFAULT_UART 0
+#endif
+
+#ifndef PICO_DEFAULT_UART_TX_PIN
+#define PICO_DEFAULT_UART_TX_PIN 0
+#endif
+
+#ifndef PICO_DEFAULT_UART_RX_PIN
+#define PICO_DEFAULT_UART_RX_PIN 1
+#endif
+
+#ifndef PICO_SD_CLK_PIN
+#define PICO_SD_CLK_PIN OLIMEXRP2350PCBOARD_SD_CLK_PIN
+#endif
+
+#ifndef PICO_SD_CMD_PIN
+#define PICO_SD_CMD_PIN OLIMEXRP2350PCBOARD_SD_CMD_PIN
+#endif
+
+#ifndef PICO_SD_DAT0_PIN
+#define PICO_SD_DAT0_PIN OLIMEXRP2350PCBOARD_SD_DAT0_PIN
+#endif
+
+#ifndef PICO_SD_CS_PIN
+#define PICO_SD_CS_PIN OLIMEXRP2350PCBOARD_SD_CS_PIN
+#endif
+
+#define OLIMEXRP2350PCBOARD_PWM_R_PIN 27
+#define OLIMEXRP2350PCBOARD_PWM_L_PIN 26
+
+#ifndef PICO_AUDIO_PWM_L_PIN
+#define PICO_AUDIO_PWM_L_PIN OLIMEXRP2350PCBOARD_PWM_L_PIN
+#endif
+
+#ifndef PICO_AUDIO_PWM_R_PIN
+#define PICO_AUDIO_PWM_R_PIN OLIMEXRP2350PCBOARD_PWM_R_PIN
+#endif
+
+#define NINEPIN_JOYSTICK
+
+#define NINEPIN_UP      3       // UEXT1 Pin 5
+#define NINEPIN_DOWN    2       // UEXT1 Pin 6
+#define NINEPIN_LEFT    4       // UEXT1 Pin 7
+#define NINEPIN_RIGHT   7       // UEXT1 Pin 8
+#define NINEPIN_BUTTON  6       // UEXT1 Pin 9
+                                // UEXT1 Pin 2 is Ground
+
+#define PICO_OLIMEXRP2350PC_BOARD
+
+// default anything we haven't set above
+#include "mcu.h"
+
+#endif
