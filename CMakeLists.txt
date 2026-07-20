@@ -2,7 +2,8 @@ set(PROJECT picozx81)
 cmake_minimum_required(VERSION 3.13)
 
 # Determine the MCU type and configure accordingly
-set(PICO_MCU "rp2350" CACHE STRING "Specify Pico MCU type")
+set(PICO_MCU "rp2040" CACHE STRING "Specify Pico MCU type")
+#set(PICO_MCU "rp2350" CACHE STRING "Specify Pico MCU type")
 
 if ((${PICO_MCU} STREQUAL "rp2350"))
     set(PICO_PLATFORM "rp2350-arm-s")
@@ -13,7 +14,8 @@ endif()
 # Look for board file in local board directory
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
 if (NOT PICO_BOARD)
-    set(PICO_BOARD "olimexrp2350pcboard")
+    set(PICO_BOARD "vgaboard")
+    #set(PICO_BOARD "olimexrp2350pcboard")
 endif()
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
@@ -27,6 +29,8 @@ OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
 OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
 OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
 
+# Set to "vgaboard" to build for Pimoroni vga board
+# e.g. cmake -DPICO_BOARD=vgaboard
 # Set to "dviboard" to build for Pimoroni dvi board
 # e.g. cmake -DPICO_BOARD=dviboard
 # Set to "vga332board" for vga 332 board similar to that used in MCUME
@@ -182,24 +186,22 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
             endif()
             target_compile_definitions(${PROJECT} PUBLIC
                                     -DDVI_DEFAULT_SERIAL_CONFIG=pimoroni_demo_hdmi_cfg)
-        else()
-            if (${PICO_BOARD} STREQUAL "olimexpcboard")
+        elseif (${PICO_BOARD} STREQUAL "olimexpcboard")
                 target_compile_definitions(${PROJECT} PUBLIC
                                         -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2040_PICO_PC_cfg
                                         -DDVI_USE_PIO_CLOCK)
-                if(${HDMI_SOUND})
-                    set(NAME_ROOT "picozx81_olimexpc_hdmi_sound")
-                else()
-                set(NAME_ROOT "picozx81_olimexpc")
-                endif()
+            if(${HDMI_SOUND})
+                set(NAME_ROOT "picozx81_olimexpc_hdmi_sound")
             else()
-                target_compile_definitions(${PROJECT} PUBLIC
-                                        -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2350PC_cfg)
-                if(${HDMI_SOUND})
-                    set(NAME_ROOT "picozx81_olimexrp2350pc_hdmi_sound")
-                else()
-                set(NAME_ROOT "picozx81_olimexrp2350pc")
-                endif()
+            set(NAME_ROOT "picozx81_olimexpc")
+            endif()
+        else()
+            target_compile_definitions(${PROJECT} PUBLIC
+                                    -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2350PC_cfg)
+            if(${HDMI_SOUND})
+                set(NAME_ROOT "picozx81_olimexrp2350pc_hdmi_sound")
+            else()
+            set(NAME_ROOT "picozx81_olimexrp2350pc")
             endif()
         endif()
     endif()
@@ -233,6 +235,8 @@ else()
     if ((${PICO_BOARD} STREQUAL "vgamaker222cboard") OR (${PICO_BOARD} STREQUAL "picozxboard") OR (${PICO_BOARD} STREQUAL "picozxrealboard"))
         target_link_libraries(${PROJECT} mod_scanvideo_dpi)
     else ()
+        # The scanvideo library generates a warning, that can escalate to an error.
+        target_compile_options(pico_scanvideo_dpi INTERFACE -Wno-unused-but-set-variable)
         target_link_libraries(${PROJECT} pico_scanvideo_dpi)
         set (EXTRA_CHECK "")
     endif()
