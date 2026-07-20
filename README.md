@@ -45,6 +45,7 @@
 + [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base)
 + [PicoMiteVGA board](https://geoffg.net/picomitevga.html)
 + [Olimex RP2040-PICO-PC (HDMI)](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware)
++ [Olimex RP2350PC (HDMI)](https://www.olimex.com/Products/RaspberryPi/PICO/RP2350pc/)
 + [Waveshare RP2040-PiZero (HDMI)](https://www.waveshare.com/wiki/RP2040-PiZero)
 + [Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
 + [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with 320 by 240 LCD and RGB222 VGA displays
@@ -167,8 +168,10 @@ Click on the uf2 name corresponding to your board in the table below to download
 | Pimoroni DVI | [`picozx81_dvi_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_rp2350.uf2)|
 | Pimoroni VGA | [`picozx81_vga_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vga_rp2350.uf2)|
 | Olimex PICO DVI | [`picozx81_olimexpc_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_rp2350.uf2)|
+| Olimex RP2350PC DVI | [`picozx81_olimexrp2350pc_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexrp2350pc_rp2350.uf2)|
 | PicoMiteVGA | [`picozx81_picomitevga_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga_rp2350.uf2)|
 | Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound_rp2350.uf2)|
+| Olimex RP2350PC DVI with HDMI Sound| [`picozx81_olimexrp2350pc_hdmi_sound_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexrp2350pc_hdmi_sound_rp2350.uf2)|
 | Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound_rp2350.uf2)|
 | Waveshare 2.8 LCD | [`picozx81_lcdws28_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28_rp2350.uf2)|
 
@@ -252,7 +255,7 @@ The following can be configured:
 
 #### Joystick
 
-In addition a USB joystick,and on some boards a 9-pin joystick, can be configured to generated key presses
+In addition a USB joystick, and on some boards a 9-pin joystick, can be configured to generate key presses
 
 | Item | Description | Default Value |
 | --- | --- | --- |
@@ -741,10 +744,11 @@ This will be named `picozx81_vga_rp2040.uf2`
 
 **Notes:**
 
-+ To build for the RP2350 append -DPICO_MCU=rp2350 to the CMake command. The resulting `uf2` file will include rp2350 in its name
++ To build for the RP2350 append `-DPICO_MCU=rp2350` to the CMake command. The resulting `uf2` file will include rp2350 in its name
++ The Olimex RP2350PC has an onboard RP2350B processor. To build use `cmake -DPICO_BOARD=olimexrp2350pcboard -DPICO_MCU=rp2350 ..`
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported combinations of mcu and board types
 + To debug using OpenOCD build and install OpenOCD as described in [Getting Started with Raspberry Pi Pico-series](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf)
-+ If debugging using MS Visual Studio Code then install the Raspberry Pi Pico extension. Commands loaded by this extension are used to determine the active MCU type in `launch.json`
+
 
 ## Extra Information
 
@@ -754,7 +758,8 @@ This will be named `picozx81_vga_rp2040.uf2`
 + The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
 + Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
 + To achieve a full speed emulation the Pico is overclocked to 252MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_VOLT` to the cmake command
-+ The Pico only has 1 USB port. The Pimoroni, Olimex and Waveshare PiZero boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
++ The Pico only has 1 USB port. The Pimoroni, Olimex PICO PC and Waveshare PiZero boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
++ The Olimex RP2350PC board has a built in USB A hub, so keyboards and joysticks can be easily connected. It is powered through a separate USB C connector
 + To connect more than one peripheral (e.g. a keyboard and joystick) at the same time, a powered USB OTG hub is required. These 3 hubs have been successfully tested. [1](https://www.amazon.co.uk/dp/B083WML1XB), [2](https://www.amazon.co.uk/dp/B078M3Z84Z), [3](https://www.amazon.co.uk/dp/B07Z4RHJ2D). Plug the hub directly into the USB port on the Pico. The USB-A connector on the PICOZX boards can also be used  
 
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
@@ -876,6 +881,7 @@ Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://ww
 | picomitevga | GP3 | GP4 | GP5 | GP22 | GP26 | Ground |
 | pizero | GP11 | GP12 | GP10 | GP15 | GP13 | Ground |
 | Olimexpc | GP20 | GP21 | GP8 | GP9 | GP5 | Ground |
+| Olimex RP2350PC | GP3 | GP2 | GP4 | GP7 | GP6 | Ground |
 
 The picozx board has a 9-pin joystick port connector built in
 
@@ -890,6 +896,17 @@ For the RP2040-PICO-PC the pins required for the joystick connection are on the 
 | 3 | 6 |
 | 4 | 5 |
 | 6 | 10 |
+| 8 | 2 |
+
+For the RP350PC the pins required for the joystick connection are on the UEXT1 connector. The mapping is:
+
+| Joystick Pin number | UEXT1 Pin Number |
+| --- | --- |
+| 1 | 5 |
+| 2 | 6 |
+| 3 | 7 |
+| 4 | 8 |
+| 6 | 9 |
 | 8 | 2 |
 
 #### Enabling the joystick
@@ -970,6 +987,7 @@ Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n;
 ### Possible Future Developments
 
 + Support for USB gamepads as well as joysticks
++ Support loading from cassette on the Olimex RP2350PC using the LineIn connector
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 
 ### Comparison to MCUME
