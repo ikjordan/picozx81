@@ -898,12 +898,12 @@ For the RP2040-PICO-PC the pins required for the joystick connection are on the 
 | 6 | 10 |
 | 8 | 2 |
 
-For the RP350PC the pins required for the joystick connection are on the UEXT1 connector. The mapping is:
+For the RP350PC the pins required for the joystick connection are on the UEXT2 connector. The mapping is:
 
-| Joystick Pin number | UEXT1 Pin Number |
+| Joystick Pin number | UEXT2 Pin Number |
 | --- | --- |
-| 1 | 5 |
-| 2 | 6 |
+| 1 | 3 |
+| 2 | 4 |
 | 3 | 7 |
 | 4 | 8 |
 | 6 | 9 |

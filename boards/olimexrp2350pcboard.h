@@ -57,16 +57,21 @@
 
 #define NINEPIN_JOYSTICK
 
-#define NINEPIN_UP      3       // UEXT1 Pin 5
-#define NINEPIN_DOWN    2       // UEXT1 Pin 6
-#define NINEPIN_LEFT    4       // UEXT1 Pin 7
-#define NINEPIN_RIGHT   7       // UEXT1 Pin 8
-#define NINEPIN_BUTTON  6       // UEXT1 Pin 9
-                                // UEXT1 Pin 2 is Ground
+#define NINEPIN_UP      38      // UEXT2 Pin 3
+#define NINEPIN_DOWN    39      // UEXT2 Pin 4
+// Skip 5 and 6 as they have external pull ups
+#define NINEPIN_LEFT    44      // UEXT2 Pin 7
+#define NINEPIN_RIGHT   43      // UEXT2 Pin 8
+#define NINEPIN_BUTTON  42      // UEXT2 Pin 9
+                                // UEXT2 Pin 2 is Ground
 
 #define PICO_OLIMEXRP2350PC_BOARD
 
 // default anything we haven't set above
 #include "mcu.h"
+
+// Ensure we enable the extra features on a 2350B
+#undef  PICO_RP2350A
+#define PICO_RP2350A 0
 
 #endif

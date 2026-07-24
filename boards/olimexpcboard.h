@@ -66,7 +66,7 @@
 #define NINEPIN_LEFT    8       // UEXT1 Pin 6
 #define NINEPIN_RIGHT   9       // UEXT1 Pin 5
 #define NINEPIN_BUTTON  5       // UEXT1 Pin 10
-                                // UEXT1 Pin 2 is Ground
+                                // UEXT1 and UEXT2 Pin 2 is Ground
 
 #define PICO_OLIMEXPC_BOARD
 
