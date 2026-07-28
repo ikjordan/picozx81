@@ -1612,6 +1612,9 @@ void emu_WaitFor50HzTimer(void)
   static uint32_t underrun;
   static int32_t  sound_prev = 0;
   static int64_t  int_prev = 0;
+#ifdef PICO_OLIMEXRP2350PC_BOARD  
+  static int32_t  linein_prev = 0;
+#endif
 
   uint64_t start = time_us_64();
 #endif
@@ -1636,9 +1639,17 @@ void emu_WaitFor50HzTimer(void)
     int_prev = -int_count;
     int32_t sound = sound_count + sound_prev;
     sound_prev = -sound_count;
+#ifdef PICO_OLIMEXRP2350PC_BOARD    
+    int32_t lineints = linein_count + linein_prev;
+    linein_prev = -linein_count;
+#endif
 
     printf("ms: %lld U: %lu\n", total_time / 1000, underrun);
+#ifdef PICO_OLIMEXRP2350PC_BOARD    
+    printf("I: %lld S: %ld L: %ld\n", ints, sound, lineints);
+#else
     printf("I: %lld S: %ld\n", ints, sound);
+#endif
     total_time = 0;
     underrun = 0;
 #ifdef FLASH_LED

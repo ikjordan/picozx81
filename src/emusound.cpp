@@ -368,8 +368,7 @@ static void beginAudio(void)
 #endif // AUDIO_PIN_L != AUDIO_PIN_R
 
 #ifdef SOUND_DMA
-    dma_channel_sound = 6; // Lower channels claimed by PicoDVI
-    dma_channel_claim(dma_channel_sound);
+    dma_channel_claim(DMA_CHANNEL_SOUND);
 
     // Cannot use DMA if have two channels on different slices
     if (audio_pin_slice_r != audio_pin_slice_l)
@@ -379,11 +378,11 @@ static void beginAudio(void)
       printf("Cannot use DMA: aborting\n");
       exit(-1);
     }
-    config_DMA(dma_channel_sound, audio_pin_slice_r, soundBuffer16, NUMSAMPLES);
+    config_DMA(DMA_CHANNEL_SOUND, audio_pin_slice_r, soundBuffer16, NUMSAMPLES);
 
     // Set the DMA interrupt handler
     irq_set_exclusive_handler(DMA_IRQ_1, dmaInterruptHandler);
-    dma_set_irq1_channel_mask_enabled(0x01 << dma_channel_sound, true);
+    dma_set_irq1_channel_mask_enabled(0x01 << DMA_CHANNEL_SOUND, true);
     irq_set_enabled(DMA_IRQ_1, true);
 #else // SOUND_DMA
     // Setup PWM interrupt to fire when PWM cycle is complete on right channel
@@ -428,7 +427,7 @@ static void beginAudio(void)
 #ifdef PICO_OLIMEXRP2350PC_BOARD
     emu_linein_start();
 #endif    
-    dma_start_channel_mask(0x1 << dma_channel_sound);
+    dma_start_channel_mask(0x1 << DMA_CHANNEL_SOUND);
 #endif // SOUND_DMA
     // Cannot use mask here, as other libs may have already enabled PWM slices
     pwm_set_enabled(audio_pin_slice_r, true);

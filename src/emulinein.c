@@ -32,6 +32,10 @@ static int linein_buffer_available = 0;             // The buffer that has data 
 static uint rx_offset = 0;
 static float linein_clkdiv = 0.0f;
 
+#ifdef TIME_SPARE
+int32_t linein_count = 0;
+#endif
+
 
 static void die_if_i2c_err(int rc, const char *what) {
     if (rc < 0) {
@@ -53,9 +57,12 @@ static void codec_power_on(void) {
     sleep_ms(100);
 }
 
+#if 0
 static void codec_power_off(void) {
     gpio_put(PICO_CODEC_PWR_DIS_PIN, 1);
 }
+#endif
+
 
 static void i2c_setup(void) {
     i2c_init(i2c_default, 400 * 1000);
@@ -124,6 +131,7 @@ static void __isr __time_critical_func(linein_dma_irq_handler)()
 
         // Swap the buffers and Signal the 50Hz semaphore
         linein_buffer_available = 1 - linein_buffer_available;
+        linein_count++;
     }
 }
 
