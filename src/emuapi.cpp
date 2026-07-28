@@ -13,6 +13,10 @@
 #include "emusound.h"
 #include "emupriv.h"
 
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+#include "emulinein.h"
+#endif
+
 #include "ini.h"
 #include "iopins.h"
 
@@ -1613,6 +1617,11 @@ void emu_WaitFor50HzTimer(void)
 #endif
   // Wait for the fifty Hz timer to fire
   sem_acquire_blocking(&timer_sem);
+
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+  // Update the lineIn API with the tstate
+  emu_linein_set_frame_tstate(tstates);
+#endif
 
 #ifdef TIME_SPARE
   uint64_t taken = (time_us_64() - start);

@@ -9,6 +9,9 @@
 #include "emusound.h"
 #include "emuvideo.h"
 #include "emukeyboard.h"
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+#include "emulinein.h"
+#endif
 #include "zx8x.h"
 #include "display.h"
 #include "menu.h"
@@ -37,6 +40,10 @@ int main(void)
     stdio_init_all();
 
     // start the display generation
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+    emu_linein_initialise();
+#endif
+
     displayBlank(false);
     displayStart();
 

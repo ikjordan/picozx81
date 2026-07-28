@@ -2,8 +2,8 @@ set(PROJECT picozx81)
 cmake_minimum_required(VERSION 3.13)
 
 # Determine the MCU type and configure accordingly
-set(PICO_MCU "rp2040" CACHE STRING "Specify Pico MCU type")
-#set(PICO_MCU "rp2350" CACHE STRING "Specify Pico MCU type")
+#set(PICO_MCU "rp2040" CACHE STRING "Specify Pico MCU type")
+set(PICO_MCU "rp2350" CACHE STRING "Specify Pico MCU type")
 
 if ((${PICO_MCU} STREQUAL "rp2350"))
     set(PICO_PLATFORM "rp2350-arm-s")
@@ -14,8 +14,8 @@ endif()
 # Look for board file in local board directory
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
 if (NOT PICO_BOARD)
-    set(PICO_BOARD "vgaboard")
-    #set(PICO_BOARD "olimexrp2350pcboard")
+    #set(PICO_BOARD "vgaboard")
+    set(PICO_BOARD "olimexrp2350pcboard")
 endif()
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
@@ -102,6 +102,10 @@ set(ZX8X_SOURCES
     src/sound.c
     src/menu.cpp)
 
+if (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
+    list(APPEND ZX8X_SOURCES src/emulinein.c)
+endif()
+
 set(INI_SOURCES
     inih/ini.c)
 
@@ -144,6 +148,10 @@ add_executable(${PROJECT}
 if ((((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")) AND ${HDMI_SOUND}) OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     # HDMI - The check also ensures that HDMI_SOUND is ignored if set for non HDMI boards
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_HDMI)
+    if (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
+        target_link_libraries(${PROJECT} hardware_i2c)
+        pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/linein.pio)
+    endif()
 else()
     if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
         # I2S loaded by DMA sound
@@ -159,6 +167,10 @@ else()
         target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
         target_link_libraries(${PROJECT} hardware_dma)
         target_link_libraries(${PROJECT} hardware_pwm)
+        if (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
+            target_link_libraries(${PROJECT} hardware_i2c)
+            pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/linein.pio)
+        endif()
     else()
         # Pure PWM
         target_link_libraries(${PROJECT} hardware_pwm)

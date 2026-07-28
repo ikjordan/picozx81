@@ -65,6 +65,20 @@
 #define NINEPIN_BUTTON  42      // UEXT2 Pin 9
                                 // UEXT2 Pin 2 is Ground
 
+// I2C
+#define PICO_DEFAULT_I2C         0                               
+#define PICO_DEFAULT_I2C_SDA_PIN 32
+#define PICO_DEFAULT_I2C_SCL_PIN 33
+
+#define PICO_ES8311_ADDR         0x18
+
+// I2S
+#define PICO_CODEC_PWR_DIS_PIN   22   // Olimex: active HIGH disables codec power
+#define PICO_MCLK_PIN            23
+#define PICO_I2S_DOUT_PIN        28   // ES8311 ASDOUT -> RP2350
+#define PICO_I2S_LRCK_PIN        29
+#define PICO_I2S_BCLK_PIN        30
+
 #define PICO_OLIMEXRP2350PC_BOARD
 
 // default anything we haven't set above
@@ -73,5 +87,6 @@
 // Ensure we enable the extra features on a 2350B
 #undef  PICO_RP2350A
 #define PICO_RP2350A 0
+
 
 #endif

@@ -881,7 +881,7 @@ Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://ww
 | picomitevga | GP3 | GP4 | GP5 | GP22 | GP26 | Ground |
 | pizero | GP11 | GP12 | GP10 | GP15 | GP13 | Ground |
 | Olimexpc | GP20 | GP21 | GP8 | GP9 | GP5 | Ground |
-| Olimex RP2350PC | GP3 | GP2 | GP4 | GP7 | GP6 | Ground |
+| Olimex RP2350PC | GP38 | GP39 | GP44 | GP43 | GP42 | Ground |
 
 The picozx board has a 9-pin joystick port connector built in
 

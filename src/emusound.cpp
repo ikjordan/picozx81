@@ -25,6 +25,9 @@
 #include "audio_ring.h"
 #include "display.h"
 #endif
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+#include "emulinein.h"
+#endif
 #include "sound.h"
 #include "emuapi.h"
 #include "emupriv.h"
@@ -47,10 +50,6 @@ static int change_count;                // count down to frame to change sound t
 static bool queued_play;
 
 static void beginAudio(void);
-
-#ifdef SOUND_DMA
-static int dma_channel_sound;
-#endif
 
 #ifdef SOUND_HDMI
 #define FIFTYHZMS   20    // ms between 50 HZ ticks
@@ -167,10 +166,10 @@ static void __isr __time_critical_func(i2s_dma_irq_handler)()
 #ifdef SOUND_DMA
 static void __not_in_flash_func(dmaInterruptHandler)()
 {
-  if (dma_channel_get_irq1_status(dma_channel_sound))
+  if (dma_channel_get_irq1_status(DMA_CHANNEL_SOUND))
   {
-    dma_channel_acknowledge_irq1(dma_channel_sound);
-    dma_channel_set_read_addr(dma_channel_sound, first ? soundBuffer2 : soundBuffer16, true);
+    dma_channel_acknowledge_irq1(DMA_CHANNEL_SOUND);
+    dma_channel_set_read_addr(DMA_CHANNEL_SOUND, first ? soundBuffer2 : soundBuffer16, true);
 
     // Swap the buffers and Signal the 50Hz semaphore
     first = !first;
@@ -369,7 +368,8 @@ static void beginAudio(void)
 #endif // AUDIO_PIN_L != AUDIO_PIN_R
 
 #ifdef SOUND_DMA
-    dma_channel_sound = dma_claim_unused_channel(true);
+    dma_channel_sound = 6; // Lower channels claimed by PicoDVI
+    dma_channel_claim(dma_channel_sound);
 
     // Cannot use DMA if have two channels on different slices
     if (audio_pin_slice_r != audio_pin_slice_l)
@@ -424,6 +424,10 @@ static void beginAudio(void)
 #endif // AUDIO_PIN_L != AUDIO_PIN_R
 
 #ifdef SOUND_DMA
+
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+    emu_linein_start();
+#endif    
     dma_start_channel_mask(0x1 << dma_channel_sound);
 #endif // SOUND_DMA
     // Cannot use mask here, as other libs may have already enabled PWM slices
@@ -437,6 +441,9 @@ static void beginAudio(void)
     getAudioRing(&ring);
     hdmi_buffer = ring->buffer;
     hdmi_buffer_size = ring->size;
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+    emu_linein_start();
+#endif    
     add_repeating_timer_ms(-TICKMS, audio_timer_callback, NULL, &audio_timer);
 #endif // SOUND_HDMI
 
