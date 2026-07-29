@@ -25,7 +25,7 @@
 #include "audio_ring.h"
 #include "display.h"
 #endif
-#ifdef PICO_OLIMEXRP2350PC_BOARD
+#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
 #include "emulinein.h"
 #endif
 #include "sound.h"
@@ -424,7 +424,7 @@ static void beginAudio(void)
 
 #ifdef SOUND_DMA
 
-#ifdef PICO_OLIMEXRP2350PC_BOARD
+#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
     emu_linein_start();
 #endif    
     dma_start_channel_mask(0x1 << DMA_CHANNEL_SOUND);
@@ -440,7 +440,7 @@ static void beginAudio(void)
     getAudioRing(&ring);
     hdmi_buffer = ring->buffer;
     hdmi_buffer_size = ring->size;
-#ifdef PICO_OLIMEXRP2350PC_BOARD
+#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
     emu_linein_start();
 #endif    
     add_repeating_timer_ms(-TICKMS, audio_timer_callback, NULL, &audio_timer);

@@ -14,7 +14,7 @@ extern void emu_linein_initialise(void);
 extern void emu_linein_start(void);
 
 extern void emu_linein_set_frame_tstate(uint32_t tstates);
-extern bool emu_linein_is_high(uint32_t tstates);
+extern int16_t emu_linein_value(uint32_t tstates);
 
 // Helper function for debug
 extern void emu_linein_get_buffer(uint32_t** buffer, uint32_t* buffer_size);

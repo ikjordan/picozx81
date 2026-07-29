@@ -18,10 +18,17 @@ typedef unsigned char  byte;
 #define LOAD_SAVE_RET_8K    0x20A       // LD HL,$403B      21
 #define LOAD_SAVE_RSTRT_8K  0x207
 
+typedef enum
+{
+    ROM_OFF = 0,
+    ROM_SD_CARD,
+    ROM_LINE
+} SLRomType_T;
+
 typedef struct
 {
-    uint16_t start;
-    bool use_rom;
+    uint16_t        start;
+    SLRomType_T     use_rom;
 } RomPatch_T;
 
 typedef struct

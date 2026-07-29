@@ -9,7 +9,7 @@
 #include "emusound.h"
 #include "emuvideo.h"
 #include "emukeyboard.h"
-#ifdef PICO_OLIMEXRP2350PC_BOARD
+#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
 #include "emulinein.h"
 #endif
 #include "zx8x.h"
@@ -39,11 +39,11 @@ int main(void)
     set_sys_clock_khz(clock, true);
     stdio_init_all();
 
-    // start the display generation
-#ifdef PICO_OLIMEXRP2350PC_BOARD
-    emu_linein_initialise();
+#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
+    emu_linein_initialise();        // Need to initialise before display, due to sleeps
 #endif
 
+    // start the display generation
     displayBlank(false);
     displayStart();
 

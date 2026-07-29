@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "emusnap.h"
+#include "common.h"
 
 #define MAX_FILENAME_LEN 64
 #define MAX_DIRECTORY_LEN 128
@@ -72,8 +73,8 @@ extern bool emu_DoubleShiftRequested(void);
 extern bool emu_ExtendFileRequested(void);
 extern bool emu_AllFilesRequested(void);
 extern bool emu_NinePinJoystickRequested(void);
-extern bool emu_loadUsingROMRequested(void);
-extern bool emu_saveUsingROMRequested(void);
+extern SLRomType_T emu_loadUsingROMRequested(void);
+extern SLRomType_T emu_saveUsingROMRequested(void);
 extern int emu_MenuBorderRequested(void);
 extern uint16_t emu_VTol(void);
 extern bool emu_ACBRequested(void);
@@ -108,8 +109,8 @@ extern void emu_SetComputer(ComputerType_T computer);
 extern void emu_SetMemory(int memory);
 extern void emu_SetLowRAM(bool lowRAM);
 extern void emu_SetM1NOT(bool m1NOT);
-extern void emu_SetLoadROM(bool loadROM);
-extern void emu_SetSaveROM(bool saveROM);
+extern void emu_SetLoadROM(SLRomType_T loadROM);
+extern void emu_SetSaveROM(SLRomType_T loadROM);
 extern void emu_SetQSUDG(bool qsudg);
 extern void emu_SetCHR128(bool chr128);
 

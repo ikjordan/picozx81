@@ -378,24 +378,38 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
   {
     if (pc == rom_patches.load.start) // load
     {
-      if (!load_p(rom4k ? hl : de, rom_patches.load.use_rom))
+      if (rom_patches.load.use_rom == ROM_LINE)
       {
-        pc = rom_patches.rstrtAddr;
+        running_rom = true;        
       }
-      else
+      else 
       {
-        running_rom = true;
+        if (!load_p(rom4k ? hl : de, (rom_patches.load.use_rom == ROM_SD_CARD)))
+        {
+          pc = rom_patches.rstrtAddr;
+        }
+        else
+        {
+          running_rom = true;
+        }
       }
     }
     else if (pc == rom_patches.save.start) // save
     {
-      if (!save_p(hl, rom_patches.save.use_rom))
+      if (rom_patches.load.use_rom == ROM_LINE)
       {
-        pc = rom_patches.rstrtAddr;
+        running_rom = true;        
       }
       else
       {
-        running_rom = true;
+        if (!save_p(hl, (rom_patches.save.use_rom != ROM_OFF)))
+        {
+          pc = rom_patches.rstrtAddr;
+        }
+        else
+        {
+          running_rom = true;
+        }
       }
     }
 

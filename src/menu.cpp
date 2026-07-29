@@ -64,14 +64,14 @@ typedef struct
 
 typedef struct
 {
-    ComputerType_T computer;
-    uint16_t    msize;
-    bool        lowRAM;
-    bool        m1not;
-    bool        loadROM;
-    bool        saveROM;
-    bool        qsudg;
-    bool        chr128;
+    ComputerType_T  computer;
+    uint16_t        msize;
+    SLRomType_T     loadROM;
+    bool            lowRAM;
+    bool            m1not;
+    SLRomType_T     saveROM;
+    bool            qsudg;
+    bool            chr128;
 } RestartF7_T;
 
 static bool buildMenu(bool clone);
@@ -546,11 +546,21 @@ bool statusMenu(void)
     }
 
 #ifdef LOAD_AND_SAVE
-    writeString("LOAD ROM:",lhs, ++lcount);
-    writeString(emu_loadUsingROMRequested() ? "ON" : "OFF", rhs, lcount++);
+    writeString("LOAD ROM:", lhs, ++lcount);
+    if (emu_loadUsingROMRequested() == ROM_LINE)
+    {
+        writeString("EAR", rhs, lcount++);
+    } else {
+        writeString(emu_loadUsingROMRequested() == ROM_SD_CARD ? "CARD" : "OFF", rhs, lcount++);
+    }
 
     writeString("SAVE ROM:",lhs, lcount);
-    writeString(emu_saveUsingROMRequested() ? "ON" : "OFF", rhs, lcount++);
+    if (emu_saveUsingROMRequested() == ROM_LINE)
+    {
+        writeString("MIC", rhs, lcount++);
+    } else {
+        writeString(emu_saveUsingROMRequested() == ROM_SD_CARD ? "CARD" : "OFF", rhs, lcount++);
+    }
 #endif
 
     writeString("CHAR$128:", lhs, ++lcount);
@@ -987,11 +997,41 @@ bool restartMenu(void)
 #ifdef LOAD_AND_SAVE
                     else if (field == PLOADROM)
                     {
-                        restart.loadROM = !restart.loadROM;
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+                        switch (restart.loadROM)
+                        {
+                            case ROM_OFF:
+                                restart.loadROM = ROM_SD_CARD;
+                            break;
+                            case ROM_SD_CARD:
+                                restart.loadROM = ROM_LINE;
+                            break;
+                            default:
+                                restart.loadROM = ROM_OFF;
+                            break;
+                        }
+#else                               
+                        restart.loadROM = (restart.loadROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
+#endif
                     }
                     else if (field == PSAVEROM)
                     {
-                        restart.saveROM = !restart.saveROM;
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+                        switch (restart.saveROM)
+                        {
+                            case ROM_OFF:
+                                restart.saveROM = ROM_SD_CARD;
+                            break;
+                            case ROM_SD_CARD:
+                                restart.saveROM = ROM_LINE;
+                            break;
+                            default:
+                                restart.saveROM = ROM_OFF;
+                            break;
+                        }
+#else                               
+                        restart.saveROM = (restart.saveROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
+#endif
                     }
 #endif
                     else if (field == PQSUDG)
@@ -1040,11 +1080,41 @@ bool restartMenu(void)
 #ifdef LOAD_AND_SAVE
                     else if (field == PLOADROM)
                     {
-                        restart.loadROM = !restart.loadROM;
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+                        switch (restart.loadROM)
+                        {
+                            case ROM_OFF:
+                                restart.loadROM = ROM_LINE;
+                            break;
+                            case ROM_SD_CARD:
+                                restart.loadROM = ROM_OFF;
+                            break;
+                            default:
+                                restart.loadROM = ROM_SD_CARD;
+                            break;
+                        }
+#else                               
+                        restart.loadROM = (restart.loadROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
+#endif
                     }
                     else if (field == PSAVEROM)
                     {
-                        restart.saveROM = !restart.saveROM;
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+                        switch (restart.saveROM)
+                        {
+                            case ROM_OFF:
+                                restart.saveROM = ROM_LINE;
+                            break;
+                            case ROM_SD_CARD:
+                                restart.saveROM = ROM_OFF;
+                            break;
+                            default:
+                                restart.saveROM = ROM_SD_CARD;
+                            break;
+                        }
+#else                               
+                        restart.saveROM = (restart.saveROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
+#endif
                     }
 #endif
                     else if (field == PQSUDG)
@@ -1393,10 +1463,10 @@ static void showRestart(PositionF7_T pos, RestartF7_T* restart)
 
 #ifdef LOAD_AND_SAVE
     writeInvertString("LOAD ROM", lhs, lcount + PositionF7_T::PLOADROM, pos == PositionF7_T::PLOADROM);
-    writeString((restart->loadROM) ? "On " : "Off", rhs , lcount + PositionF7_T::PLOADROM);
+    writeString((restart->loadROM == ROM_LINE) ? "Ear  " : (restart->loadROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF7_T::PLOADROM);
 
     writeInvertString("SAVE ROM", lhs, lcount + PositionF7_T::PSAVEROM, pos == PositionF7_T::PSAVEROM);
-    writeString((restart->saveROM) ? "On " : "Off", rhs , lcount + PositionF7_T::PSAVEROM);
+    writeString((restart->saveROM == ROM_LINE) ? "Mic  " : (restart->saveROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF7_T::PSAVEROM);
 #endif
 
     writeInvertString("CHAR$128:", lhs, lcount + PositionF7_T::PCHR128, pos == PositionF7_T::PCHR128);

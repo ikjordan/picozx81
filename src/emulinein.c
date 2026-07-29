@@ -131,7 +131,9 @@ static void __isr __time_critical_func(linein_dma_irq_handler)()
 
         // Swap the buffers and Signal the 50Hz semaphore
         linein_buffer_available = 1 - linein_buffer_available;
+#ifdef TIME_SPARE        
         linein_count++;
+#endif
     }
 }
 
@@ -180,7 +182,6 @@ void emu_linein_initialise(void)
 
     // Calculate the LineIn SM clock frequency
     linein_clkdiv = clock_get_hz(clk_sys)/ (LINEIN_RATE_HZ * PIO_INSTRUCTIONS_PER_SAMPLE);
-    printf("Sys clock %lu LineIn Divide: %f\n", clock_get_hz(clk_sys), linein_clkdiv);
 }
 
 // Start the linein capture
