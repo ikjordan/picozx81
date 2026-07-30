@@ -13,7 +13,7 @@
 #include "emulinein.h"
 #include "linein.pio.h"
 
-#define PIO_INSTRUCTIONS_PER_BIT    3
+#define PIO_INSTRUCTIONS_PER_BIT    2
 #define PIO_INSTRUCTIONS_PER_SAMPLE (32.0f * PIO_INSTRUCTIONS_PER_BIT)
 
 #define LINEIN_RX_SM    0
@@ -22,7 +22,7 @@ static PIO linein_pio = pio2;                       // Hard coded to avoid clash
 static uint32_t linein_frame_tstates = 0;           // tstates at start of frame
 
 // DMA 
-#define LINEIN_BUFF_SIZE        (LINEIN_RATE_HZ / 50)   // 20ms at 48000Hz
+#define LINEIN_BUFF_SIZE        (LINEIN_RATE_HZ / 50)   // 20ms at sample rate
 #define LINEIN_DMA_IRQ_INDEX    2                       // Hard coded to DMA 2 as 0 and 1 used elsewhere
 #define LINEIN_DMA_CHANNEL      DMA_CHANNEL_LINEIN      // Hard coded to avoid channels used elsewhere
 #define LINEIN_DMA_IRQ          (DMA_IRQ_0 + LINEIN_DMA_IRQ_INDEX)
@@ -182,6 +182,7 @@ void emu_linein_initialise(void)
 
     // Calculate the LineIn SM clock frequency
     linein_clkdiv = clock_get_hz(clk_sys)/ (LINEIN_RATE_HZ * PIO_INSTRUCTIONS_PER_SAMPLE);
+    printf("Sys clock %lu LineIn Divide: %f\n", clock_get_hz(clk_sys), linein_clkdiv);
 }
 
 // Start the linein capture

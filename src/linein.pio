@@ -1,25 +1,33 @@
+; I2S Receive
+; Reads 1 bit every 2 cycles (2*16 bit words every 64 cycles)
+; Word select (LRCLK) transitions before LSB is read, as per I2S standard
+; 
+; Clock division:
+; 270MHz sys clock, 32kHz capture -> 270000000 / (32000 * 64) = 131.8359375 -> 131 and 214/256
+; 252MHz sys clock, 32kHz capture -> 252000000 / (32000 * 64) = 123.046875  -> 123 and 12/256
+; 270MHz sys clock, 48kHz capture -> 270000000 / (48000 * 64) = 87.890625   -> 87 and 228/256
+; 252MHz sys clock, 48kHz capture -> 252000000 / (48000 * 64) = 82.03125    -> 8 and 176/256
+
 .program linein_rx
 .side_set 2
 
 .wrap_target
-                    ;          /--- LRCLK
-                    ;          |/-- BCLK
+                    ;          /--- BCLK
+                    ;          |/-- LRCLK
     set x, 14           side 0b01 
 
 left_loop:
     in  pins,1          side 0b11 
-    jmp x-- left_loop   side 0b01 [1]
+    jmp x-- left_loop   side 0b01
 
     in  pins,1          side 0b10 
-    set x,14            side 0b00 [1]
+    set x,14            side 0b00
 
 right_loop:
     in  pins,1          side 0b10 
-    jmp x-- right_loop  side 0b00 [1]
+    jmp x-- right_loop  side 0b00
 
-    in  pins,1          side 0b11
-
-    push block          side 0b01
+    in  pins,1          side 0b11   ; autopush occurs here
 
 .wrap
 
@@ -38,7 +46,7 @@ static inline void linein_rx_program_init(PIO pio, uint sm, uint offset,
     // Only transmitting, so make the FIFO as large as possible to give max time to IRQ handler to restart DMA
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
 
-    sm_config_set_in_shift(&c, false, false, 32);
+    sm_config_set_in_shift(&c, false, true, 32);   // shift left, autopush, push on 32 bits
 
     sm_config_set_clkdiv(&c, clkdiv);
 
