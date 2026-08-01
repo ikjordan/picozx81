@@ -72,28 +72,6 @@ static char tapename[64]={0};
 
 static void set_mem_attribute_and_ptr(void);
 
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
-
-#define BIT_TO_HIGH 400
-#define BIT_TO_LOW  (-BIT_TO_HIGH)
-
-static bool is_bit_7_set(void)
-{
-  static bool high = false;
-
-  int16_t val = emu_linein_value(tstates);
-
-  if (high) {
-    if (val < BIT_TO_LOW) {
-      high = false;
-    }
-  } else if (val > BIT_TO_HIGH) {
-    high = true;
-  }
-  return high;
-}
-#endif
-
 unsigned int __not_in_flash_func(in)(int h, int l)
 {
   if ((h == 0x7f) && (l == 0xef))
@@ -136,7 +114,7 @@ unsigned int __not_in_flash_func(in)(int h, int l)
 #ifdef PICO_OLIMEXRP2350PC_BOARD
       if (emu_loadUsingROMRequested() == ROM_LINE)
       {
-        data |= is_bit_7_set() ? 0x0 : 0x80;  // Reversed as use xor below
+        data |= emu_is_signal_high(tstates) ? 0x0 : 0x80;  // Reversed as use xor below
       } 
       else
 #endif
