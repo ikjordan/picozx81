@@ -6,28 +6,34 @@
 ; 270MHz sys clock, 32kHz capture -> 270000000 / (32000 * 64) = 131.8359375 -> 131 and 214/256
 ; 252MHz sys clock, 32kHz capture -> 252000000 / (32000 * 64) = 123.046875  -> 123 and 12/256
 ; 270MHz sys clock, 48kHz capture -> 270000000 / (48000 * 64) = 87.890625   -> 87 and 228/256
-; 252MHz sys clock, 48kHz capture -> 252000000 / (48000 * 64) = 82.03125    -> 8 and 176/256
+; 252MHz sys clock, 48kHz capture -> 252000000 / (48000 * 64) = 82.03125    -> 82 and 176/256
 
 .program linein_rx
 .side_set 2
 
 .wrap_target
-                    ;          /--- BCLK
-                    ;          |/-- LRCLK
-    set x, 14           side 0b01 
-
-left_loop:
-    in  pins,1          side 0b11 
-    jmp x-- left_loop   side 0b01
-
-    in  pins,1          side 0b10 
-    set x,14            side 0b00
+ ;                             /--- BCLK
+ ;                             |/-- LRCLK
+    set x, 13           side 0b01 
 
 right_loop:
-    in  pins,1          side 0b10 
-    jmp x-- right_loop  side 0b00
+    in  pins,1          side 0b11 
+    jmp x-- right_loop  side 0b01
 
-    in  pins,1          side 0b11   ; autopush occurs here
+    in  pins,1          side 0b11 
+    nop                 side 0b00   ; LRCLK transitions on BCLK falling edge
+
+    in  pins,1          side 0b10   ; Read right LSB
+
+    set x,13            side 0b00
+left_loop:
+    in  pins,1          side 0b10 
+    jmp x-- left_loop   side 0b00
+
+    in  pins,1          side 0b10 
+    nop                 side 0b01   ; LRCLK transitions on BCLK falling edge
+
+    in  pins,1          side 0b11   ; Read left LSB and autopush
 
 .wrap
 
