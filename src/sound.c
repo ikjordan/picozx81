@@ -96,9 +96,9 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
  * given the number of port writes theoretically possible in a
  * 50th I think this should be plenty.
  */
-#define AY_CHANGE_MAX     160
-#define MIC_CHANGE_MAX    (AY_CHANGE_MAX * 4)
-#define FRAME_SIZE        (SAMPLE_FREQ / 50)  // Number of samples in 20 ms
+#define AY_CHANGE_MAX         160
+#define CASSETTE_CHANGE_MAX   (AY_CHANGE_MAX * 4)
+#define FRAME_SIZE            (SAMPLE_FREQ / 50) // Number of samples in 20 ms
 
 /* Vsysnc is either on or off
  */
@@ -139,7 +139,7 @@ typedef struct
 typedef union
 {
   int16_t vsync[FRAME_SIZE];
-  unsigned short  cassette_offset[MIC_CHANGE_MAX];
+  unsigned short  cassette_offset[CASSETTE_CHANGE_MAX];
   ay_change_tag   ay[AY_CHANGE_MAX];
 } change_tag;
 
@@ -386,7 +386,7 @@ void __not_in_flash_func(sound_beeper)(int on)
       return;
     }
 
-    if (cassette_change_count < MIC_CHANGE_MAX)
+    if (cassette_change_count < CASSETTE_CHANGE_MAX)
     {
       cassette_current_state = !cassette_current_state;
       int pos = (tstates*FRAME_SIZE)/tsmax;

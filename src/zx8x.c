@@ -102,7 +102,7 @@ unsigned int __not_in_flash_func(in)(int h, int l)
     int data=0x80;
     LastInstruction=LASTINSTINFE;
 
-    if (((sound_type == SOUND_TYPE_VSYNC) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync)))
+    if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
     {
         sound_beeper(0);
     }

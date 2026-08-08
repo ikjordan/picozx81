@@ -820,7 +820,7 @@ bool modifyMenu(void)
 #ifndef PICO_NO_SOUND
                     else if (field == PSOUNDTYPE)
                     {
-                        modify.sound = (modify.sound + 1) % 5;
+                        modify.sound = (modify.sound + 1) % 6;
                     }
                     else if (field == PSTEREOACB)
                     {
@@ -861,7 +861,7 @@ bool modifyMenu(void)
 #ifndef PICO_NO_SOUND
                     else if (field == PSOUNDTYPE)
                     {
-                        modify.sound = (modify.sound + 4) % 5;
+                        modify.sound = (modify.sound + 5) % 6;
                     }
                     else if (field == PSTEREOACB)
                     {
@@ -1405,7 +1405,7 @@ static void showModify(PositionF6_T pos, ModifyF6_T* modify)
         break;
 
         case SOUND_TYPE_CASSETTE:
-            strcpy(c,"MIC       ");
+            strcpy(c,"CASSETTE  ");
         break;
 
         default:
