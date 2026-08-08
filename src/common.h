@@ -48,6 +48,7 @@ extern RomPatches_T rom_patches;
 #define SOUND_TYPE_ZONX         2
 #define SOUND_TYPE_CHROMA       3
 #define SOUND_TYPE_VSYNC        4
+#define SOUND_TYPE_CASSETTE     5
 
 #define MEMORYRAM_SIZE 0x10000
 
@@ -56,6 +57,7 @@ extern unsigned char *memptr[64];
 extern int memattr[64];
 extern int sound_type;
 extern unsigned long tstates;
+extern unsigned long tstates_frame;
 extern const unsigned long tsmax;
 extern int ramsize;
 extern int autoload;

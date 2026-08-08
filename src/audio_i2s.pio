@@ -12,7 +12,7 @@
 ; | 31   :   16 | 15   :    0 |
 ; | sample ws=0 | sample ws=1 |
 ;
-; Data is output at 1 bit per 3 clock cycles. Use clock divider to adjust frequency.
+; Data is output at 1 bit per 6 clock cycles. Use clock divider to adjust frequency.
 ; Fractional divider will probably be needed to get correct bit clock period,
 ; but for common syslck freqs this should still give a constant word select period.
 ;
@@ -39,15 +39,15 @@ bitloop0:
     jmp y-- bitloop0  side 0b01 [2]
     out pins, 1       side 0b10 [2]
 public entry_point:
-    pull noblock      side 0b11 
-    mov x, osr        side 0b11 
+    pull noblock      side 0b11
+    mov x, osr        side 0b11
     set y, 14         side 0b11
 
 % c-sdk {
 
 static inline void audio_i2s_program_init(PIO pio, uint sm, uint offset, uint data_pin, uint clock_pin_base) {
     pio_sm_config sm_config = audio_i2s_program_get_default_config(offset);
-    
+
     sm_config_set_out_pins(&sm_config, data_pin, 1);
     sm_config_set_sideset_pins(&sm_config, clock_pin_base);
     sm_config_set_out_shift(&sm_config, false, false, 32);

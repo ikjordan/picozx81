@@ -66,7 +66,7 @@
                                 // UEXT2 Pin 2 is Ground
 
 // I2C
-#define PICO_DEFAULT_I2C         0                               
+#define PICO_DEFAULT_I2C         0
 #define PICO_DEFAULT_I2C_SDA_PIN 32
 #define PICO_DEFAULT_I2C_SCL_PIN 33
 

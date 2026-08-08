@@ -115,7 +115,7 @@ unsigned int __not_in_flash_func(in)(int h, int l)
       if (emu_loadUsingROMRequested() == ROM_LINE)
       {
         data |= emu_is_signal_high(tstates) ? 0x0 : 0x80;  // Reversed as use xor below
-      } 
+      }
       else
 #endif
       {
@@ -156,8 +156,10 @@ unsigned int __not_in_flash_func(in)(int h, int l)
 
 void __not_in_flash_func(out)(int h, int l, int a)
 {
-  if ((sound_type == SOUND_TYPE_VSYNC) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
-    sound_beeper(1);
+  if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
+  {
+      sound_beeper(1);
+  }
 
 #ifdef SUPPORT_CHROMA
   if ((h == 0x7f) && (l == 0xef))

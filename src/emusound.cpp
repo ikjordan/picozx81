@@ -426,7 +426,7 @@ static void beginAudio(void)
 
 #if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
     emu_linein_start();
-#endif    
+#endif
     dma_start_channel_mask(0x1 << DMA_CHANNEL_SOUND);
 #endif // SOUND_DMA
     // Cannot use mask here, as other libs may have already enabled PWM slices
@@ -442,7 +442,7 @@ static void beginAudio(void)
     hdmi_buffer_size = ring->size;
 #if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
     emu_linein_start();
-#endif    
+#endif
     add_repeating_timer_ms(-TICKMS, audio_timer_callback, NULL, &audio_timer);
 #endif // SOUND_HDMI
 

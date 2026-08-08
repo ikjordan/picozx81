@@ -50,6 +50,7 @@ unsigned char partable[256] = {     // Constant, but want to be in RAM
    };
 
 unsigned long tstates = 0;
+unsigned long tstates_frame = 0;
 const unsigned long tsmax = 65000;
 static unsigned long ts = 0;
 
@@ -238,6 +239,7 @@ void resetZ80(void)
   intsample = 0;
   m1cycles = 0;
   tstates = 0;
+  tstates_frame = 0;
   ts = 0;
   vsx = vsy = 0;
   RasterX = 0;
@@ -380,9 +382,9 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
     {
       if (rom_patches.load.use_rom == ROM_LINE)
       {
-        running_rom = true;        
+        running_rom = true;
       }
-      else 
+      else
       {
         if (!load_p(rom4k ? hl : de, (rom_patches.load.use_rom == ROM_SD_CARD)))
         {
@@ -398,7 +400,7 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
     {
       if (rom_patches.load.use_rom == ROM_LINE)
       {
-        running_rom = true;        
+        running_rom = true;
       }
       else
       {
@@ -415,11 +417,11 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
 
     if (running_rom)
     {
-      // Run the ROM, generating VSYNC sound
+      // Run the ROM, generating MIC / EAR sound
       sound_cache = sound_type;
-      if (sound_type != SOUND_TYPE_VSYNC)
+      if (sound_type != SOUND_TYPE_CASSETTE)
       {
-        sound_type = SOUND_TYPE_VSYNC;
+        sound_type = SOUND_TYPE_CASSETTE;
         emu_sndInit(true, false);
       }
     }
@@ -746,6 +748,7 @@ void __not_in_flash_func(execZX81)(void)
   while (tstates < tsmax);
 
   tstates -= tsmax;
+  tstates_frame++;
 }
 
 void __not_in_flash_func(execZX80)(void)
@@ -940,7 +943,9 @@ void __not_in_flash_func(execZX80)(void)
     {
       videoFlipFlop3Q ? vsync_lower() : vsync_raise();
       // ZX80 HSYNC sound - excluded if Chroma
-      if (sound_type == SOUND_TYPE_VSYNC) sound_beeper(videoFlipFlop3Q);
+      if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE)) {
+        sound_beeper(videoFlipFlop3Q);
+      }
     }
 
     if (videoFlipFlop3Q && (sync_len > 0))

@@ -533,6 +533,10 @@ bool statusMenu(void)
             strcpy(c,"CHROMA");
         break;
 
+        case SOUND_TYPE_CASSETTE:
+            strcpy(c,"CASSETTE");
+        break;
+
         default:
             strcpy(c,"NONE");
         break;
@@ -1010,7 +1014,7 @@ bool restartMenu(void)
                                 restart.loadROM = ROM_OFF;
                             break;
                         }
-#else                               
+#else
                         restart.loadROM = (restart.loadROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
 #endif
                     }
@@ -1029,7 +1033,7 @@ bool restartMenu(void)
                                 restart.saveROM = ROM_OFF;
                             break;
                         }
-#else                               
+#else
                         restart.saveROM = (restart.saveROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
 #endif
                     }
@@ -1093,7 +1097,7 @@ bool restartMenu(void)
                                 restart.loadROM = ROM_SD_CARD;
                             break;
                         }
-#else                               
+#else
                         restart.loadROM = (restart.loadROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
 #endif
                     }
@@ -1112,7 +1116,7 @@ bool restartMenu(void)
                                 restart.saveROM = ROM_SD_CARD;
                             break;
                         }
-#else                               
+#else
                         restart.saveROM = (restart.saveROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
 #endif
                     }
@@ -1398,6 +1402,10 @@ static void showModify(PositionF6_T pos, ModifyF6_T* modify)
 
         case SOUND_TYPE_CHROMA:
             strcpy(c,"CHROMA    ");
+        break;
+
+        case SOUND_TYPE_CASSETTE:
+            strcpy(c,"MIC       ");
         break;
 
         default:

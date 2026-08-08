@@ -895,6 +895,10 @@ static int handler(void *user, const char *section, const char *name,
       {
         c->conf->sound = SOUND_TYPE_CHROMA;
       }
+      else if ((strcasecmp(value, "MIC") == 0) || (strcasecmp(value, "CASSETTE") == 0))
+      {
+        c->conf->sound = SOUND_TYPE_CASSETTE;
+      }
       else
       {
         c->conf->sound = SOUND_TYPE_ZONX;
@@ -1104,7 +1108,7 @@ static int handler(void *user, const char *section, const char *name,
         }
 #else
         c->conf->loadUsingROM = ROM_OFF;
-#endif        
+#endif
       }
       else if ((!strcasecmp(name, "SaveUsingROM")))
       {
@@ -1126,7 +1130,7 @@ static int handler(void *user, const char *section, const char *name,
         }
 #else
         c->conf->saveUsingROM = ROM_OFF;
-#endif        
+#endif
       }
 #ifdef PICO_LCD_CS_PIN
       else if (!strcasecmp(name, "LCDInvertColour"))
@@ -1645,7 +1649,7 @@ void emu_WaitFor50HzTimer(void)
   static uint32_t underrun;
   static int32_t  sound_prev = 0;
   static int64_t  int_prev = 0;
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE)) 
+#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
   static int32_t  linein_prev = 0;
 #endif
 
@@ -1672,13 +1676,13 @@ void emu_WaitFor50HzTimer(void)
     int_prev = -int_count;
     int32_t sound = sound_count + sound_prev;
     sound_prev = -sound_count;
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))   
+#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
     int32_t lineints = linein_count + linein_prev;
     linein_prev = -linein_count;
 #endif
 
     printf("ms: %lld U: %lu\n", total_time / 1000, underrun);
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))  
+#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
     printf("I: %lld S: %ld L: %ld\n", ints, sound, lineints);
 #else
     printf("I: %lld S: %ld\n", ints, sound);

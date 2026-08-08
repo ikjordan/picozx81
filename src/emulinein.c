@@ -23,7 +23,7 @@
 static PIO linein_pio = pio2;                       // Hard coded to avoid clashes with existing SMs on 0 and 1
 static int32_t linein_frame_tstates = 0;            // tstates at start of frame with half bin offset
 
-// DMA 
+// DMA
 #define LINEIN_BUFF_SIZE        (LINEIN_RATE_HZ / 50)   // 20ms at sample rate
 #define LINEIN_DMA_IRQ_INDEX    2                       // Hard coded to DMA 2 as 0 and 1 used elsewhere
 #define LINEIN_DMA_CHANNEL      DMA_CHANNEL_LINEIN      // Hard coded to avoid channels used elsewhere
@@ -84,7 +84,7 @@ static void es8311_init_capture(void) {
 
     // Output format
     es8311_write(0x09, 0x0c);       // left channel, 16-bit serial audio data word length, I2S serial audio data format
-    
+
     // Power analog/bias/vref/ADC path
     es8311_write(0x0d, 0x01);       // VMID startup normal
     sleep_ms(50);
@@ -92,7 +92,7 @@ static void es8311_init_capture(void) {
 
     es8311_write(0x0e, 0x00);       // power up PGA + ADC modulator
     sleep_ms(20);
-    
+
     // Input: MIC1P-MIC1N differential, DMIC disabled, PGA gain = 0 dB
     es8311_write(0x14, 0x10);
 
@@ -123,7 +123,7 @@ static void __isr __time_critical_func(linein_dma_irq_handler)()
 
         // Swap the buffers and Signal the 50Hz semaphore
         linein_buffer_available = 1 - linein_buffer_available;
-#ifdef TIME_SPARE        
+#ifdef TIME_SPARE
         linein_count++;
 #endif
     }
@@ -145,7 +145,7 @@ static int16_t linein_value(uint32_t tstates)
 // External API
 
 // Initialise the linein capture
-void emu_linein_initialise(void) 
+void emu_linein_initialise(void)
 {
     codec_power_on();
     i2c_setup();
@@ -167,7 +167,7 @@ void emu_linein_initialise(void)
     channel_config_set_dreq(&dma_config, pio_get_dreq(linein_pio, LINEIN_RX_SM, false));
 
     channel_config_set_transfer_data_size(&dma_config, DMA_SIZE_32);
- 
+
     dma_channel_configure(LINEIN_DMA_CHANNEL,
                           &dma_config,
                           NULL,                             // destination, set later
