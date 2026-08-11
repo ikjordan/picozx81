@@ -418,12 +418,8 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
     if (running_rom)
     {
       // Run the ROM, generating MIC / EAR sound
-      sound_cache = sound_type;
-      if (sound_type != SOUND_TYPE_CASSETTE)
-      {
-        sound_type = SOUND_TYPE_CASSETTE;
-        emu_sndInit(true, false);
-      }
+      // Need to handle corner case of a program that loops through save
+      sound_cache = emu_sndImmediateChange(sound_type, SOUND_TYPE_CASSETTE);
     }
   }
   else
@@ -433,7 +429,7 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
       // Restore the sound mode
       if (sound_cache != sound_type)
       {
-        emu_sndQueueChange(sound_cache != SOUND_TYPE_NONE, sound_cache);
+        emu_sndQueueChange(sound_cache);
       }
       running_rom = false;
     }

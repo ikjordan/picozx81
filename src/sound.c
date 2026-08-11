@@ -87,8 +87,14 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 #define VSYNC_SHIFT_INCREASE    1
 #endif
 #else
+#if (defined (SOUND_HDMI))
+// Not realistic to load from HDMI, so can make quieter
+#define CASSETTE_BEEPER_ON      0x500
+#define CASSETTE_BEEPER_OFF     -0x500
+#else
 #define CASSETTE_BEEPER_ON      0x2000
 #define CASSETTE_BEEPER_OFF     -0x2000
+#endif
 #define VSYNC_SHIFT_INCREASE    5
 #endif
 
@@ -218,12 +224,11 @@ static void sound_ay_overlay(int16_t* buff);
 /*
  * Public interface
  */
-bool sound_create(int framesize)
+void sound_create(void)
 {
   sound_ay_setvol();
   sound_ay_reset();
   sound_beeper_reset();
-  return (FRAME_SIZE == framesize);
 }
 
 void sound_init(bool acb, bool reset)
