@@ -237,7 +237,7 @@ The following can be configured:
 | FrameSync | Synchronises screen updates to the start of the display frame. Option to synchronise frame pairs for programs that display interlaced images| Off |`On` reduces "tearing" in programs with horizontal scrolling, at the expense of a possible small lag. `Interlaced` reduces flickering in programs that display interlaced images|
 | CHR128 | Enables emulation of a 128 character user defined graphics board (CHR$128) in Low memory. | Off|When enabled LowRAM is forced to On, WRX and QSUDG are forced to off|
 | QSUDG | Enables emulation of the QS user defined graphics board| Off |Memory automatically limited to 16 when selected |
-| Sound | Selects sound card type (if any) | None | Valid options are `QUICKSILVA`, `ZONX`, `TV`, `CHROMA` and `NONE` or `OFF`|
+| Sound | Selects sound card type (if any) | None | Valid options are `QUICKSILVA`, `ZONX`, `TV`, `CASSETTE`, `CHROMA` and `NONE` or `OFF`|
 | ACB | Enables ACB stereo if sound card enabled | Off |  |
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 25 | See notes below|
@@ -251,7 +251,7 @@ The following can be configured:
 4. A higher tolerance value set for `VTOL` results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
 5. The "Big Bang" ROM can double the speed of BASIC programs
 6. The Waveshare LCD 2.8 board has no sound capabilities
-7. The `TV` sound option emulates the sound generated through the TV speaker by VSYNC pulses. The `CHROMA` sound option emulates the sound generated through the TV speaker by the Chroma interface when VSYNC pulses are not frame synchronised
+7. The `TV` sound option emulates the sound generated through the TV speaker by VSYNC pulses. The `CHROMA` sound option emulates the sound generated through the TV speaker by the Chroma interface when VSYNC pulses are not frame synchronised. `CASSETTE` is similar to `TV` but does not emulate attenuation of VSYNC signals, allowing them to be saved to cassette, or to a PC in WAV format, and then later loaded back into a ZX81
 8. When `FiveSevenSix` is specified in the `[default]` section of the `config.ini` file in the root directory of the SD Card it sets the display resolution and refresh rate of picozx81 at start-up. If set for a specific program, then the resolution and refresh rate is set when the program is loaded. If necessary,picozx81 will reset and restart with the requested display before the program is loaded
 
 #### Joystick
