@@ -13,6 +13,10 @@
 #include "emusound.h"
 #include "emupriv.h"
 
+#ifdef INPUT_EAR
+#include "emulinein.h"
+#endif
+
 #include "ini.h"
 #include "iopins.h"
 
@@ -298,8 +302,8 @@ typedef struct
   bool lcdBGR;
   bool vga;
   bool ninePinJoystick;
-  bool loadUsingROM;
-  bool saveUsingROM;
+  uint8_t loadUsingROM;
+  uint8_t saveUsingROM;
 } Configuration_T;
 
 typedef struct
@@ -453,14 +457,14 @@ bool emu_NinePinJoystickRequested(void)
 #endif
 }
 
-bool emu_loadUsingROMRequested(void)
+SLRomType_T emu_loadUsingROMRequested(void)
 {
-  return specific.loadUsingROM;
+  return (SLRomType_T)specific.loadUsingROM;
 }
 
-bool emu_saveUsingROMRequested(void)
+SLRomType_T emu_saveUsingROMRequested(void)
 {
-  return specific.saveUsingROM;
+  return (SLRomType_T)specific.saveUsingROM;
 }
 
 int emu_MenuBorderRequested(void)
@@ -757,16 +761,16 @@ void emu_SetM1NOT(bool m1NOT)
   specific.M1NOT = m1NOT;
 }
 
-void emu_SetLoadROM(bool loadROM)
+void emu_SetLoadROM(SLRomType_T loadROM)
 {
-  general.loadUsingROM = loadROM;
-  specific.loadUsingROM = loadROM;
+  general.loadUsingROM = (uint8_t)loadROM;
+  specific.loadUsingROM = (uint8_t)loadROM;
 }
 
-void emu_SetSaveROM(bool saveROM)
+void emu_SetSaveROM(SLRomType_T saveROM)
 {
-  general.saveUsingROM = saveROM;
-  specific.saveUsingROM = saveROM;
+  general.saveUsingROM = (uint8_t)saveROM;
+  specific.saveUsingROM = (uint8_t)saveROM;
 }
 
 void emu_SetQSUDG(bool qsudg)
@@ -890,6 +894,10 @@ static int handler(void *user, const char *section, const char *name,
       else if (strcasecmp(value, "CHROMA") == 0)
       {
         c->conf->sound = SOUND_TYPE_CHROMA;
+      }
+      else if ((strcasecmp(value, "MIC") == 0) || (strcasecmp(value, "CASSETTE") == 0))
+      {
+        c->conf->sound = SOUND_TYPE_CASSETTE;
       }
       else
       {
@@ -1078,18 +1086,51 @@ static int handler(void *user, const char *section, const char *name,
       }
       else if ((!strcasecmp(name, "NinePinJoystick")))
       {
-        // Defaults to off
         c->conf->ninePinJoystick = isEnabled(value);
       }
       else if ((!strcasecmp(name, "LoadUsingROM")))
       {
-        // Defaults to off
-        c->conf->loadUsingROM = isEnabled(value);
+#ifdef LOAD_AND_SAVE
+        if (isEnabled(value))
+        {
+#ifdef INPUT_EAR
+          if (!strcasecmp(value, "EAR"))
+          {
+            c->conf->loadUsingROM = ROM_EAR_MIC;
+          } else {
+            c->conf->loadUsingROM = ROM_SD_CARD;
+          }
+#else
+          c->conf->loadUsingROM = ROM_SD_CARD;
+#endif
+        } else {
+          c->conf->loadUsingROM = ROM_OFF;
+        }
+#else
+        c->conf->loadUsingROM = ROM_OFF;
+#endif
       }
       else if ((!strcasecmp(name, "SaveUsingROM")))
       {
-        // Defaults to off
-        c->conf->saveUsingROM = isEnabled(value);
+#ifdef LOAD_AND_SAVE
+        if (isEnabled(value))
+        {
+#ifdef PICO_OLIMEXRP2350PC_BOARD
+          if (!strcasecmp(value, "MIC"))
+          {
+            c->conf->saveUsingROM = ROM_EAR_MIC;
+          } else {
+            c->conf->saveUsingROM = ROM_SD_CARD;
+          }
+#else
+          c->conf->saveUsingROM = ROM_SD_CARD;
+#endif
+        } else {
+          c->conf->saveUsingROM = ROM_OFF;
+        }
+#else
+        c->conf->saveUsingROM = ROM_OFF;
+#endif
       }
 #ifdef PICO_LCD_CS_PIN
       else if (!strcasecmp(name, "LCDInvertColour"))
@@ -1193,8 +1234,8 @@ void emu_ReadDefaultValues(void)
     general.lcdBGR = false;
     general.vga = false;
     general.ninePinJoystick = false;
-    general.loadUsingROM = false;
-    general.saveUsingROM = false;
+    general.loadUsingROM = ROM_OFF;
+    general.saveUsingROM = ROM_OFF;
 
 #ifdef PICO_LCDWS28_BOARD
     general.lcdInvertColour = true;
@@ -1608,11 +1649,19 @@ void emu_WaitFor50HzTimer(void)
   static uint32_t underrun;
   static int32_t  sound_prev = 0;
   static int64_t  int_prev = 0;
+#ifdef INPUT_EAR
+  static int32_t  linein_prev = 0;
+#endif
 
   uint64_t start = time_us_64();
 #endif
   // Wait for the fifty Hz timer to fire
   sem_acquire_blocking(&timer_sem);
+
+#ifdef INPUT_EAR
+  // Update the lineIn API with the tstate
+  emu_linein_set_frame_tstate(tstates);
+#endif
 
 #ifdef TIME_SPARE
   uint64_t taken = (time_us_64() - start);
@@ -1627,9 +1676,17 @@ void emu_WaitFor50HzTimer(void)
     int_prev = -int_count;
     int32_t sound = sound_count + sound_prev;
     sound_prev = -sound_count;
+#ifdef INPUT_EAR
+    int32_t lineints = linein_count + linein_prev;
+    linein_prev = -linein_count;
+#endif
 
     printf("ms: %lld U: %lu\n", total_time / 1000, underrun);
+#ifdef INPUT_EAR
+    printf("I: %lld S: %ld L: %ld\n", ints, sound, lineints);
+#else
     printf("I: %lld S: %ld\n", ints, sound);
+#endif
     total_time = 0;
     underrun = 0;
 #ifdef FLASH_LED

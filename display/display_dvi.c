@@ -53,10 +53,11 @@ static uint16_t keyboard_to_fill = 0;
 static uint16_t stride = 0;
 
 #ifdef SOUND_HDMI
+#define AUDIO_BUFFER_SIZE   (0x1<<8)    // Must be power of 2
+audio_sample_t   audio_buffer[AUDIO_BUFFER_SIZE];
+
 static const int hdmi_n[3] = {4096, 6272, 6144};
-static uint16_t  rate  = 32000;     // Default audio rate
-#define AUDIO_BUFFER_SIZE   (0x1<<8) // Must be power of 2
-audio_sample_t      audio_buffer[AUDIO_BUFFER_SIZE];
+static uint16_t  audio_rate = 32000;    // Default audio rate
 #endif
 
 //
@@ -77,7 +78,7 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
 #else
     if (info)
     {
-        rate = info->info.hdmi.audioRate;
+        audio_rate = info->info.hdmi.audioRate;
     }
 #endif
 
@@ -118,15 +119,15 @@ void displayStart(void)
 
 #ifdef SOUND_HDMI
     // HDMI Audio related
-    int offset = rate == 48000 ? 2 : (rate == 44100) ? 1 : 0;
-    int cts = dvi0.timing->bit_clk_khz*hdmi_n[offset]/(rate/100)/128;
+    int offset = audio_rate == 48000 ? 2 : (audio_rate == 44100) ? 1 : 0;
+    int cts = dvi0.timing->bit_clk_khz*hdmi_n[offset]/(audio_rate/100)/128;
     dvi_get_blank_settings(&dvi0)->top    = 0;
     dvi_get_blank_settings(&dvi0)->bottom = 0;
     dvi_audio_sample_buffer_set(&dvi0, audio_buffer, AUDIO_BUFFER_SIZE);
-    dvi_set_audio_freq(&dvi0, rate, cts, hdmi_n[offset]);
+    dvi_set_audio_freq(&dvi0, audio_rate, cts, hdmi_n[offset]);
     increase_write_pointer(&dvi0.audio_ring,AUDIO_BUFFER_SIZE -1);
 
-    //printf("HP: %u BP: %u Rate: %u CTS: %i\n", video_mode->h_active_pixels, video_mode->v_back_porch, rate, cts);
+    //printf("HP: %u BP: %u Rate: %u CTS: %i\n", video_mode->h_active_pixels, video_mode->v_back_porch, audio_rate, cts);
 #endif
     displayStartCommon();
 }

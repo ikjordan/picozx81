@@ -9,12 +9,17 @@
 #include "emusound.h"
 #include "emuvideo.h"
 #include "emukeyboard.h"
+#ifdef INPUT_EAR
+#include "emulinein.h"
+#endif
 #include "common.h"
 #include "hid_app.h"
 #include "hid_usb.h"
 #include "menu.h"
 #include "display.h"
+#ifdef LOAD_AND_SAVE
 #include "loadp.h"
+#endif
 
 char *strzx80_to_ascii(int memaddr);
 bool parseNumber(const char* input,
@@ -99,7 +104,7 @@ unsigned int __not_in_flash_func(in)(int h, int l)
     int data=0x80;
     LastInstruction=LASTINSTINFE;
 
-    if (((sound_type == SOUND_TYPE_VSYNC) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync)))
+    if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
     {
         sound_beeper(0);
     }
@@ -108,7 +113,16 @@ unsigned int __not_in_flash_func(in)(int h, int l)
     if (running_rom)
     {
       data = useNTSC ? 0x40 : 0;
-      data |= loadPGetBit() ? 0x0 : 0x80; // Reversed as use xor below
+#ifdef INPUT_EAR
+      if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
+      {
+        data |= emu_is_signal_high(tstates) ? 0x0 : 0x80;  // Reversed as use xor below
+      }
+      else
+#endif
+      {
+        data |= loadPGetBit() ? 0x0 : 0x80;   // Reversed as use xor below
+      }
     }
 #endif
 
@@ -144,8 +158,10 @@ unsigned int __not_in_flash_func(in)(int h, int l)
 
 void __not_in_flash_func(out)(int h, int l, int a)
 {
-  if ((sound_type == SOUND_TYPE_VSYNC) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
-    sound_beeper(1);
+  if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
+  {
+      sound_beeper(1);
+  }
 
 #ifdef SUPPORT_CHROMA
   if ((h == 0x7f) && (l == 0xef))
@@ -457,17 +473,21 @@ bool load_p(int name_addr, bool defer_rom)
     // Finally load the file
     size  = (size < max_read) ? size : max_read;
     printf("start=%i size=%i\n", start, size);
+#ifdef LOAD_AND_SAVE
     if (!defer)
+#endif
     {
       emu_FileRead(mem + start, size, offset);
       emu_FileClose();
     }
+#ifdef LOAD_AND_SAVE
     else
     {
       // Close the open file and defer loading to ROM routine
       emu_FileClose();
       loadPInitialise(fname, name_addr, rom4k);
     }
+#endif
   }
   else
   {

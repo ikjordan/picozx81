@@ -27,6 +27,7 @@
 + Emulation runs at accurate speed of a 3.25MHz ZX81
 + Supports saving of snapshots. No need to restart from the beginning after you die in a game!
 + Optionally emulates real-time ZX81/80 program load and save with realistic sound and graphics
++ Supports load and save from a cassette recorder on the Olimex RP2350PC board
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
 + Load `.p`, `.81`, `.o`, `.s` (picozx81 snapshot), `.80` and `.p81` files from micro SD Card. Save `.p`, `.o` and `.s` files
@@ -45,6 +46,7 @@
 + [Pimoroni Pico DVI demo board (HDMI)](https://shop.pimoroni.com/products/pimoroni-pico-dv-demo-base)
 + [PicoMiteVGA board](https://geoffg.net/picomitevga.html)
 + [Olimex RP2040-PICO-PC (HDMI)](https://www.olimex.com/Products/MicroPython/RP2040-PICO-PC/open-source-hardware)
++ [Olimex RP2350PC (HDMI)](https://www.olimex.com/Products/RaspberryPi/PICO/RP2350pc/)
 + [Waveshare RP2040-PiZero (HDMI)](https://www.waveshare.com/wiki/RP2040-PiZero)
 + [Waveshare Pico-ResTouch-LCD-2.8](https://www.waveshare.com/wiki/Pico-ResTouch-LCD-2.8)
 + [Cytron Maker Pi Pico](https://www.cytron.io/p-maker-pi-pico) with 320 by 240 LCD and RGB222 VGA displays
@@ -167,8 +169,10 @@ Click on the uf2 name corresponding to your board in the table below to download
 | Pimoroni DVI | [`picozx81_dvi_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_rp2350.uf2)|
 | Pimoroni VGA | [`picozx81_vga_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_vga_rp2350.uf2)|
 | Olimex PICO DVI | [`picozx81_olimexpc_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_rp2350.uf2)|
+| Olimex RP2350PC DVI | [`picozx81_olimexrp2350pc_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexrp2350pc_rp2350.uf2)|
 | PicoMiteVGA | [`picozx81_picomitevga_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_picomitevga_rp2350.uf2)|
 | Olimex PICO DVI with HDMI Sound| [`picozx81_olimexpc_hdmi_sound_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexpc_hdmi_sound_rp2350.uf2)|
+| Olimex RP2350PC DVI with HDMI Sound| [`picozx81_olimexrp2350pc_hdmi_sound_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_olimexrp2350pc_hdmi_sound_rp2350.uf2)|
 | Pimoroni DVI with HDMI Sound| [`picozx81_dvi_hdmi_sound_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_dvi_hdmi_sound_rp2350.uf2)|
 | Waveshare 2.8 LCD | [`picozx81_lcdws28_rp2350.uf2`](https://github.com/ikjordan/picozx81/releases/latest/download/picozx81_lcdws28_rp2350.uf2)|
 
@@ -233,7 +237,7 @@ The following can be configured:
 | FrameSync | Synchronises screen updates to the start of the display frame. Option to synchronise frame pairs for programs that display interlaced images| Off |`On` reduces "tearing" in programs with horizontal scrolling, at the expense of a possible small lag. `Interlaced` reduces flickering in programs that display interlaced images|
 | CHR128 | Enables emulation of a 128 character user defined graphics board (CHR$128) in Low memory. | Off|When enabled LowRAM is forced to On, WRX and QSUDG are forced to off|
 | QSUDG | Enables emulation of the QS user defined graphics board| Off |Memory automatically limited to 16 when selected |
-| Sound | Selects sound card type (if any) | None | Valid options are `QUICKSILVA`, `ZONX`, `TV`, `CHROMA` and `NONE` or `OFF`|
+| Sound | Selects sound card type (if any) | None | Valid options are `QUICKSILVA`, `ZONX`, `TV`, `CASSETTE`, `CHROMA` and `NONE` or `OFF`|
 | ACB | Enables ACB stereo if sound card enabled | Off |  |
 | NTSC | Enables emulation of NTSC (60Hz display refresh)| Off | As for the "real" ZX81, SLOW mode is slower when NTSC is selected|
 | VTOL | Specifies the tolerance in lines of the emulated TV display detecting vertical sync| 25 | See notes below|
@@ -247,12 +251,12 @@ The following can be configured:
 4. A higher tolerance value set for `VTOL` results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
 5. The "Big Bang" ROM can double the speed of BASIC programs
 6. The Waveshare LCD 2.8 board has no sound capabilities
-7. The `TV` sound option emulates the sound generated through the TV speaker by VSYNC pulses. The `CHROMA` sound option emulates the sound generated through the TV speaker by the Chroma interface when VSYNC pulses are not frame synchronised
+7. The `TV` sound option emulates the sound generated through the TV speaker by VSYNC pulses. The `CHROMA` sound option emulates the sound generated through the TV speaker by the Chroma interface when VSYNC pulses are not frame synchronised. `CASSETTE` is similar to `TV` but does not emulate attenuation of VSYNC signals, allowing them to be saved to cassette, or to a PC in WAV format, and then later loaded back into a ZX81
 8. When `FiveSevenSix` is specified in the `[default]` section of the `config.ini` file in the root directory of the SD Card it sets the display resolution and refresh rate of picozx81 at start-up. If set for a specific program, then the resolution and refresh rate is set when the program is loaded. If necessary,picozx81 will reset and restart with the requested display before the program is loaded
 
 #### Joystick
 
-In addition a USB joystick,and on some boards a 9-pin joystick, can be configured to generated key presses
+In addition a USB joystick, and on some boards a 9-pin joystick, can be configured to generate key presses
 
 | Item | Description | Default Value |
 | --- | --- | --- |
@@ -275,9 +279,9 @@ Ten extra options apply across all programs and can only be set in the `[default
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.s`, `.81`, `.80` and `.p81` are initially displayed|Off|
-| MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2| 1 |
-| LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated | OFF |
-| SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated | OFF |
+| MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2 | 1 |
+| LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated. Set to On to enable. <br><br> On the RP2350PC set the value to EAR and connect a cassette player to the LineIn socket to load directly from a cassette. Can also load directly from a WAV file played into the LineIn socket | Off |
+| SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated. Set to On to enable. When set to MIC the audio save tones will be created, but the file will not be saved to SD-Card. <br><br> The signals can be recorded to a cassette recorder. The Signals are at Line level voltages, use an attenuating lead if connecting to a cassette recorder the requires microphone level voltages. Can also connect to a PC to save a WAV file | Off |
 | NinePinJoystick | When set to `on` Enables reading a 9 pin joystick, if supported in hardware | Off |
 | VGA | When set to `on` enables VGA output for the PICOZX + LCD board | off |
 
@@ -287,6 +291,7 @@ Ten extra options apply across all programs and can only be set in the `[default
 2. By default, the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
 3. The LCD supported displays all have a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for these displays (50 Hz, 50.65 Hz or 60 Hz)
 4. Due to the low speed of the ZX8x cassette interface, files can take many minutes to load and save when `LoadUsingROM` and `SaveUsingROM` is enabled
+5. A mono plug must be used for the RP2350PC LineIn connection. A stereo input will result in garbled data being received by the emulator. If a PC is used as the source of the sound data, consider using a stereo to mono converter cable
 
 #### Examples
 
@@ -741,10 +746,11 @@ This will be named `picozx81_vga_rp2040.uf2`
 
 **Notes:**
 
-+ To build for the RP2350 append -DPICO_MCU=rp2350 to the CMake command. The resulting `uf2` file will include rp2350 in its name
++ To build for the RP2350 append `-DPICO_MCU=rp2350` to the CMake command. The resulting `uf2` file will include rp2350 in its name
++ The Olimex RP2350PC has an onboard RP2350B processor. To build use `cmake -DPICO_BOARD=olimexrp2350pcboard -DPICO_MCU=rp2350 ..`
 + The [`buildall`](buildall) script in the root directory of `picozx81` will build `uf2` files for all supported combinations of mcu and board types
 + To debug using OpenOCD build and install OpenOCD as described in [Getting Started with Raspberry Pi Pico-series](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf)
-+ If debugging using MS Visual Studio Code then install the Raspberry Pi Pico extension. Commands loaded by this extension are used to determine the active MCU type in `launch.json`
+
 
 ## Extra Information
 
@@ -754,7 +760,8 @@ This will be named `picozx81_vga_rp2040.uf2`
 + The ["Big Bang"](https://www.sinclairzxworld.com/viewtopic.php?t=2986) ROM is supported, as this accelerates BASIC execution, and runs on the original ZX81 hardware
 + Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
 + To achieve a full speed emulation the Pico is overclocked to 252MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_VOLT` to the cmake command
-+ The Pico only has 1 USB port. The Pimoroni, Olimex and Waveshare PiZero boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
++ The Pico only has 1 USB port. The Pimoroni, Olimex PICO PC and Waveshare PiZero boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
++ The Olimex RP2350PC board has a built in USB A hub, so keyboards and joysticks can be easily connected. It is powered through a separate USB C connector
 + To connect more than one peripheral (e.g. a keyboard and joystick) at the same time, a powered USB OTG hub is required. These 3 hubs have been successfully tested. [1](https://www.amazon.co.uk/dp/B083WML1XB), [2](https://www.amazon.co.uk/dp/B078M3Z84Z), [3](https://www.amazon.co.uk/dp/B07Z4RHJ2D). Plug the hub directly into the USB port on the Pico. The USB-A connector on the PICOZX boards can also be used  
 
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
@@ -876,6 +883,7 @@ Solderless 9-Pin connectors can be sourced from e.g. ebay or [amazon](https://ww
 | picomitevga | GP3 | GP4 | GP5 | GP22 | GP26 | Ground |
 | pizero | GP11 | GP12 | GP10 | GP15 | GP13 | Ground |
 | Olimexpc | GP20 | GP21 | GP8 | GP9 | GP5 | Ground |
+| Olimex RP2350PC | GP38 | GP39 | GP44 | GP43 | GP42 | Ground |
 
 The picozx board has a 9-pin joystick port connector built in
 
@@ -890,6 +898,17 @@ For the RP2040-PICO-PC the pins required for the joystick connection are on the 
 | 3 | 6 |
 | 4 | 5 |
 | 6 | 10 |
+| 8 | 2 |
+
+For the RP350PC the pins required for the joystick connection are on the UEXT2 connector. The mapping is:
+
+| Joystick Pin number | UEXT2 Pin Number |
+| --- | --- |
+| 1 | 3 |
+| 2 | 4 |
+| 3 | 7 |
+| 4 | 8 |
+| 6 | 9 |
 | 8 | 2 |
 
 #### Enabling the joystick
@@ -924,6 +943,8 @@ Code to convert a ZX8x keyboard to USB can be found at [ZX81_USB_KBD](https://gi
 To access the function menus from a ZX80/81 keyboard the `doubleshift` configuration option must be enabled
 
 The picozx board does support keyboard and joystick. This is achieved by using every available GPIO pin, and using VGA222 with CSYNC, together with mono audio
+
+The Olimex RP2350PC has a RP2350B processor which has extra GPIO pins. It may be possible to add a Keyboard interface directly to this board
 
 ### Snapshot file format
 
@@ -970,6 +991,8 @@ Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n;
 ### Possible Future Developments
 
 + Support for USB gamepads as well as joysticks
++ For boards that support both HDMI and LineOut sound, continually emulate the VSYNC signals presented on the MIC socket via the LineOut socket. This will enable normal sound effects to be played via HDMI, whilst programs can be saved to cassette via LineOut
++ Support the direct connection of the ZX81 keyboard to the RP2350PC
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 
 ### Comparison to MCUME

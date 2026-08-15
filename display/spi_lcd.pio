@@ -47,7 +47,7 @@ static inline void spi_lcd_program_init(PIO p, uint s, uint offset, uint data_pi
 // Making use of the narrow store replication behaviour on RP2040 to get the
 // data left-justified (as we are using shift-to-left to get MSB-first serial)
 
-static inline void spi_lcd_put(uint8_t x) 
+static inline void spi_lcd_put(uint8_t x)
 {
     while (pio_sm_is_tx_fifo_full(pio, sm))
         ;

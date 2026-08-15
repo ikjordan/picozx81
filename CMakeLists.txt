@@ -27,6 +27,8 @@ OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
 OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
 OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
 
+# Set to "vgaboard" to build for Pimoroni vga board
+# e.g. cmake -DPICO_BOARD=vgaboard
 # Set to "dviboard" to build for Pimoroni dvi board
 # e.g. cmake -DPICO_BOARD=dviboard
 # Set to "vga332board" for vga 332 board similar to that used in MCUME
@@ -35,6 +37,8 @@ OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
 # e.g. cmake -DPICO_BOARD=picomitevgaboard
 # Set to "olimexpcboard" for Olimex RP2040-PICO-PC board
 # e.g. cmake -DPICO_BOARD=olimexpcboard
+# Set to "olimexrp2350pcboard" for Olimex RP2350PC board
+# e.g. cmake -DPICO_BOARD=olimexrp2350pcboard
 # Set to "lcdws28board" for Waveshare Pico-ResTouch-LCD-2.8
 # e.g. cmake -DPICO_BOARD=lcdws28board
 # Set to "wspizeroboard" for Waveshare PiZero
@@ -54,8 +58,8 @@ OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-if (PICO_SDK_VERSION_STRING VERSION_LESS "2.0.0")
-    message(FATAL_ERROR "Raspberry Pi Pico SDK version 2.0.0 (or later) required. Current version is ${PICO_SDK_VERSION_STRING}")
+if (PICO_SDK_VERSION_STRING VERSION_LESS "2.2.0")
+    message(FATAL_ERROR "Raspberry Pi Pico SDK version 2.2.0 (or later) required. Current version is ${PICO_SDK_VERSION_STRING}")
 endif()
 
 # Initialize the Pico SDK
@@ -72,7 +76,7 @@ include_directories(display)
 include_directories(usb)
 include_directories(inih)
 
-if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
+if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     add_subdirectory(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/include)
@@ -96,13 +100,14 @@ set(ZX8X_SOURCES
     src/sound.c
     src/menu.cpp)
 
+if (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
+    list(APPEND ZX8X_SOURCES src/emulinein.c)
+endif()
+
 set(INI_SOURCES
     inih/ini.c)
 
-set(DISPLAY_COMMON_SOURCES
-    display/display_common.c)
-
-if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
+if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     set(DISPLAY_SOURCES
         display/display_dvi.c
         display/tmds_double.S
@@ -114,10 +119,11 @@ elseif ((${PICO_BOARD} STREQUAL "picozxboard") AND (${PICOZX_LCD}))
     set(DISPLAY_SOURCES
         display/display_lcd.c
         display/display_vga.c)
-else ()
+else()
     set(DISPLAY_SOURCES
         display/display_vga.c)
-endif ()
+endif()
+list(APPEND DISPLAY_SOURCES display/display_common.c)
 
 set(USB_SOURCES
     usb/hid_app.c
@@ -130,14 +136,17 @@ set(USB_SOURCES
 add_executable(${PROJECT}
                ${ZX8X_SOURCES}
                ${INI_SOURCES}
-               ${DISPLAY_COMMON_SOURCES}
                ${DISPLAY_SOURCES}
                ${USB_SOURCES})
 
 # Determine sound system
-if ((((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard")) AND ${HDMI_SOUND}) OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
+if ((((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")) AND ${HDMI_SOUND}) OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     # HDMI - The check also ensures that HDMI_SOUND is ignored if set for non HDMI boards
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_HDMI)
+    if (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
+        target_link_libraries(${PROJECT} hardware_i2c)
+        pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/linein.pio)
+    endif()
 else()
     if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
         # I2S loaded by DMA sound
@@ -149,10 +158,15 @@ else()
                             hardware_dma)
         pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/audio_i2s.pio)
     elseif (NOT (${PICO_BOARD} STREQUAL "olimexpcboard"))
-        # DMA driven PWM unless Olimex (which has channels on different slices)
+        # DMA driven PWM unless Olimexpc (which has channels on different slices)
         target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
         target_link_libraries(${PROJECT} hardware_dma)
         target_link_libraries(${PROJECT} hardware_pwm)
+        if (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
+            target_link_libraries(${PROJECT} hardware_i2c)
+            target_compile_definitions(${PROJECT} PRIVATE -DINPUT_EAR)
+            pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/linein.pio)
+        endif()
     else()
         # Pure PWM
         target_link_libraries(${PROJECT} hardware_pwm)
@@ -161,7 +175,7 @@ endif()
 
 # Determine video system and name uf2
 set (EXTRA_CHECK "-Wextra")
-if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
+if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     target_compile_definitions(${PROJECT} PUBLIC
                                 -DDVI_1BPP_BIT_REVERSE=1
                                 -DDVI_VERTICAL_REPEAT=2)
@@ -180,14 +194,22 @@ if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboar
             endif()
             target_compile_definitions(${PROJECT} PUBLIC
                                     -DDVI_DEFAULT_SERIAL_CONFIG=pimoroni_demo_hdmi_cfg)
-        else()
+        elseif (${PICO_BOARD} STREQUAL "olimexpcboard")
             target_compile_definitions(${PROJECT} PUBLIC
                                     -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2040_PICO_PC_cfg
                                     -DDVI_USE_PIO_CLOCK)
             if(${HDMI_SOUND})
                 set(NAME_ROOT "picozx81_olimexpc_hdmi_sound")
             else()
-            set(NAME_ROOT "picozx81_olimexpc")
+                set(NAME_ROOT "picozx81_olimexpc")
+            endif()
+        else()
+            target_compile_definitions(${PROJECT} PUBLIC
+                                    -DDVI_DEFAULT_SERIAL_CONFIG=Olimex_RP2350PC_cfg)
+            if(${HDMI_SOUND})
+                set(NAME_ROOT "picozx81_olimexrp2350pc_hdmi_sound")
+            else()
+                set(NAME_ROOT "picozx81_olimexrp2350pc")
             endif()
         endif()
     endif()
@@ -211,16 +233,18 @@ else()
             pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/display/spi_lcd.pio)
             target_compile_definitions(${PROJECT} PRIVATE -DPICOZX_LCD)
             set(NAME_ROOT "picozx81_picozx_lcd")
-        else ()
+        else()
             set(NAME_ROOT "picozx81_picozx")
-        endif ()
+        endif()
     elseif (${PICO_BOARD} STREQUAL "picozxrealboard")
         set(NAME_ROOT "picozx81_picozxreal")
     endif()
 
     if ((${PICO_BOARD} STREQUAL "vgamaker222cboard") OR (${PICO_BOARD} STREQUAL "picozxboard") OR (${PICO_BOARD} STREQUAL "picozxrealboard"))
         target_link_libraries(${PROJECT} mod_scanvideo_dpi)
-    else ()
+    else()
+        # The scanvideo library generates a warning, that can escalate to an error.
+        target_compile_options(pico_scanvideo_dpi INTERFACE -Wno-unused-but-set-variable)
         target_link_libraries(${PROJECT} pico_scanvideo_dpi)
         set (EXTRA_CHECK "")
     endif()
@@ -243,7 +267,7 @@ if (${OVER_VOLT})
     target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
 endif()
 
-# always support Chroma
+# always support Chroma and emulated load and save
 target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA -DLOAD_AND_SAVE)
 
 target_compile_options(${PROJECT} PRIVATE -Wall ${EXTRA_CHECK})

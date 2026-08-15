@@ -75,7 +75,9 @@ build_uf2 vga rp2350
 build_uf2 dvi rp2350
 build_uf2 picomitevga rp2350
 build_uf2 olimexpc rp2350
+build_uf2 olimexrp2350pc rp2350
 build_uf2 vga332 rp2350
 build_uf2 lcdws28 rp2350
 build_uf2_hdmi dvi rp2350
 build_uf2_hdmi olimexpc rp2350
+build_uf2_hdmi olimexrp2350pc rp2350

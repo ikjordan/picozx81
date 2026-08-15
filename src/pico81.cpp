@@ -9,6 +9,9 @@
 #include "emusound.h"
 #include "emuvideo.h"
 #include "emukeyboard.h"
+#ifdef INPUT_EAR
+#include "emulinein.h"
+#endif
 #include "zx8x.h"
 #include "display.h"
 #include "menu.h"
@@ -35,6 +38,10 @@ int main(void)
     // Set the clock, driven by the video rate
     set_sys_clock_khz(clock, true);
     stdio_init_all();
+
+#ifdef INPUT_EAR
+    emu_linein_initialise();        // Need to initialise before display, due to sleeps
+#endif
 
     // start the display generation
     displayBlank(false);

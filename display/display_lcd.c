@@ -513,7 +513,7 @@ void core1_main(void)
 static bool  __not_in_flash_func(timer_callback)(repeating_timer_t *rt)
 {
     (void)rt;
-    
+
     // Trigger new frame
     sem_release(&frame_sync);
     return true;

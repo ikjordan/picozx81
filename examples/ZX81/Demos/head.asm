@@ -36,7 +36,7 @@ tag_5:
 	ld hl,buffer40			; ld hl, #0x4000
 	ld bc, 24
 	ldir				; Move the contents of buffer down 1 in memory
-	pop bc				
+	pop bc
 	djnz blub			; Back to hold	- will loop 4 times
 
 	ld a, (scrolloff)
@@ -61,21 +61,21 @@ hr_5:
 	djnz hr_5			; delay for 0 or 1 line
 ;       nop
 	ld a, (scrolloff)		; scroll offset counted down in loop_around_5
-	cp 190				
-	jr c, yiek			; : 12 if met 7 if not 
+	cp 190
+	jr c, yiek			; : 12 if met 7 if not
 	ld a, 190			; if a > 190 set a to 190 : 7
 	jp ziep 			; : 10
 yiek:
-	nop				; Got here 10 + 7 - (12-7) quicker, so 3*4 to balance 
+	nop				; Got here 10 + 7 - (12-7) quicker, so 3*4 to balance
 	nop
 	nop
 
-ziep:	     
-	or a	
+ziep:
+	or a
 	jr z, dok_5			; scroll offset is 0 :	5 more if met
 	ld c, a 			; if not zero, use as counter : 4
 
-nline:	      
+nline:
 	ld b, 14			; 13 * 13 + 7 + 8 = 184
 
 wline:
@@ -84,7 +84,7 @@ wline:
 	ld r,a				; : 9
 	jp nz, nline			; 10 = 184 + 4 + 10 + 9 = 207 :-)
 	jr strt_5			; 12
-dok_5:	      
+dok_5:
 	ld a,0				; 7 + 4 + 5 above = 16 matches 16 if not zero
 	nop
 
@@ -105,7 +105,7 @@ strt_5: exx
 nextline_5:
 	exx					; hl=bmpdata and de=start of buffer
 	jp oneline_5+0x8000			; 10 + execute the line
-oneline_5:	  
+oneline_5:
 	ld r,a					; 9
 	db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0	; 64  16x4
 	db 0,0,0,0,0,0,0,0			; 32   8x4
@@ -128,13 +128,13 @@ zorg:
 	nop
 	djnz zorg				; loop 6 times : 13
 
-	exx					; get back value of b set in strt_5 
+	exx					; get back value of b set in strt_5
 	nop
 	djnz nextline_5 			; loop on value of b : 13
 	ld b, 14
 
 waiter_2:
-	djnz waiter_2				; : 13 * 13 + 8 
+	djnz waiter_2				; : 13 * 13 + 8
 
 	inc hl
 	ld b, 8
@@ -142,14 +142,14 @@ waiter_2:
 	ld i,a
 	ld ix, endoftext
 
-textlines:	  
+textlines:
 	jp textline+0x8000			; 10
-textline:	 
+textline:
 	db 0x28,0x26,0x31,0x34,0x29,0x34,0x3d,0x00     ; "CALODOX "
 	db 0x16,0x00,0x3c,0x2a,0x00,0x34,0x3c,0x33     ; "- WE OWN"
 	db 0x00,0x3f,0x3d,0x24,0x1d,0,0,0	       ; " ZX81   "
 	jp (ix) 				; 8
-endoftext:	  
+endoftext:
 	ld c,4
 
 askd:
@@ -207,10 +207,10 @@ doret_5:
 	ld a, 45
 	jp 0x029e
 
-interlace:	  
+interlace:
 	db 0					; Toggled to delay start by one line
 
-scrolloff:	  
+scrolloff:
 	db 255
 
 bmpdata:
