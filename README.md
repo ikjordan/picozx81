@@ -944,6 +944,8 @@ To access the function menus from a ZX80/81 keyboard the `doubleshift` configura
 
 The picozx board does support keyboard and joystick. This is achieved by using every available GPIO pin, and using VGA222 with CSYNC, together with mono audio
 
+The Olimex RP2350PC has a RP2350B processor which has extra GPIO pins. It may be possible to add a Keyboard interface directly to this board
+
 ### Snapshot file format
 
 The snapshot (`.s`) file format stores the state of the emulator, so that excution can continue at a later date, potentially on an instance of picozx81 running on a different board type. To achieve this most of the picozx81 variables are saved. The 64 kB of emulated memory is also saved, together with the state of the AY and beeper sound emaulators.
@@ -989,7 +991,8 @@ Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n;
 ### Possible Future Developments
 
 + Support for USB gamepads as well as joysticks
-+ Support loading from a cassette player on the Olimex RP2350PC using the LineIn connector
++ For boards that support both HDMI and LineOut sound, continually emulate the VSYNC signals presented on the MIC socket via the LineOut socket. This will enable normal sound effects to be played via HDMI, whilst programs can be saved to cassette via LineOut
++ Support the direct connection of the ZX81 keyboard to the RP2350PC
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 
 ### Comparison to MCUME
