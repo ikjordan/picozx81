@@ -27,6 +27,7 @@
 + Emulation runs at accurate speed of a 3.25MHz ZX81
 + Supports saving of snapshots. No need to restart from the beginning after you die in a game!
 + Optionally emulates real-time ZX81/80 program load and save with realistic sound and graphics
++ Supports load and save from a cassette recorder on the Olimex RP2350PC board
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
 + Load `.p`, `.81`, `.o`, `.s` (picozx81 snapshot), `.80` and `.p81` files from micro SD Card. Save `.p`, `.o` and `.s` files
@@ -278,9 +279,9 @@ Ten extra options apply across all programs and can only be set in the `[default
 | Load | Specifies the name of a program to load automatically on boot in the directory given by `Dir` | "" |
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.s`, `.81`, `.80` and `.p81` are initially displayed|Off|
-| MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2| 1 |
-| LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated | OFF |
-| SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated | OFF |
+| MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2 | 1 |
+| LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated. Set to On to enable. <br><br> On the RP2350PC set the value to EAR and connect a cassette player to the LineIn socket to load directly from a cassette. Can also load directly from a WAV file played into the LineIn socket | Off |
+| SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated. Set to On to enable. When set to MIC the audio save tones will be created, but the file will not be saved to SD-Card. <br><br> The signals can be recorded to a cassette recorder. The Signals are at Line level voltages, use an attenuating lead if connecting to a cassette recorder the requires microphone level voltages. Can also connect to a PC to save a WAV file | Off |
 | NinePinJoystick | When set to `on` Enables reading a 9 pin joystick, if supported in hardware | Off |
 | VGA | When set to `on` enables VGA output for the PICOZX + LCD board | off |
 
@@ -290,6 +291,7 @@ Ten extra options apply across all programs and can only be set in the `[default
 2. By default, the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
 3. The LCD supported displays all have a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for these displays (50 Hz, 50.65 Hz or 60 Hz)
 4. Due to the low speed of the ZX8x cassette interface, files can take many minutes to load and save when `LoadUsingROM` and `SaveUsingROM` is enabled
+5. A mono plug must be used for the RP2350PC LineIn connection. A stereo input will result in garbled data being received by the emulator. If a PC is used as the source of the sound data, consider using a stereo to mono converter cable
 
 #### Examples
 
@@ -987,7 +989,7 @@ Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n;
 ### Possible Future Developments
 
 + Support for USB gamepads as well as joysticks
-+ Support loading from cassette on the Olimex RP2350PC using the LineIn connector
++ Support loading from a cassette player on the Olimex RP2350PC using the LineIn connector
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 
 ### Comparison to MCUME

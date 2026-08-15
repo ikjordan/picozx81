@@ -25,7 +25,7 @@
 #include "audio_ring.h"
 #include "display.h"
 #endif
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
+#ifdef INPUT_EAR
 #include "emulinein.h"
 #endif
 #include "sound.h"
@@ -41,7 +41,6 @@ static const uint16_t NUMSAMPLES = (SAMPLE_FREQ / 50); // samples in 50th of sec
 static uint16_t soundBuffer16[NUMSAMPLES << 2]; // Effectively two stereo buffers
 static uint16_t* soundBuffer2 = &soundBuffer16[NUMSAMPLES << 1];
 
-static bool soundCreated = false;
 static volatile bool first = true;      // True if the first buffer is playing
 static bool genSound = false;
 
@@ -85,15 +84,19 @@ uint16_t emu_sndGetSampleRate(void)
 
 void emu_sndInit(bool playSound, bool reset)
 {
+  static bool soundCreated = false;
+
   genSound = playSound;
   change_count = 0;   // in case a changed was queued
 
-  // This can be called multiple times...
+  // This can be called multiple times
   if (!soundCreated)
   {
     sound_create();
     sound_init(emu_ACBRequested(), reset);
     emu_sndSilence();
+
+    // audio drives the 50Hz timer
     beginAudio();
     soundCreated = true;
   }
@@ -140,7 +143,7 @@ void emu_sndQueueChange(int new_sound_type)
 // Calls to this function are synchronised to 50Hz through main timer interrupt
 void emu_sndGenerateSamples(void)
 {
-  if (genSound && soundCreated)
+  if (genSound)
   {
     sound_frame(first ? soundBuffer2 : soundBuffer16);
 #ifdef TIME_SPARE
@@ -295,14 +298,15 @@ static bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t)
   {
     call_count = 0;
 
+    // Swap the buffers
+    first = !first;
+
     // resync the play pointer
-    if ((!first) & (cnt!=0))
+    if (!first)
     {
       cnt=0;
     }
-
-    // Swap the buffers and Signal the 50Hz semaphore
-    first = !first;
+    // Signal the 50Hz semaphore
     sem_release(&timer_sem);
   }
   return true;
@@ -442,7 +446,7 @@ static void beginAudio(void)
 
 #ifdef SOUND_DMA
 
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
+#ifdef INPUT_EAR
   emu_linein_start();
 #endif
   dma_start_channel_mask(0x1 << DMA_CHANNEL_SOUND);
@@ -457,7 +461,7 @@ static void beginAudio(void)
   getAudioRing(&ring);
   hdmi_buffer = ring->buffer;
   hdmi_buffer_size = ring->size;
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
+#ifdef INPUT_EAR
   emu_linein_start();
 #endif
   add_repeating_timer_ms(-TICKMS, audio_timer_callback, NULL, &audio_timer);

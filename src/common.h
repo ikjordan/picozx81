@@ -5,6 +5,13 @@
 
 typedef unsigned char  byte;
 
+typedef enum
+{
+    ROM_OFF = 0,
+    ROM_SD_CARD,
+    ROM_EAR_MIC
+} SLRomType_T;
+
 #ifdef LOAD_AND_SAVE
 
 /* ROM Patching */
@@ -17,13 +24,6 @@ typedef unsigned char  byte;
 #define SAVE_START_8K       0x2ff       // LD DE,$12CB      11
 #define LOAD_SAVE_RET_8K    0x20A       // LD HL,$403B      21
 #define LOAD_SAVE_RSTRT_8K  0x207
-
-typedef enum
-{
-    ROM_OFF = 0,
-    ROM_SD_CARD,
-    ROM_LINE
-} SLRomType_T;
 
 typedef struct
 {

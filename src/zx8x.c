@@ -9,7 +9,7 @@
 #include "emusound.h"
 #include "emuvideo.h"
 #include "emukeyboard.h"
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
+#ifdef INPUT_EAR
 #include "emulinein.h"
 #endif
 #include "common.h"
@@ -17,7 +17,9 @@
 #include "hid_usb.h"
 #include "menu.h"
 #include "display.h"
+#ifdef LOAD_AND_SAVE
 #include "loadp.h"
+#endif
 
 char *strzx80_to_ascii(int memaddr);
 bool parseNumber(const char* input,
@@ -111,8 +113,8 @@ unsigned int __not_in_flash_func(in)(int h, int l)
     if (running_rom)
     {
       data = useNTSC ? 0x40 : 0;
-#ifdef PICO_OLIMEXRP2350PC_BOARD
-      if (emu_loadUsingROMRequested() == ROM_LINE)
+#ifdef INPUT_EAR
+      if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
       {
         data |= emu_is_signal_high(tstates) ? 0x0 : 0x80;  // Reversed as use xor below
       }
@@ -471,17 +473,21 @@ bool load_p(int name_addr, bool defer_rom)
     // Finally load the file
     size  = (size < max_read) ? size : max_read;
     printf("start=%i size=%i\n", start, size);
+#ifdef LOAD_AND_SAVE    
     if (!defer)
+#endif
     {
       emu_FileRead(mem + start, size, offset);
       emu_FileClose();
     }
+#ifdef LOAD_AND_SAVE    
     else
     {
       // Close the open file and defer loading to ROM routine
       emu_FileClose();
       loadPInitialise(fname, name_addr, rom4k);
     }
+#endif
   }
   else
   {

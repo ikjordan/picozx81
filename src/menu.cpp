@@ -551,7 +551,7 @@ bool statusMenu(void)
 
 #ifdef LOAD_AND_SAVE
     writeString("LOAD ROM:", lhs, ++lcount);
-    if (emu_loadUsingROMRequested() == ROM_LINE)
+    if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
     {
         writeString("EAR", rhs, lcount++);
     } else {
@@ -559,7 +559,7 @@ bool statusMenu(void)
     }
 
     writeString("SAVE ROM:",lhs, lcount);
-    if (emu_saveUsingROMRequested() == ROM_LINE)
+    if (emu_saveUsingROMRequested() == ROM_EAR_MIC)
     {
         writeString("MIC", rhs, lcount++);
     } else {
@@ -1008,7 +1008,7 @@ bool restartMenu(void)
                                 restart.loadROM = ROM_SD_CARD;
                             break;
                             case ROM_SD_CARD:
-                                restart.loadROM = ROM_LINE;
+                                restart.loadROM = ROM_EAR_MIC;
                             break;
                             default:
                                 restart.loadROM = ROM_OFF;
@@ -1027,7 +1027,7 @@ bool restartMenu(void)
                                 restart.saveROM = ROM_SD_CARD;
                             break;
                             case ROM_SD_CARD:
-                                restart.saveROM = ROM_LINE;
+                                restart.saveROM = ROM_EAR_MIC;
                             break;
                             default:
                                 restart.saveROM = ROM_OFF;
@@ -1088,7 +1088,7 @@ bool restartMenu(void)
                         switch (restart.loadROM)
                         {
                             case ROM_OFF:
-                                restart.loadROM = ROM_LINE;
+                                restart.loadROM = ROM_EAR_MIC;
                             break;
                             case ROM_SD_CARD:
                                 restart.loadROM = ROM_OFF;
@@ -1107,7 +1107,7 @@ bool restartMenu(void)
                         switch (restart.saveROM)
                         {
                             case ROM_OFF:
-                                restart.saveROM = ROM_LINE;
+                                restart.saveROM = ROM_EAR_MIC;
                             break;
                             case ROM_SD_CARD:
                                 restart.saveROM = ROM_OFF;
@@ -1471,10 +1471,10 @@ static void showRestart(PositionF7_T pos, RestartF7_T* restart)
 
 #ifdef LOAD_AND_SAVE
     writeInvertString("LOAD ROM", lhs, lcount + PositionF7_T::PLOADROM, pos == PositionF7_T::PLOADROM);
-    writeString((restart->loadROM == ROM_LINE) ? "Ear  " : (restart->loadROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF7_T::PLOADROM);
+    writeString((restart->loadROM == ROM_EAR_MIC) ? "Ear  " : (restart->loadROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF7_T::PLOADROM);
 
     writeInvertString("SAVE ROM", lhs, lcount + PositionF7_T::PSAVEROM, pos == PositionF7_T::PSAVEROM);
-    writeString((restart->saveROM == ROM_LINE) ? "Mic  " : (restart->saveROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF7_T::PSAVEROM);
+    writeString((restart->saveROM == ROM_EAR_MIC) ? "Mic  " : (restart->saveROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF7_T::PSAVEROM);
 #endif
 
     writeInvertString("CHAR$128:", lhs, lcount + PositionF7_T::PCHR128, pos == PositionF7_T::PCHR128);

@@ -2,8 +2,7 @@ set(PROJECT picozx81)
 cmake_minimum_required(VERSION 3.13)
 
 # Determine the MCU type and configure accordingly
-#set(PICO_MCU "rp2040" CACHE STRING "Specify Pico MCU type")
-set(PICO_MCU "rp2350" CACHE STRING "Specify Pico MCU type")
+set(PICO_MCU "rp2040" CACHE STRING "Specify Pico MCU type")
 
 if ((${PICO_MCU} STREQUAL "rp2350"))
     set(PICO_PLATFORM "rp2350-arm-s")
@@ -14,8 +13,7 @@ endif()
 # Look for board file in local board directory
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
 if (NOT PICO_BOARD)
-    #set(PICO_BOARD "vgaboard")
-    set(PICO_BOARD "olimexrp2350pcboard")
+    set(PICO_BOARD "vgaboard")
 endif()
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
@@ -160,12 +158,13 @@ else()
                             hardware_dma)
         pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/audio_i2s.pio)
     elseif (NOT (${PICO_BOARD} STREQUAL "olimexpcboard"))
-        # DMA driven PWM unless Olimex (which has channels on different slices)
+        # DMA driven PWM unless Olimexpc (which has channels on different slices)
         target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
         target_link_libraries(${PROJECT} hardware_dma)
         target_link_libraries(${PROJECT} hardware_pwm)
         if (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
             target_link_libraries(${PROJECT} hardware_i2c)
+            target_compile_definitions(${PROJECT} PRIVATE -DINPUT_EAR)
             pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/linein.pio)
         endif()
     else()
@@ -268,7 +267,7 @@ if (${OVER_VOLT})
     target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
 endif()
 
-# always support Chroma
+# always support Chroma and emulated load and save
 target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA -DLOAD_AND_SAVE)
 
 target_compile_options(${PROJECT} PRIVATE -Wall ${EXTRA_CHECK})

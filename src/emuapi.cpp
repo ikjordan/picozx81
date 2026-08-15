@@ -13,7 +13,7 @@
 #include "emusound.h"
 #include "emupriv.h"
 
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
+#ifdef INPUT_EAR
 #include "emulinein.h"
 #endif
 
@@ -1093,10 +1093,10 @@ static int handler(void *user, const char *section, const char *name,
 #ifdef LOAD_AND_SAVE
         if (isEnabled(value))
         {
-#ifdef PICO_OLIMEXRP2350PC_BOARD
-          if ((!strcasecmp(value, "EAR") || (!strcasecmp(value, "LINE"))))
+#ifdef INPUT_EAR
+          if (!strcasecmp(value, "EAR"))
           {
-            c->conf->loadUsingROM = ROM_LINE;
+            c->conf->loadUsingROM = ROM_EAR_MIC;
           } else {
             c->conf->loadUsingROM = ROM_SD_CARD;
           }
@@ -1116,9 +1116,9 @@ static int handler(void *user, const char *section, const char *name,
         if (isEnabled(value))
         {
 #ifdef PICO_OLIMEXRP2350PC_BOARD
-          if ((!strcasecmp(value, "MIC") || (!strcasecmp(value, "LINE"))))
+          if (!strcasecmp(value, "MIC"))
           {
-            c->conf->saveUsingROM = ROM_LINE;
+            c->conf->saveUsingROM = ROM_EAR_MIC;
           } else {
             c->conf->saveUsingROM = ROM_SD_CARD;
           }
@@ -1649,7 +1649,7 @@ void emu_WaitFor50HzTimer(void)
   static uint32_t underrun;
   static int32_t  sound_prev = 0;
   static int64_t  int_prev = 0;
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
+#ifdef INPUT_EAR
   static int32_t  linein_prev = 0;
 #endif
 
@@ -1658,7 +1658,7 @@ void emu_WaitFor50HzTimer(void)
   // Wait for the fifty Hz timer to fire
   sem_acquire_blocking(&timer_sem);
 
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
+#ifdef INPUT_EAR
   // Update the lineIn API with the tstate
   emu_linein_set_frame_tstate(tstates);
 #endif
@@ -1676,13 +1676,13 @@ void emu_WaitFor50HzTimer(void)
     int_prev = -int_count;
     int32_t sound = sound_count + sound_prev;
     sound_prev = -sound_count;
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
+#ifdef INPUT_EAR
     int32_t lineints = linein_count + linein_prev;
     linein_prev = -linein_count;
 #endif
 
     printf("ms: %lld U: %lu\n", total_time / 1000, underrun);
-#if ((defined PICO_OLIMEXRP2350PC_BOARD) && (defined LOAD_AND_SAVE))
+#ifdef INPUT_EAR
     printf("I: %lld S: %ld L: %ld\n", ints, sound, lineints);
 #else
     printf("I: %lld S: %ld\n", ints, sound);

@@ -380,7 +380,7 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
   {
     if (pc == rom_patches.load.start) // load
     {
-      if (rom_patches.load.use_rom == ROM_LINE)
+      if (rom_patches.load.use_rom == ROM_EAR_MIC)
       {
         running_rom = true;
       }
@@ -398,7 +398,7 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
     }
     else if (pc == rom_patches.save.start) // save
     {
-      if (rom_patches.load.use_rom == ROM_LINE)
+      if (rom_patches.load.use_rom == ROM_EAR_MIC)
       {
         running_rom = true;
       }
@@ -417,8 +417,7 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
 
     if (running_rom)
     {
-      // Run the ROM, generating MIC / EAR sound
-      // Need to handle corner case of a program that loops through save
+      // Run the ROM, generating MIC (save) / EAR (load) sounds
       sound_cache = emu_sndImmediateChange(sound_type, SOUND_TYPE_CASSETTE);
     }
   }
