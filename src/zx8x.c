@@ -473,14 +473,14 @@ bool load_p(int name_addr, bool defer_rom)
     // Finally load the file
     size  = (size < max_read) ? size : max_read;
     printf("start=%i size=%i\n", start, size);
-#ifdef LOAD_AND_SAVE    
+#ifdef LOAD_AND_SAVE
     if (!defer)
 #endif
     {
       emu_FileRead(mem + start, size, offset);
       emu_FileClose();
     }
-#ifdef LOAD_AND_SAVE    
+#ifdef LOAD_AND_SAVE
     else
     {
       // Close the open file and defer loading to ROM routine
