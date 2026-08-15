@@ -422,7 +422,6 @@ static void beginAudio(void)
 
   // Want to generate samples at a ratio of the
   // system clock, wrap at 1000 to allow 32kHz samples
-  // At 250 MHz, 32K samples per second with range 1000 gives 7.8125
   // At 252 MHz, 32K samples per second with range 1000 gives 7.875
   // At 270 MHz, 32K samples per second with range 1000 gives 8.4375
   // int_frac has 4 bit frac, so multiply int by 16 (4 bits)

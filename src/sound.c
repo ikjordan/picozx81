@@ -774,9 +774,17 @@ bool sound_load_snap(uint32_t version)
   if (!emu_FileReadBytes(ay_tone_period, sizeof(unsigned int) * 3)) return false;
   if (!emu_FileReadBytes(sound_ay_registers, sizeof(unsigned char) * 16)) return false;
 
-  if (!emu_FileReadBytes(&cassette_initial_state, sizeof(cassette_initial_state))) return false;
-  if (!emu_FileReadBytes(&cassette_current_state, sizeof(cassette_current_state))) return false;
-  if (!emu_FileReadBytes(&cassette_change_count, sizeof(cassette_change_count))) return false;
-
+  if (version == SUPPORTED_VERSION_2)
+  {
+    if (!emu_FileReadBytes(&cassette_initial_state, sizeof(cassette_initial_state))) return false;
+    if (!emu_FileReadBytes(&cassette_current_state, sizeof(cassette_current_state))) return false;
+    if (!emu_FileReadBytes(&cassette_change_count, sizeof(cassette_change_count))) return false;
+  }
+  else
+  {
+    cassette_initial_state = false;
+    cassette_current_state = false;
+    cassette_change_count = 0;
+  }
   return true;
 }

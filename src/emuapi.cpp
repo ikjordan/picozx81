@@ -1336,9 +1336,8 @@ void emu_ReadSpecificValues(const char *filename)
 /********************************
  * Snapshot
  ********************************/
-#define SNAPSHOT_ID       0x50414E53          // Little endian 'SNAP'
-#define SUPPORTED_VERSION 0x00010001          // Major and minor versions
-#define SECOND_OFFSET     57                  // Start of second data section
+#define SNAPSHOT_ID         0x50414E53          // Little endian 'SNAP'
+#define SECOND_OFFSET       57                  // Start of second data section
 
 #ifdef __cplusplus
 extern "C" {
@@ -1369,7 +1368,7 @@ bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
     {
       printf("emu_loadSnapshotSpecific wrong id\n");
     }
-    else if (!emu_FileReadBytes(&id, sizeof(id)) || (id != SUPPORTED_VERSION))
+    else if (!emu_FileReadBytes(&id, sizeof(id)) || (id != SUPPORTED_VERSION_1) || (id != SUPPORTED_VERSION_2))
     {
       printf("emu_loadSnapshotSpecific wrong version %li\n", id);
     }
@@ -1416,7 +1415,8 @@ bool emu_loadSnapshotData(const char* fullpathname)
     {
       printf("emu_loadSnapshotData wrong id\n");
     }
-    else if (!emu_FileReadBytes(&version, sizeof(version)) || version != SUPPORTED_VERSION)
+    else if ((!emu_FileReadBytes(&version, sizeof(version)) || version != SUPPORTED_VERSION_1) ||
+             (!emu_FileReadBytes(&version, sizeof(version)) || version != SUPPORTED_VERSION_2))
     {
       printf("emu_loadSnapshotData wrong version %li\n", version);
     }
@@ -1466,7 +1466,7 @@ bool emu_saveSnapshot(const char* fullpathname)
   {
     // write identifer
     uint32_t id = SNAPSHOT_ID;
-    uint32_t version = SUPPORTED_VERSION;
+    uint32_t version = SUPPORTED_VERSION_2;
     if (!emu_FileWriteBytes(&id, sizeof(id)))
     {
       printf("emu_saveSnapshot write id failed\n");
