@@ -341,7 +341,7 @@ int emu_SoundRequested(void)
 bool emu_ACBRequested(void)
 {
   // Do not allow stereo on a mono board
-#if defined(I2S) || defined(SOUND_HDMI)
+#if defined(SOUND_I2S) || defined(SOUND_HDMI)
   return specific.acb;
 #else
   return specific.acb && (AUDIO_PIN_L != AUDIO_PIN_R);

@@ -71,7 +71,7 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 /* full range of beeper volume */
 #define VOL_BEEPER          (AMPL_BEEPER<<1)
 
-#if ((!defined (I2S)) && (!defined (SOUND_HDMI)))
+#if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
 /* For PWM max value is 999, mid point 499.5 mid for each channel is 499.5 / 4 = 124
    2048 divided by 16 gives 128
 */
@@ -680,7 +680,7 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
     if(!sound_stereo_acb)
       ptr[1]=*ptr;
 
-  #if ((!defined (I2S)) && (!defined (SOUND_HDMI)))
+  #if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
     // Correct to PWM
     *ptr = (*ptr>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
     ptr[1] = (ptr[1]>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
