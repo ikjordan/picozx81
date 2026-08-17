@@ -8,19 +8,23 @@
 #include "emupriv.h"
 #include "emusound_common.h"
 #include "iopins.h"
-#ifdef INPUT_EAR
-#include "emulinein.h"
-#endif
 
-#ifndef SOUND_DMA
+static int audio_pin_slice_r = 0;
+static int audio_pin_slice_l = 0;
+
+#ifdef SOUND_DMA
+void initAudio_dma(int audio_pin_slice_r, int audio_pin_slice_l);
+void startAudio_dma(void);
+#else
+
 static void __not_in_flash_func(pwmInterruptHandler)()
 {
     static int cnt = 0;
     pwm_clear_irq(pwm_gpio_to_slice_num(AUDIO_PIN_R));
 
-    pwm_set_gpio_level(AUDIO_PIN_R, soundBuffer16[cnt++]);
+    pwm_set_gpio_level(AUDIO_PIN_R, SBUFFER16[cnt++]);
 #if (AUDIO_PIN_L != AUDIO_PIN_R)
-    pwm_set_gpio_level(AUDIO_PIN_L, soundBuffer16[cnt++]);
+    pwm_set_gpio_level(AUDIO_PIN_L, SBUFFER16[cnt++]);
 #else
     cnt++;
 #endif
@@ -31,17 +35,17 @@ static void __not_in_flash_func(pwmInterruptHandler)()
     if (cnt == (NUMSAMPLES << 2))
     {
         cnt = 0;
-        first = true;
-        sem_release(&timer_sem);
+        SFIRST = true;
+        SEM_REL;
     }
     else if (cnt == NUMSAMPLES << 1)
     {
-        first = false;
-        sem_release(&timer_sem);
+        SFIRST = false;
+        SEM_REL;
     }
 }
 
-static void initAudio_pwm(int audio_pin_slice_r)
+static void create_interrupt_pwm(void)
 {
     // Setup PWM interrupt to fire when PWM cycle is complete on right channel
     pwm_clear_irq(audio_pin_slice_r);
@@ -52,24 +56,20 @@ static void initAudio_pwm(int audio_pin_slice_r)
 }
 #endif
 
-static void createAudio_outputs(int* pin_slice_r, int* pin_slice_l)
+static void createAudio_outputs(void)
 {
     gpio_set_function(AUDIO_PIN_R, GPIO_FUNC_PWM);
-    *pin_slice_r = pwm_gpio_to_slice_num(AUDIO_PIN_R);
-    *pin_slice_l = *pin_slice_r;
+    audio_pin_slice_r = pwm_gpio_to_slice_num(AUDIO_PIN_R);
+    audio_pin_slice_l = audio_pin_slice_r;
 
 #if (AUDIO_PIN_L != AUDIO_PIN_R)
     gpio_set_function(AUDIO_PIN_L, GPIO_FUNC_PWM);
-    *pin_slice_l = pwm_gpio_to_slice_num(AUDIO_PIN_L);
+    audio_pin_slice_l = pwm_gpio_to_slice_num(AUDIO_PIN_L);
 #endif // AUDIO_PIN_L != AUDIO_PIN_R
 }
 
-static void configureAudio_outputs(int audio_pin_slice_r, int audio_pin_slice_l)
+static void configureAudio_outputs(void)
 {
-#if (AUDIO_PIN_L == AUDIO_PIN_R)
-    (void)audio_pin_slice_l;
-#endif
-
     pwm_config config = pwm_get_default_config();
 
     // Want to generate samples at a ratio of the
@@ -96,34 +96,28 @@ static void configureAudio_outputs(int audio_pin_slice_r, int audio_pin_slice_l)
 #endif // AUDIO_PIN_L != AUDIO_PIN_R
 }
 
-static void startAudio_pwm(int audio_pin_slice_r, int audio_pin_slice_l)
+void initAudio_pwm(void)
 {
+    createAudio_outputs();
+#ifdef SOUND_DMA
+    initAudio_dma(audio_pin_slice_r, audio_pin_slice_l);
+#else // SOUND_DMA
+    create_interrupt_pwm();
+#endif // SOUND_DMA
+    configureAudio_outputs();
+}
+
+void startAudio_pwm(void)
+{
+#ifdef SOUND_DMA
+    startAudio_dma();
+#endif // SOUND_DMA
+
     // Cannot use mask here, as other libs may have already enabled PWM slices
     pwm_set_enabled(audio_pin_slice_r, true);
     if (audio_pin_slice_r != audio_pin_slice_l)
     {
         pwm_set_enabled(audio_pin_slice_l, true);
     }
-}
-
-void beginAudio_pwm(void)
-{
-    int audio_pin_slice_r = 0;
-    int audio_pin_slice_l = 0;
-
-    createAudio_outputs(&audio_pin_slice_r, &audio_pin_slice_l);
-#ifdef SOUND_DMA
-    initAudio_dma(audio_pin_slice_r, audio_pin_slice_l);
-#else // SOUND_DMA
-    initAudio_pwm(audio_pin_slice_r);
-#endif // SOUND_DMA
-    configureAudio_outputs(audio_pin_slice_r, audio_pin_slice_l);
-#ifdef INPUT_EAR
-    emu_linein_start();
-#endif
-#ifdef SOUND_DMA
-    startAudio_dma();
-#endif // SOUND_DMA
-    startAudio_pwm(audio_pin_slice_r, audio_pin_slice_l);
 }
 

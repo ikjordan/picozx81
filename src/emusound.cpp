@@ -5,23 +5,30 @@
 #include <stdlib.h>
 #include "pico/stdlib.h"
 #include <stdio.h>
-//#include "hardware/irq.h"
-//#include "hardware/clocks.h"
 #include "pico/sync.h"
 #include "sound.h"
 #include "emuapi.h"
 #include "emupriv.h"
 #include "emusound.h"
 #include "emusound_common.h"
+#ifdef INPUT_EAR
+#include "emulinein.h"
+#endif
 
 semaphore_t timer_sem;
 
 extern const uint16_t NUMSAMPLES = (SAMPLE_FREQ / 50); // samples in 50th of second
 
-uint16_t soundBuffer16[NUMSAMPLES << 2]; // Effectively two stereo buffers
+uint16_t soundBuffer16[NUMSAMPLES << 2];  // Effectively two stereo buffers
 uint16_t* soundBuffer2 = &soundBuffer16[NUMSAMPLES << 1];
+volatile bool sound_first = true;         // True if the first buffer is playing
 
-volatile bool first = true;      // True if the first buffer is playing
+#ifdef MIC_SOUND
+uint16_t micBuffer16[NUMSAMPLES << 2];  // Effectively two stereo buffers
+uint16_t* micBuffer2 = &micBuffer16[NUMSAMPLES << 1];
+volatile bool mic_first = true;         // True if the first buffer is playing
+#endif
+
 bool genSound = false;
 
 int queued_sound_type;           // new sound type requested
@@ -103,7 +110,7 @@ void emu_sndGenerateSamples(void)
 {
   if (genSound)
   {
-    sound_frame(first ? soundBuffer2 : soundBuffer16);
+    sound_frame(sound_first ? soundBuffer2 : soundBuffer16);
 #ifdef TIME_SPARE
     sound_count++;
 #endif
@@ -123,15 +130,36 @@ void emu_sndGenerateSamples(void)
 static void beginAudio(void)
 {
   sem_init(&timer_sem, 0, 1);
-#ifndef SOUND_HDMI
+
+  // Configure the transfers
 #ifdef SOUND_I2S
-  beginAudio_i2s();
-#else // SOUND_I2S
-  beginAudio_pwm();
-#endif // SOUND_I2S
-#else // SOUND_HDMI
-  beginAudio_hdmi();
-#endif // SOUND_HDMI
+  initAudio_i2s();
+#endif
+
+#if defined(SOUND_DMA) || defined(SOUND_PWM)
+  initAudio_pwm();
+#endif
+
+#ifdef SOUND_HDMI
+  initAudio_hdmi();
+#endif
+
+// Start the transfers
+#ifdef INPUT_EAR
+  emu_linein_start();
+#endif
+
+#ifdef SOUND_I2S
+  startAudio_i2s();
+#endif
+
+#if defined(SOUND_DMA) || defined(SOUND_PWM)
+  startAudio_pwm();
+#endif
+
+#ifdef SOUND_HDMI
+  startAudio_hdmi();
+#endif
 
   printf("sound initialized\n");
 }
@@ -142,6 +170,9 @@ void emu_sndSilence(void)
   for (int i = 0; i < (NUMSAMPLES<<2); ++i)
   {
     soundBuffer16[i] = ZEROSOUND;
+#ifdef MIC_SOUND
+    micBuffer16[i] = ZEROMIC;
+#endif
   }
 }
 

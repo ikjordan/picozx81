@@ -14,11 +14,11 @@ static void __not_in_flash_func(dmaInterruptHandler)()
     if (dma_channel_get_irq1_status(DMA_CHANNEL_SOUND))
     {
         dma_channel_acknowledge_irq1(DMA_CHANNEL_SOUND);
-        dma_channel_set_read_addr(DMA_CHANNEL_SOUND, first ? soundBuffer2 : soundBuffer16, true);
+        dma_channel_set_read_addr(DMA_CHANNEL_SOUND, SFIRST ? SBUFFER2 : SBUFFER16, true);
 
         // Swap the buffers and Signal the 50Hz semaphore
-        first = !first;
-        sem_release(&timer_sem);
+        SFIRST = !SFIRST;
+        SEM_REL;
 #ifdef TIME_SPARE
         int_count++;
 #endif

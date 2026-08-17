@@ -25,7 +25,7 @@ static inline void i2s_start_dma_transfer()
     channel_config_set_read_increment(&c, true);
     dma_channel_set_config(i2s_dma, &c, false);
     dma_channel_transfer_from_buffer_now(i2s_dma,
-                                         first ? soundBuffer2 : soundBuffer16,
+                                         SFIRST ? SBUFFER2 : SBUFFER16,
                                          NUMSAMPLES);
 }
 
@@ -38,15 +38,15 @@ static void __isr __time_critical_func(i2s_dma_irq_handler)()
         i2s_start_dma_transfer();
 
         // Swap the buffers and Signal the 50Hz semaphore
-        first = !first;
-        sem_release(&timer_sem);
+        SFIRST = !SFIRST;
+        SEM_REL;
 #ifdef TIME_SPARE
         int_count++;
 #endif
     }
 }
 
-void beginAudio_i2s(void)
+void initAudio_i2s(void)
 {
     irq_num = (dma_irq == DMA_IRQ_1) ? 1 : 0;
 
@@ -109,6 +109,10 @@ void beginAudio_i2s(void)
     dma_irqn_set_channel_enabled(irq_num, i2s_dma, 1);
 
     irq_set_enabled(dma_irq , true);
+}
+
+void startAudio_i2s(void)
+{
     i2s_start_dma_transfer();
     pio_sm_set_enabled(audio_pio, i2s_pio_sm, true);
 }

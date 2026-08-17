@@ -8,10 +8,6 @@
 #include "emuapi.h"
 #include "emupriv.h"
 #include "emusound_common.h"
-#ifdef INPUT_EAR
-#include "emulinein.h"
-#endif
-
 
 #define FIFTYHZMS       20                  // ms between 50 HZ ticks
 #define TICKMS          2                   // ms ticks to service hdmi audio ring buffer
@@ -64,10 +60,10 @@ static bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t)
         call_count = 0;
 
         // Swap the buffers
-        first = !first;
+        sound_first = !sound_first;
 
         // resync the play pointer
-        if (!first)
+        if (sound_first)
         {
             cnt=0;
         }
@@ -77,14 +73,15 @@ static bool __not_in_flash_func(audio_timer_callback)(struct repeating_timer *t)
     return true;
 }
 
-void beginAudio_hdmi(void)
+void initAudio_hdmi(void)
 {
     // Create the timer callback
     getAudioRing(&ring);
     hdmi_buffer = ring->buffer;
     hdmi_buffer_size = ring->size;
-#ifdef INPUT_EAR
-    emu_linein_start();
-#endif
+}
+
+void startAudio_hdmi(void)
+{
     add_repeating_timer_ms(-TICKMS, audio_timer_callback, NULL, &audio_timer);
 }
