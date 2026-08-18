@@ -31,12 +31,8 @@ extern volatile bool mic_first;
 #define SEM_REL   sem_release(&timer_sem)
 #endif
 
-
-extern bool genSound;
-
 extern int queued_sound_type;           // new sound type requested
 extern int change_count;                // count down to frame to change sound type
-extern bool queued_play;
 
 #ifdef SOUND_I2S
 void initAudio_i2s(void);

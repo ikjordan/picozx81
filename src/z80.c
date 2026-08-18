@@ -398,7 +398,7 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
     }
     else if (pc == rom_patches.save.start) // save
     {
-      if (rom_patches.load.use_rom == ROM_EAR_MIC)
+      if (rom_patches.save.use_rom == ROM_EAR_MIC)
       {
         running_rom = true;
       }
@@ -937,10 +937,6 @@ void __not_in_flash_func(execZX80)(void)
     if (prevVideoFlipFlop3Q != videoFlipFlop3Q)
     {
       videoFlipFlop3Q ? vsync_lower() : vsync_raise();
-      // ZX80 HSYNC sound - excluded if Chroma
-      if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE)) {
-        sound_beeper(videoFlipFlop3Q);
-      }
     }
 
     if (videoFlipFlop3Q && (sync_len > 0))

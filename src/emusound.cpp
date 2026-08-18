@@ -29,11 +29,8 @@ uint16_t* micBuffer2 = &micBuffer16[NUMSAMPLES << 1];
 volatile bool mic_first = true;         // True if the first buffer is playing
 #endif
 
-bool genSound = false;
-
 int queued_sound_type;           // new sound type requested
 int change_count;                // count down to frame to change sound type
-bool queued_play;
 
 static void beginAudio(void);
 
@@ -47,18 +44,17 @@ uint16_t emu_sndGetSampleRate(void)
   return SAMPLE_FREQ;
 }
 
-void emu_sndInit(bool playSound, bool reset)
+void emu_sndInit(bool force_reset)
 {
   static bool soundCreated = false;
 
-  genSound = playSound;
   change_count = 0;   // in case a changed was queued
 
   // This can be called multiple times
   if (!soundCreated)
   {
     sound_create();
-    sound_init(emu_ACBRequested(), reset);
+    sound_init(emu_ACBRequested(), force_reset);
     emu_sndSilence();
 
     // audio drives the 50Hz timer
@@ -68,7 +64,7 @@ void emu_sndInit(bool playSound, bool reset)
   else
   {
     // Call each time, as sound type may have changed
-    sound_init(emu_ACBRequested(), reset);
+    sound_init(emu_ACBRequested(), force_reset);
     emu_sndSilence();
   }
 }
@@ -92,7 +88,7 @@ int emu_sndImmediateChange(int current_sound_type, int new_sound_type)
     if (current_sound_type != new_sound_type)
     {
       sound_change_type(new_sound_type);
-      emu_sndInit(new_sound_type != SOUND_TYPE_NONE, true);
+      emu_sndInit(false);
     }
   }
   return old_sound;
@@ -101,28 +97,27 @@ int emu_sndImmediateChange(int current_sound_type, int new_sound_type)
 void emu_sndQueueChange(int new_sound_type)
 {
   queued_sound_type = new_sound_type;
-  queued_play = (new_sound_type != SOUND_TYPE_NONE);
   change_count = 3; // Allow final save bytes to propagate
 }
 
 // Calls to this function are synchronised to 50Hz through main timer interrupt
 void emu_sndGenerateSamples(void)
 {
-  if (genSound)
-  {
-    sound_frame(sound_first ? soundBuffer2 : soundBuffer16);
+  sound_frame(sound_first ? soundBuffer2 : soundBuffer16);
+#ifdef MIC_SOUND
+  mic_frame(mic_first ? micBuffer2 : micBuffer16);
+#endif
 #ifdef TIME_SPARE
     sound_count++;
 #endif
 
-    // process any queued sound change
-    if (change_count)
+  // process any queued sound change
+  if (change_count)
+  {
+    if (--change_count == 0)
     {
-      if (--change_count == 0)
-      {
-        sound_change_type(queued_sound_type);
-        emu_sndInit(queued_play, false);
-      }
+      sound_change_type(queued_sound_type);
+      emu_sndInit(false);
     }
   }
 }
@@ -180,7 +175,6 @@ bool emu_sndSaveSnap(void)
 {
   if (!sound_save_snap()) return false;
   if (!emu_FileWriteBytes(&queued_sound_type, sizeof(queued_sound_type))) return false;
-  if (!emu_FileWriteBytes(&queued_play, sizeof(queued_play))) return false;
 
   return true;
 }
@@ -189,7 +183,10 @@ bool emu_sndLoadSnap(uint32_t version)
 {
   if (!sound_load_snap(version)) return false;
   if (!emu_FileReadBytes(&queued_sound_type, sizeof(queued_sound_type))) return false;
-  if (!emu_FileReadBytes(&queued_play, sizeof(queued_play))) return false;
-
+  if (version == SUPPORTED_VERSION_1)
+  {
+    bool dummy;
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
+  }
   return true;
 }

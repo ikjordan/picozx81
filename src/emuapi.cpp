@@ -1112,20 +1112,18 @@ static int handler(void *user, const char *section, const char *name,
       }
       else if ((!strcasecmp(name, "SaveUsingROM")))
       {
-#ifdef LOAD_AND_SAVE
+#if defined (LOAD_AND_SAVE) && (!defined(PICO_NO_SOUND))
         if (isEnabled(value))
         {
-#ifdef PICO_OLIMEXRP2350PC_BOARD
           if (!strcasecmp(value, "MIC"))
           {
             c->conf->saveUsingROM = ROM_EAR_MIC;
           } else {
             c->conf->saveUsingROM = ROM_SD_CARD;
           }
-#else
-          c->conf->saveUsingROM = ROM_SD_CARD;
-#endif
-        } else {
+        }
+        else
+        {
           c->conf->saveUsingROM = ROM_OFF;
         }
 #else

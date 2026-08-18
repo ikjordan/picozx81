@@ -1001,7 +1001,7 @@ bool restartMenu(void)
 #ifdef LOAD_AND_SAVE
                     else if (field == PLOADROM)
                     {
-#ifdef PICO_OLIMEXRP2350PC_BOARD
+#ifdef INPUT_EAR
                         switch (restart.loadROM)
                         {
                             case ROM_OFF:
@@ -1020,7 +1020,7 @@ bool restartMenu(void)
                     }
                     else if (field == PSAVEROM)
                     {
-#ifdef PICO_OLIMEXRP2350PC_BOARD
+#ifndef PICO_NO_SOUND
                         switch (restart.saveROM)
                         {
                             case ROM_OFF:
@@ -1034,7 +1034,7 @@ bool restartMenu(void)
                             break;
                         }
 #else
-                        restart.saveROM = (restart.saveROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
+                        restart.saveROM = ROM_OFF;
 #endif
                     }
 #endif
@@ -1084,7 +1084,7 @@ bool restartMenu(void)
 #ifdef LOAD_AND_SAVE
                     else if (field == PLOADROM)
                     {
-#ifdef PICO_OLIMEXRP2350PC_BOARD
+#ifdef INPUT_EAR
                         switch (restart.loadROM)
                         {
                             case ROM_OFF:
@@ -1103,7 +1103,7 @@ bool restartMenu(void)
                     }
                     else if (field == PSAVEROM)
                     {
-#ifdef PICO_OLIMEXRP2350PC_BOARD
+#ifndef PICO_NO_SOUND
                         switch (restart.saveROM)
                         {
                             case ROM_OFF:
@@ -1117,7 +1117,7 @@ bool restartMenu(void)
                             break;
                         }
 #else
-                        restart.saveROM = (restart.saveROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
+                        restart.saveROM = ROM_OFF;
 #endif
                     }
 #endif

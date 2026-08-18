@@ -3,8 +3,9 @@ cmake_minimum_required(VERSION 3.13)
 
 # Determine the MCU type and configure accordingly
 set(PICO_MCU "rp2040" CACHE STRING "Specify Pico MCU type")
+#set(PICO_MCU "rp2350" CACHE STRING "Specify Pico MCU type")
 
-if(${PICO_MCU} STREQUAL "rp2350")
+if (${PICO_MCU} STREQUAL "rp2350")
     set(PICO_PLATFORM "rp2350-arm-s")
 else()
     set(PICO_PLATFORM "rp2040")
@@ -12,8 +13,11 @@ endif()
 
 # Look for board file in local board directory
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
-if(NOT PICO_BOARD)
-    set(PICO_BOARD "vgaboard")
+if (NOT PICO_BOARD)
+    #set(PICO_BOARD "vgaboard")
+    #set(PICO_BOARD "dviboard")
+    set(PICO_BOARD "olimexpcboard")
+    #set(PICO_BOARD "olimexrp2350pcboard")
 endif()
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
@@ -58,7 +62,7 @@ OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-if(PICO_SDK_VERSION_STRING VERSION_LESS "2.2.0")
+if (PICO_SDK_VERSION_STRING VERSION_LESS "2.2.0")
     message(FATAL_ERROR "Raspberry Pi Pico SDK version 2.2.0 (or later) required. Current version is ${PICO_SDK_VERSION_STRING}")
 endif()
 
@@ -76,11 +80,11 @@ include_directories(display)
 include_directories(usb)
 include_directories(inih)
 
-if((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
+if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     add_subdirectory(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/libdvi)
     include_directories(PicoDVI/software/include)
-elseif((${PICO_BOARD} STREQUAL "vgamaker222cboard") OR (${PICO_BOARD} STREQUAL "picozxboard") OR (${PICO_BOARD} STREQUAL "picozxrealboard"))
+elseif ((${PICO_BOARD} STREQUAL "vgamaker222cboard") OR (${PICO_BOARD} STREQUAL "picozxboard") OR (${PICO_BOARD} STREQUAL "picozxrealboard"))
     # Build local scanvideo, to use CSYNC
     add_subdirectory(scanvideo)
     include_directories(scanvideo/pico_scanvideo/include)
@@ -103,15 +107,15 @@ set(ZX8X_SOURCES
 set(INI_SOURCES
     inih/ini.c)
 
-if((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
+if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     set(DISPLAY_SOURCES
         display/display_dvi.c
         display/tmds_double.S
         display/tmds_chroma.S)
-elseif((${PICO_BOARD} STREQUAL "lcdws28board") OR (${PICO_BOARD} STREQUAL "lcdmakerboard"))
+elseif ((${PICO_BOARD} STREQUAL "lcdws28board") OR (${PICO_BOARD} STREQUAL "lcdmakerboard"))
     set(DISPLAY_SOURCES
         display/display_lcd.c)
-elseif((${PICO_BOARD} STREQUAL "picozxboard") AND (${PICOZX_LCD}))
+elseif ((${PICO_BOARD} STREQUAL "picozxboard") AND (${PICOZX_LCD}))
     set(DISPLAY_SOURCES
         display/display_lcd.c
         display/display_vga.c)

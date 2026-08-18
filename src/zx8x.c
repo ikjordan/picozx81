@@ -104,6 +104,7 @@ unsigned int __not_in_flash_func(in)(int h, int l)
     int data=0x80;
     LastInstruction=LASTINSTINFE;
 
+    SOUND_CASSETTE(0);
     if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
     {
         sound_beeper(0);
@@ -158,6 +159,8 @@ unsigned int __not_in_flash_func(in)(int h, int l)
 
 void __not_in_flash_func(out)(int h, int l, int a)
 {
+  SOUND_CASSETTE(1);
+
   if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
   {
       sound_beeper(1);
@@ -892,7 +895,7 @@ void z8x_Init(void)
   memset( keyboard, 255, sizeof( keyboard ) );
 
   resetZ80();
-  emu_sndInit(sound_type != SOUND_TYPE_NONE, true);
+  emu_sndInit(true);
 
   if (load_snap)
   {
@@ -904,7 +907,7 @@ void z8x_Init(void)
 void z8x_updateValues(void)
 {
   sound_type = emu_SoundRequested();
-  emu_sndInit(sound_type != SOUND_TYPE_NONE, false);
+  emu_sndInit(false);
 
   useWRX = emu_WRXRequested();
   useNTSC = emu_NTSCRequested();
@@ -924,10 +927,7 @@ bool z8x_Step(void)
     return false;
   }
 
-  if (sound_type != SOUND_TYPE_NONE)
-  {
-    emu_sndGenerateSamples();
-  }
+  emu_sndGenerateSamples();
   return true;
 }
 
