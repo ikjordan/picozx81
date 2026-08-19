@@ -12,9 +12,7 @@ typedef enum
     ROM_EAR_MIC
 } SLRomType_T;
 
-#ifdef LOAD_AND_SAVE
-
-/* ROM Patching */
+/* ROM load and save detection */
 #define LOAD_START_4K       0x207       // POP DE           D1
 #define SAVE_START_4K       0x1b7       // POP DE           D1
 #define LOAD_SAVE_RET_4K    0x204       // JP $0283         C3 02 83
@@ -93,5 +91,4 @@ extern bool load_p(int name_addr, bool defer_rom);
 
 #ifdef __cplusplus
 }
-#endif
 #endif

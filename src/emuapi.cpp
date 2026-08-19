@@ -1090,7 +1090,6 @@ static int handler(void *user, const char *section, const char *name,
       }
       else if ((!strcasecmp(name, "LoadUsingROM")))
       {
-#ifdef LOAD_AND_SAVE
         if (isEnabled(value))
         {
 #ifdef INPUT_EAR
@@ -1106,13 +1105,10 @@ static int handler(void *user, const char *section, const char *name,
         } else {
           c->conf->loadUsingROM = ROM_OFF;
         }
-#else
-        c->conf->loadUsingROM = ROM_OFF;
-#endif
       }
       else if ((!strcasecmp(name, "SaveUsingROM")))
       {
-#if defined (LOAD_AND_SAVE) && (!defined(PICO_NO_SOUND))
+#ifndef PICO_NO_SOUND
         if (isEnabled(value))
         {
           if (!strcasecmp(value, "MIC"))

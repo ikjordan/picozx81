@@ -40,13 +40,9 @@ typedef enum
     PMSIZE = PCOMPUTER + PINCF7,
     PLOWRAM = PMSIZE + PINCF7,
     PM1NOT = PLOWRAM + PINCF7,
-#ifdef LOAD_AND_SAVE
     PLOADROM = PM1NOT + PINCF7,
     PSAVEROM = PLOADROM + PINCF7,
     PQSUDG = PSAVEROM + PINCF7,
-#else
-    PQSUDG = PM1NOT + PINCF7,
-#endif
     PCHR128 = PQSUDG + PINCF7,
     PBOTTOMF7 = PCHR128
 } PositionF7_T;
@@ -549,7 +545,6 @@ bool statusMenu(void)
         writeString(emu_ACBRequested() ? "ON" : "OFF", rhs, lcount++);
     }
 
-#ifdef LOAD_AND_SAVE
     writeString("LOAD ROM:", lhs, ++lcount);
     if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
     {
@@ -565,7 +560,6 @@ bool statusMenu(void)
     } else {
         writeString(emu_saveUsingROMRequested() == ROM_SD_CARD ? "CARD" : "OFF", rhs, lcount++);
     }
-#endif
 
     writeString("CHAR$128:", lhs, ++lcount);
     writeString(emu_CHR128Requested() ? "ON" : "OFF", rhs, lcount++);
@@ -998,7 +992,6 @@ bool restartMenu(void)
                     {
                         restart.m1not = !restart.m1not;
                     }
-#ifdef LOAD_AND_SAVE
                     else if (field == PLOADROM)
                     {
 #ifdef INPUT_EAR
@@ -1037,7 +1030,6 @@ bool restartMenu(void)
                         restart.saveROM = ROM_OFF;
 #endif
                     }
-#endif
                     else if (field == PQSUDG)
                     {
                         restart.qsudg = !restart.qsudg;
@@ -1081,7 +1073,6 @@ bool restartMenu(void)
                     {
                         restart.m1not = !restart.m1not;
                     }
-#ifdef LOAD_AND_SAVE
                     else if (field == PLOADROM)
                     {
 #ifdef INPUT_EAR
@@ -1120,7 +1111,6 @@ bool restartMenu(void)
                         restart.saveROM = ROM_OFF;
 #endif
                     }
-#endif
                     else if (field == PQSUDG)
                     {
                         restart.qsudg = !restart.qsudg;
@@ -1469,13 +1459,11 @@ static void showRestart(PositionF7_T pos, RestartF7_T* restart)
     writeInvertString("MINOT:", lhs, lcount + PositionF7_T::PM1NOT, pos == PositionF7_T::PM1NOT);
     writeString((restart->m1not) ? "On " : "Off", rhs , lcount + PositionF7_T::PM1NOT);
 
-#ifdef LOAD_AND_SAVE
     writeInvertString("LOAD ROM", lhs, lcount + PositionF7_T::PLOADROM, pos == PositionF7_T::PLOADROM);
     writeString((restart->loadROM == ROM_EAR_MIC) ? "Ear  " : (restart->loadROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF7_T::PLOADROM);
 
     writeInvertString("SAVE ROM", lhs, lcount + PositionF7_T::PSAVEROM, pos == PositionF7_T::PSAVEROM);
     writeString((restart->saveROM == ROM_EAR_MIC) ? "Mic  " : (restart->saveROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF7_T::PSAVEROM);
-#endif
 
     writeInvertString("CHAR$128:", lhs, lcount + PositionF7_T::PCHR128, pos == PositionF7_T::PCHR128);
     writeString((restart->chr128) ? "On " : "Off", rhs , lcount + PositionF7_T::PCHR128);

@@ -194,9 +194,7 @@ endinstr;
 instr(17,10);
    e=fetch(pc),pc++;
    d=fetch(pc),pc++;
-#ifdef LOAD_AND_SAVE
    if ((pc == SAVE_START_8K) && (!rom4k)) loadAndSaveROM();
-#endif
 endinstr;
 
 instr(18,7);
@@ -270,9 +268,7 @@ instr(33,10);
    if(!ixoriy){
       l=fetch(pc),pc++;
       h=fetch(pc),pc++;
-#ifdef LOAD_AND_SAVE
       if ((pc == LOAD_SAVE_RET_8K) && (!rom4k)) loadAndSaveROM();
-#endif
    }
    else {
       if(ixoriy==1)
@@ -1001,9 +997,7 @@ instr(0xc2,10);
 endinstr;
 
 instr(0xc3,10);
-#if (defined LOAD_AND_SAVE)
    if ((pc == LOAD_SAVE_RET_4K) && rom4k) loadAndSaveROM();
-#endif
    jp;
 endinstr;
 
@@ -1069,9 +1063,7 @@ endinstr;
 
 instr(0xd1,10);
    pop1(d,e);
-#if (defined LOAD_AND_SAVE)
    if (((pc == LOAD_START_4K) || (pc == SAVE_START_4K)) && rom4k) loadAndSaveROM();
-#endif
 endinstr;
 
 instr(0xd2,10);

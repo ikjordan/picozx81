@@ -17,9 +17,7 @@
 #include "hid_usb.h"
 #include "menu.h"
 #include "display.h"
-#ifdef LOAD_AND_SAVE
 #include "loadp.h"
-#endif
 
 char *strzx80_to_ascii(int memaddr);
 bool parseNumber(const char* input,
@@ -110,7 +108,6 @@ unsigned int __not_in_flash_func(in)(int h, int l)
         sound_beeper(0);
     }
 
-#ifdef LOAD_AND_SAVE
     if (running_rom)
     {
       data = useNTSC ? 0x40 : 0;
@@ -125,7 +122,6 @@ unsigned int __not_in_flash_func(in)(int h, int l)
         data |= loadPGetBit() ? 0x0 : 0x80;   // Reversed as use xor below
       }
     }
-#endif
 
     switch(h)
     {
@@ -475,22 +471,17 @@ bool load_p(int name_addr, bool defer_rom)
 
     // Finally load the file
     size  = (size < max_read) ? size : max_read;
-    printf("start=%i size=%i\n", start, size);
-#ifdef LOAD_AND_SAVE
     if (!defer)
-#endif
     {
       emu_FileRead(mem + start, size, offset);
       emu_FileClose();
     }
-#ifdef LOAD_AND_SAVE
     else
     {
       // Close the open file and defer loading to ROM routine
       emu_FileClose();
       loadPInitialise(fname, name_addr, rom4k);
     }
-#endif
   }
   else
   {
@@ -671,49 +662,26 @@ bool save_p(int name_addr, bool defer_rom)
   return defer;
 }
 
-#ifdef LOAD_AND_SAVE
 RomPatches_T rom_patches;
-#endif
 
 void rom8kPatches()
 {
-#ifdef LOAD_AND_SAVE
   rom_patches.save.start = SAVE_START_8K;
   rom_patches.save.use_rom = emu_saveUsingROMRequested();
   rom_patches.load.start = LOAD_START_8K;
   rom_patches.load.use_rom = emu_loadUsingROMRequested();
   rom_patches.retAddr = LOAD_SAVE_RET_8K;
   rom_patches.rstrtAddr = LOAD_SAVE_RSTRT_8K;
-#else
-  /* patch save routine */
-  mem[0x2fc]=0xed; mem[0x2fd]=0xfd;
-  mem[0x2fe]=0xc3; mem[0x2ff]=0x07; mem[0x300]=0x02;
-
-  /* patch load routine */
-  mem[0x347]=0xeb;
-  mem[0x348]=0xed; mem[0x349]=0xfc;
-  mem[0x34a]=0xc3; mem[0x34b]=0x07; mem[0x34c]=0x02;
-#endif
 }
 
 void rom4kPatches()
 {
-#ifdef LOAD_AND_SAVE
   rom_patches.save.start = SAVE_START_4K;
   rom_patches.save.use_rom = emu_saveUsingROMRequested();
   rom_patches.load.start = LOAD_START_4K;
   rom_patches.load.use_rom = emu_loadUsingROMRequested();
   rom_patches.retAddr = LOAD_SAVE_RET_4K;
   rom_patches.rstrtAddr = LOAD_SAVE_RSTRT_4K;
-#else
-  /* patch save routine */
-  mem[0x1b6]=0xed; mem[0x1b7]=0xfd;
-  mem[0x1b8]=0xc3; mem[0x1b9]=0x83; mem[0x1ba]=0x02;
-
-  /* patch load routine */
-  mem[0x206]=0xed; mem[0x207]=0xfc;
-  mem[0x208]=0xc3; mem[0x209]=0x83; mem[0x20a]=0x02;
-#endif
 }
 
 static void initmem(void)

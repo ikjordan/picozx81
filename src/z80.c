@@ -125,10 +125,7 @@ static void vsync_lower(void);
 static inline int z80_interrupt(void);
 static inline int nmi_interrupt(void);
 static unsigned long z80_op(void);
-
-#ifdef LOAD_AND_SAVE
 static void loadAndSaveROM(void);
-#endif
 
 int sound_type = SOUND_TYPE_NONE;
 bool m1not = false;
@@ -371,7 +368,6 @@ void resetZ80(void)
   }
 }
 
-#ifdef LOAD_AND_SAVE
 static void loadAndSaveROM(void)
 {
   static int sound_cache;
@@ -434,7 +430,6 @@ static void loadAndSaveROM(void)
     }
   }
 }
-#endif
 
 static void __not_in_flash_func(displayAndNewScreen)(bool sync)
 {
@@ -937,7 +932,7 @@ void __not_in_flash_func(execZX80)(void)
     if (prevVideoFlipFlop3Q != videoFlipFlop3Q)
     {
       videoFlipFlop3Q ? vsync_lower() : vsync_raise();
-      // hsync is not passed to cassette routine, as on real 
+      // hsync is not passed to cassette routine, as on real
       // hardware the signal is removed by a low pass filter
     }
 
