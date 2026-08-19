@@ -17,7 +17,7 @@ typedef enum
 /* ROM Patching */
 #define LOAD_START_4K       0x207       // POP DE           D1
 #define SAVE_START_4K       0x1b7       // POP DE           D1
-#define LOAD_SAVE_RET_4K    0x203       // POP HL           E1
+#define LOAD_SAVE_RET_4K    0x204       // JP $0283         C3 02 83
 #define LOAD_SAVE_RSTRT_4K  0x283
 
 #define LOAD_START_8K       0x347       // RRC D            CB 10

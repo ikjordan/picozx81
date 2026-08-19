@@ -1001,6 +1001,9 @@ instr(0xc2,10);
 endinstr;
 
 instr(0xc3,10);
+#if (defined LOAD_AND_SAVE)
+   if ((pc == LOAD_SAVE_RET_4K) && rom4k) loadAndSaveROM();
+#endif
    jp;
 endinstr;
 
@@ -1154,9 +1157,6 @@ endinstr;
 instr(0xe1,10);
    if(!ixoriy)
    {pop1(h,l);
-#if (defined LOAD_AND_SAVE)
-   if ((pc == LOAD_SAVE_RET_4K) && rom4k) loadAndSaveROM();
-#endif
    }
    else if(ixoriy==1)pop2(ix);
    else pop2(iy);
