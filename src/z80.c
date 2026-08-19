@@ -372,7 +372,7 @@ void resetZ80(void)
 }
 
 #ifdef LOAD_AND_SAVE
-static void __not_in_flash_func(loadAndSaveROM)(void)
+static void loadAndSaveROM(void)
 {
   static int sound_cache;
 
@@ -937,6 +937,8 @@ void __not_in_flash_func(execZX80)(void)
     if (prevVideoFlipFlop3Q != videoFlipFlop3Q)
     {
       videoFlipFlop3Q ? vsync_lower() : vsync_raise();
+      // hsync is not passed to cassette routine, as on real 
+      // hardware the signal is removed by a low pass filter
     }
 
     if (videoFlipFlop3Q && (sync_len > 0))

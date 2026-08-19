@@ -383,7 +383,7 @@ void mic_frame(uint16_t* buff)
 /* Don't make the change immediately; record it for later,
  * to be made by sound_frame() (via sound_ay_overlay()).
  */
-void sound_ay_write(int reg,int val)
+void __not_in_flash_func(sound_ay_write)(int reg,int val)
 {
   // Rely on this only being called when sound_type is QS or ZonX
   if(!sound_enabled) return;
@@ -430,7 +430,7 @@ static void sound_capture_beeper(int on, cassette_status_tag* status, change_tag
   }
   else
   {
-      printf("change_count exceeded %i\n", status->change_count);
+      printf("change_count exceeded\n");
   }
 }
 
@@ -588,7 +588,7 @@ static int rng=1;
 static int noise_toggle=1;
 static int env_level=0;
 
-static void sound_ay_overlay(int16_t* buff)
+static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
 {
   int tone_level[3];
   int mixer,envshape;
