@@ -903,8 +903,10 @@ void __not_in_flash_func(execZX80)(void)
           if (sync_len > ZX80HSyncAcceptanceDuration)
           {
             videoFlipFlop3Q = 1;
+            vsync_lower();
           }
         }
+
         LastInstruction = LASTINSTNONE;
       break;
 
@@ -912,6 +914,7 @@ void __not_in_flash_func(execZX80)(void)
         if (videoFlipFlop3Q)
         {
           sync_len = PortActiveDuration;
+          vsync_raise();
         }
         else
         {
@@ -933,14 +936,7 @@ void __not_in_flash_func(execZX80)(void)
       break;
     }
 
-    if (prevVideoFlipFlop3Q != videoFlipFlop3Q)
-    {
-      videoFlipFlop3Q ? vsync_lower() : vsync_raise();
-      // hsync is not passed to cassette routine, as on real
-      // hardware the signal is removed by a low pass filter
-    }
-
-    if (videoFlipFlop3Q && (sync_len > 0))
+     if (videoFlipFlop3Q && (sync_len > 0))
     {
       // The line is now complete
       if (sync_len <= ZX80HSyncAcceptanceDuration)

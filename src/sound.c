@@ -241,52 +241,7 @@ void sound_change_type(int new_sound_type)
     sound_type = new_sound_type;
 }
 
-static void sound_populate_frame(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
-{
-  int frame_index = 0;
-  int16_t* restrict ibuff = (int16_t*)buff;
-#ifdef DEBUG_SOUND
-  static int change_count_max = 0;
-
-  if (change_count_max < status->change_count)
-  {
-    change_count_max = status->change_count;
-    printf("change_count_max: %i\n", change_count_max);
-  }
-#endif
-
-  for (int vs = 0; vs < status->change_count; ++vs)
-  {
-    int16_t val = (status->initial_state ? status->volume_on : status->volume_off);
-
-    for (int fill = frame_index; fill < c->vsync_offset[vs]; ++fill)
-    {
-      *ibuff++ = val;
-      *ibuff++ = val;
-    }
-    status->initial_state = !status->initial_state;
-    frame_index = c->vsync_offset[vs];
-  }
-
-  // Fill in end of frame
-  int16_t val = (status->initial_state ? status->volume_on : status->volume_off);
-
-  for (int fill = frame_index; fill < FRAME_SIZE; ++fill)
-  {
-    *ibuff++ = val;
-    *ibuff++ = val;
-  }
-  status->change_count = 0;
-
-  if (status->initial_state != status->current_state)
-  {
-#ifdef DEBUG_SOUND
-    printf("current_state incorrect");
-#endif
-  }
-}
-
-void sound_frame(uint16_t* buff)
+void __not_in_flash_func(sound_frame)(uint16_t* buff)
 {
   if (sound_type == SOUND_TYPE_NONE)
   {
@@ -335,7 +290,70 @@ void __not_in_flash_func(sound_ay_write)(int reg,int val)
   }
 }
 
-static void sound_capture_mic(int on, vsync_status_tag* status, change_tag* c)
+void __not_in_flash_func(sound_vsync)(int on)
+{
+  if ((sound_type == SOUND_TYPE_CASSETTE) || (sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CHROMA))
+  {
+    sound_capture_mic(on, &vsync, &change);
+  }
+}
+
+#ifdef MIC_SOUND
+void __not_in_flash_func(sound_mic)(int on)
+{
+  sound_capture_mic(on, &mic, &mic_change);
+}
+#endif
+
+/*
+ * Private interface
+ */
+static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
+{
+  int frame_index = 0;
+  int16_t* restrict ibuff = (int16_t*)buff;
+#ifdef DEBUG_SOUND
+  static int change_count_max = 0;
+
+  if (change_count_max < status->change_count)
+  {
+    change_count_max = status->change_count;
+    printf("change_count_max: %i\n", change_count_max);
+  }
+#endif
+
+  for (int vs = 0; vs < status->change_count; ++vs)
+  {
+    int16_t val = (status->initial_state ? status->volume_on : status->volume_off);
+
+    for (int fill = frame_index; fill < c->vsync_offset[vs]; ++fill)
+    {
+      *ibuff++ = val;
+      *ibuff++ = val;
+    }
+    status->initial_state = !status->initial_state;
+    frame_index = c->vsync_offset[vs];
+  }
+
+  // Fill in end of frame
+  int16_t val = (status->initial_state ? status->volume_on : status->volume_off);
+
+  for (int fill = frame_index; fill < FRAME_SIZE; ++fill)
+  {
+    *ibuff++ = val;
+    *ibuff++ = val;
+  }
+  status->change_count = 0;
+
+  if (status->initial_state != status->current_state)
+  {
+#ifdef DEBUG_SOUND
+    printf("current_state incorrect");
+#endif
+  }
+}
+
+static void __not_in_flash_func(sound_capture_mic)(int on, vsync_status_tag* status, change_tag* c)
 {
   // Ignore if state has not changed
   if (status->current_state == (on != 0))
@@ -365,24 +383,6 @@ static void sound_capture_mic(int on, vsync_status_tag* status, change_tag* c)
   }
 }
 
-void sound_vsync(int on)
-{
-  if ((sound_type == SOUND_TYPE_CASSETTE) || (sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CHROMA))
-  {
-    sound_capture_mic(on, &vsync, &change);
-  }
-}
-
-#ifdef MIC_SOUND
-void sound_mic(int on)
-{
-  sound_capture_mic(on, &mic, &mic_change);
-}
-#endif
-
-/*
- * Private interface
- */
 static void sound_ay_setvol(void)
 {
   int f;
@@ -655,12 +655,12 @@ bool sound_load_snap(uint32_t version)
   else // SUPPORTED_VERSION_2
   {
 #ifdef MIC_SOUND
-  if (!emu_FileReadBytes(&mic_change, sizeof(mic_change))) return false;
-  if (!emu_FileReadBytes(&mic, sizeof(mic))) return false;
+    if (!emu_FileReadBytes(&mic_change, sizeof(mic_change))) return false;
+    if (!emu_FileReadBytes(&mic, sizeof(mic))) return false;
 #else
-  // These reads will be overwritten later
-  if (!emu_FileReadBytes(&change, sizeof(change))) return false;
-  if (!emu_FileReadBytes(&vsync, sizeof(vsync))) return false;
+    // These reads will be overwritten later
+    if (!emu_FileReadBytes(&change, sizeof(change))) return false;
+    if (!emu_FileReadBytes(&vsync, sizeof(vsync))) return false;
 #endif
   }
 
