@@ -1246,6 +1246,7 @@ instr(0xf1,10);
 endinstr;
 
 instr(0xf2,10);
+   if ((pc == LOAD_SAVE_RSTRT_4K) && rom4k) loadAndSaveROM();
    if(!(f&0x80))jp;
    else pc+=2;
 endinstr;

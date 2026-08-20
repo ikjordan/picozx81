@@ -15,13 +15,13 @@ typedef enum
 /* ROM load and save detection */
 #define LOAD_START_4K       0x207       // POP DE           D1
 #define SAVE_START_4K       0x1b7       // POP DE           D1
-#define LOAD_SAVE_RET_4K    0x204       // JP $0283         C3 02 83
-#define LOAD_SAVE_RSTRT_4K  0x283
+#define LOAD_SAVE_RET_4K    0x204       // JP $0283         C3
+#define LOAD_SAVE_RSTRT_4K  0x24F       // JP P $0000       F2
 
 #define LOAD_START_8K       0x347       // RRC D            CB 10
 #define SAVE_START_8K       0x2ff       // LD DE,$12CB      11
 #define LOAD_SAVE_RET_8K    0x20A       // LD HL,$403B      21
-#define LOAD_SAVE_RSTRT_8K  0x207
+#define LOAD_SAVE_RSTRT_8K  LOAD_SAVE_RET_8K
 
 typedef struct
 {

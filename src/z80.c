@@ -371,6 +371,7 @@ void resetZ80(void)
 static void loadAndSaveROM(void)
 {
   static int sound_cache;
+  printf("loadAndSaveROM %04x\n", pc);
 
   if (!running_rom)
   {
@@ -419,7 +420,7 @@ static void loadAndSaveROM(void)
   }
   else
   {
-    if (pc == rom_patches.retAddr)
+    if ((pc == rom_patches.retAddr) || (pc == rom_patches.rstrtAddr))
     {
       // Restore the sound mode
       if (sound_cache != sound_type)
