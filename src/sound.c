@@ -66,44 +66,36 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
  * For 12S further divide by 4 to avoid full volume
  */
 #define AMPL_AY_TONE        2048
-#define AMPL_BEEPER         31
-
-/* full range of beeper volume */
-#define VOL_BEEPER          (AMPL_BEEPER<<1)
 
 #if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
-/* For PWM max value is 999, mid point 499.5 mid for each channel is 499.5 / 4 = 124
-   2048 divided by 16 gives 128
-*/
-#define CASSETTE_BEEPER_ON      ((RANGE >> 2) * 3)
-#define CASSETTE_BEEPER_OFF     0
+#define VSYNC_ON            ((RANGE >> 2) * 3)
+#define VSYNC_OFF           0
 
-#ifdef PICO_PICOZXREAL_BOARD
+#ifndef PICO_PICOZXREAL_BOARD
+/* For PWM max value is 999, mid point 499.5 mid for each channel is 499.5 / 4 = 124
+   AMPL_AY_TONE (2048) divided by 16 (2<<4) gives 128
+*/
+#define PWM_SOUND_SHIFT_REDUCE  4
+#else
 // Allow risk of over saturation for ZXReal board, as PWM output is low volume
 #define PWM_SOUND_SHIFT_REDUCE  3
-#define VSYNC_SHIFT_INCREASE    2
-#else
-#define PWM_SOUND_SHIFT_REDUCE  4
-#define VSYNC_SHIFT_INCREASE    1
 #endif
 #else
 #if (defined (SOUND_HDMI))
 // Not realistic to load from HDMI, so can make quieter
-#define CASSETTE_BEEPER_ON      0x500
-#define CASSETTE_BEEPER_OFF     -0x500
+#define VSYNC_ON            0x500
 #else
-#define CASSETTE_BEEPER_ON      0x2000
-#define CASSETTE_BEEPER_OFF     -0x2000
+#define VSYNC_ON            0x2000
 #endif
-#define VSYNC_SHIFT_INCREASE    5
+#define VSYNC_OFF           (-VSYNC_ON)
 #endif
 
 #ifdef MIC_SOUND
-#define MIC_BEEPER_OFF          ZEROMIC
+#define MIC_OFF             ZEROMIC
 #ifdef SOUND_I2S
-#define MIC_BEEPER_ON           (0-ZEROMIC)
+#define MIC_ON              (-ZEROMIC)
 #else
-#define MIC_BEEPER_ON           ((RANGE >> 2) * 3)
+#define MIC_ON              ((RANGE >> 2) * 3)
 #endif
 #endif
 
@@ -112,17 +104,8 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
  * 50th I think this should be plenty.
  */
 #define AY_CHANGE_MAX         160
-#define CASSETTE_CHANGE_MAX   (AY_CHANGE_MAX * 4)
+#define VSYNC_CHANGE_MAX      (AY_CHANGE_MAX * 4)
 #define FRAME_SIZE            (SAMPLE_FREQ / 50) // Number of samples in 20 ms
-
-/* timer used for fadeout after beeper-toggle;
- * fixed-point with low 24 bits as fractional part.
- */
-static unsigned int beeper_tick;
-static const unsigned int beeper_tick_incr = (1<<24)/SAMPLE_FREQ;
-
-static int sound_oldpos,sound_fillpos,sound_oldval,sound_oldval_orig;
-static int beeper_last_subpos=0;
 
 static uint16_t ay_tone_levels[16];
 
@@ -154,31 +137,30 @@ typedef struct
   int16_t volume_off;         // Volume for pulse 0
   bool initial_state;         // state at start of frame
   bool current_state;         // Current state
-} cassette_status_tag;
+} vsync_status_tag;
 
 typedef union
 {
-  int16_t vsync[FRAME_SIZE];
-  unsigned short  cassette_offset[CASSETTE_CHANGE_MAX];
+  unsigned short  vsync_offset[VSYNC_CHANGE_MAX];
   ay_change_tag   ay[AY_CHANGE_MAX];
 } change_tag;
 
 static change_tag change;
-static cassette_status_tag cassette;
+static vsync_status_tag vsync;
 static int ay_change_count;
 
 #ifdef MIC_SOUND
 static change_tag mic_change;
-static cassette_status_tag mic;
+static vsync_status_tag mic;
 #endif
 
 /* Private function declarations */
-static void sound_beeper_reset(void);
+static void sound_vsync_reset(void);
 static void sound_ay_reset(void);
 static void sound_ay_setvol(void);
 static void sound_ay_overlay(int16_t* buff);
-static void sound_populate_frame(uint16_t* buff, cassette_status_tag* status, const change_tag* c);
-static void sound_capture_beeper(int on, cassette_status_tag* status, change_tag* c);
+static void sound_populate_frame(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
+static void sound_capture_mic(int on, vsync_status_tag* status, change_tag* c);
 
 /* Macros */
 
@@ -210,38 +192,12 @@ static void sound_capture_beeper(int on, cassette_status_tag* status, change_tag
 
 
 /* The behaviour of the MIC output works differently on a ZX81
- * compared to Spectrum. There is no decay
-   For saving and loading we model square waves. For TV (VSYNC) sound
-   we model a decaying sound
-   */
-
-   /* VSYNC */
-
-/* it should go without saying that the beeper was hardly capable of
- * generating perfect square waves. :-) What seems to have happened is
- * that after the `click' in the intended direction away from the rest
- * (zero) position, it faded out gradually over about 1/50th of a second
- * back down to zero - the bulk of the fade being over after about
- * a 1/500th.
- *
- * The true behaviour is awkward to model accurately, but a compromise
- * emulation (doing a linear fadeout over 250 us) seems to work quite
- * well and returns to a zero reset position
+ * compared to Spectrum. There is no decay.
+ * For saving and loading square waves are modelled.
+ * The band pass filter in the ZX81 and ZX80 Mic curcuit is not
+ * modelled, as it has little impact to the relative amplitude of
+ * the frequencies generated. The 15kHz hsync signal is not emulated.
  */
-
-#define BEEPER_FADEOUT  (((1<<24)/4000)/AMPL_BEEPER)
-
-#define BEEPER_OLDVAL_ADJUST      \
-  beeper_tick+=beeper_tick_incr;  \
-  while(beeper_tick>=BEEPER_FADEOUT) \
-  {                               \
-    beeper_tick-=BEEPER_FADEOUT;  \
-    if(sound_oldval>0)            \
-      sound_oldval--;             \
-    else                          \
-      if(sound_oldval<0)          \
-        sound_oldval++;           \
-  }
 
 /*
  * Public interface
@@ -250,7 +206,7 @@ void sound_create(void)
 {
   sound_ay_setvol();
   sound_ay_reset();
-  sound_beeper_reset();
+  sound_vsync_reset();
 }
 
 void sound_init(bool acb, bool force_reset)
@@ -266,7 +222,7 @@ void sound_init(bool acb, bool force_reset)
 
     if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CHROMA) || (sound_type == SOUND_TYPE_CASSETTE))
     {
-      sound_beeper_reset();
+      sound_vsync_reset();
     }
     else if ((sound_type == SOUND_TYPE_QUICKSILVA) || (sound_type == SOUND_TYPE_ZONX))
     {
@@ -285,7 +241,7 @@ void sound_change_type(int new_sound_type)
     sound_type = new_sound_type;
 }
 
-static void sound_populate_frame(uint16_t* buff, cassette_status_tag* status, const change_tag* c)
+static void sound_populate_frame(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
 {
   int frame_index = 0;
   int16_t* restrict ibuff = (int16_t*)buff;
@@ -303,13 +259,13 @@ static void sound_populate_frame(uint16_t* buff, cassette_status_tag* status, co
   {
     int16_t val = (status->initial_state ? status->volume_on : status->volume_off);
 
-    for (int fill = frame_index; fill < c->cassette_offset[vs]; ++fill)
+    for (int fill = frame_index; fill < c->vsync_offset[vs]; ++fill)
     {
       *ibuff++ = val;
       *ibuff++ = val;
     }
     status->initial_state = !status->initial_state;
-    frame_index = c->cassette_offset[vs];
+    frame_index = c->vsync_offset[vs];
   }
 
   // Fill in end of frame
@@ -342,34 +298,9 @@ void sound_frame(uint16_t* buff)
     sound_ay_overlay((int16_t*)buff);
     ay_change_count = 0;
   }
-  else if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CHROMA))
+  else
   {
-  // Propagate to end of file
-    int16_t* restrict ptr = change.vsync+sound_fillpos;
-    int16_t* restrict ibuff = (int16_t*)buff;
-    int16_t val;
-
-    for(int f = sound_fillpos; f < FRAME_SIZE; ++f)
-    {
-      BEEPER_OLDVAL_ADJUST;
-      *ptr ++= sound_oldval;
-    }
-    sound_oldpos = -1;
-    sound_fillpos = 0;
-
-    // Copy data to buffer and convert to stereo
-    ptr = change.vsync;
-    for (int f = 0; f < FRAME_SIZE; ++f)
-    {
-      val = (*ptr << VSYNC_SHIFT_INCREASE) + ZEROSOUND;
-      *ibuff++ = val;
-      *ibuff++ = val;
-      *ptr++ = 0;
-    }
-  }
-  else if (sound_type == SOUND_TYPE_CASSETTE)
-  {
-    sound_populate_frame(buff, &cassette, &change);
+    sound_populate_frame(buff, &vsync, &change);
   }
 }
 
@@ -404,7 +335,7 @@ void __not_in_flash_func(sound_ay_write)(int reg,int val)
   }
 }
 
-static void sound_capture_beeper(int on, cassette_status_tag* status, change_tag* c)
+static void sound_capture_mic(int on, vsync_status_tag* status, change_tag* c)
 {
   // Ignore if state has not changed
   if (status->current_state == (on != 0))
@@ -412,19 +343,19 @@ static void sound_capture_beeper(int on, cassette_status_tag* status, change_tag
     return;
   }
 
-  if (status->change_count < CASSETTE_CHANGE_MAX)
+  if (status->change_count < VSYNC_CHANGE_MAX)
   {
     status->current_state = !status->current_state;
     int pos = (tstates*FRAME_SIZE)/tsmax;
 
-    if (status->change_count && (c->cassette_offset[status->change_count - 1] == pos))
+    if (status->change_count && (c->vsync_offset[status->change_count - 1] == pos))
     {
       // Remove the previous zero length blip
       status->change_count--;
     }
     else
     {
-      c->cassette_offset[status->change_count] = pos;
+      c->vsync_offset[status->change_count] = pos;
       status->change_count++;
     }
   }
@@ -434,91 +365,18 @@ static void sound_capture_beeper(int on, cassette_status_tag* status, change_tag
   }
 }
 
-void sound_beeper(int on)
+void sound_vsync(int on)
 {
-  if (sound_type == SOUND_TYPE_CASSETTE)
+  if ((sound_type == SOUND_TYPE_CASSETTE) || (sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CHROMA))
   {
-    sound_capture_beeper(on, &cassette, &change);
-  }
-  else
-  {
-    int16_t* ptr;
-    int newpos,subpos;
-    int val,subval;
-    int f;
-
-    val=(on?AMPL_BEEPER:-AMPL_BEEPER);
-
-    /* Only act on state changes - not rewriting the existing state */
-    if(val==sound_oldval_orig) return;
-
-    /* XXX a lookup table might help here... */
-    newpos=(tstates*FRAME_SIZE)/tsmax;
-    subpos=(tstates*FRAME_SIZE*VOL_BEEPER)/tsmax-VOL_BEEPER*newpos;
-
-    /* if we already wrote here, adjust the level.
-    */
-    if(newpos==sound_oldpos)
-    {
-      /* adjust it as if the rest of the sample period were all in
-      * the new state. (Often it will be, but if not, we'll fix
-      * it later by doing this again.)
-      */
-      if(on)
-      {
-        beeper_last_subpos+=VOL_BEEPER-subpos;
-      }
-      else
-      {
-        beeper_last_subpos-=VOL_BEEPER-subpos;
-      }
-    }
-    else
-    {
-      beeper_last_subpos=(on?VOL_BEEPER-subpos:subpos);
-    }
-
-    subval=-AMPL_BEEPER+beeper_last_subpos;
-
-    if(newpos>=0)
-    {
-      /* fill gap from previous position */
-      ptr=change.vsync+sound_fillpos;
-      for(f=sound_fillpos;f<newpos && f<FRAME_SIZE;f++)
-      {
-        BEEPER_OLDVAL_ADJUST;
-        *ptr++=sound_oldval;
-      }
-
-      if(newpos<FRAME_SIZE)
-      {
-        /* newpos may be less than sound_fillpos, so... */
-        ptr=change.vsync+newpos;
-
-        /* limit subval in case of faded beeper level,
-        * to avoid slight spikes on ordinary tones.
-        */
-        if((sound_oldval<0 && subval<sound_oldval) ||
-          (sound_oldval>=0 && subval>sound_oldval))
-        {
-          subval=sound_oldval;
-        }
-
-        /* write subsample value */
-        *ptr=subval;
-      }
-    }
-
-    sound_oldpos=newpos;
-    sound_fillpos=newpos+1;
-    sound_oldval=sound_oldval_orig=val;
+    sound_capture_mic(on, &vsync, &change);
   }
 }
 
 #ifdef MIC_SOUND
 void sound_mic(int on)
 {
-  sound_capture_beeper(on, &mic, &mic_change);
+  sound_capture_mic(on, &mic, &mic_change);
 }
 #endif
 
@@ -562,25 +420,20 @@ static void sound_ay_reset(void)
   ay_tick_incr=(int)(65536.*clock/SAMPLE_FREQ);
 }
 
-static void sound_beeper_reset(void)
+static void sound_vsync_reset(void)
 {
-  // beeper and cassette reset
-  sound_oldval=sound_oldval_orig=0;
-  sound_oldpos=-1;
-  sound_fillpos=0;
-  beeper_tick=0;
-
-  cassette.initial_state = false;
-  cassette.current_state = false;
-  cassette.change_count = 0;
-  cassette.volume_on = CASSETTE_BEEPER_ON;
-  cassette.volume_off = CASSETTE_BEEPER_OFF;
+  // vsync reset
+  vsync.initial_state = false;
+  vsync.current_state = false;
+  vsync.change_count = 0;
+  vsync.volume_on = VSYNC_ON;
+  vsync.volume_off = VSYNC_OFF;
 #ifdef MIC_SOUND
   mic.initial_state = false;
   mic.current_state = false;
   mic.change_count = 0;
-  mic.volume_on = MIC_BEEPER_ON;
-  mic.volume_off = MIC_BEEPER_OFF;
+  mic.volume_on = MIC_ON;
+  mic.volume_off = MIC_OFF;
 #endif
 }
 
@@ -753,7 +606,6 @@ bool sound_save_snap(void)
 {
   if (!emu_FileWriteBytes(&sound_enabled, sizeof(sound_enabled))) return false;
   if (!emu_FileWriteBytes(&sound_stereo_acb, sizeof(sound_stereo_acb))) return false;
-  if (!emu_FileWriteBytes(&beeper_tick, sizeof(beeper_tick))) return false;
 
 
 #ifdef MIC_SOUND
@@ -762,15 +614,10 @@ bool sound_save_snap(void)
 #else
   // These reads will be overwritten later
   if (!emu_FileWriteBytes(&change, sizeof(change))) return false;
-  if (!emu_FileWriteBytes(&cassette, sizeof(cassette))) return false;
+  if (!emu_FileWriteBytes(&vsync, sizeof(vsync))) return false;
 #endif
-  if (!emu_FileWriteBytes(&cassette, sizeof(cassette))) return false;
+  if (!emu_FileWriteBytes(&vsync, sizeof(vsync))) return false;
 
-  if (!emu_FileWriteBytes(&sound_oldpos, sizeof(sound_oldpos))) return false;
-  if (!emu_FileWriteBytes(&sound_fillpos, sizeof(sound_fillpos))) return false;
-  if (!emu_FileWriteBytes(&sound_oldval, sizeof(sound_oldval))) return false;
-  if (!emu_FileWriteBytes(&sound_oldval_orig, sizeof(sound_oldval_orig))) return false;
-  if (!emu_FileWriteBytes(&beeper_last_subpos, sizeof(beeper_last_subpos))) return false;
   if (!emu_FileWriteBytes(&ay_noise_tick, sizeof(ay_noise_tick))) return false;
   if (!emu_FileWriteBytes(&ay_env_tick, sizeof(ay_env_tick))) return false;
   if (!emu_FileWriteBytes(&ay_env_subcycles, sizeof(ay_env_subcycles))) return false;
@@ -798,12 +645,12 @@ bool sound_load_snap(uint32_t version)
 {
   if (!emu_FileReadBytes(&sound_enabled, sizeof(sound_enabled))) return false;
   if (!emu_FileReadBytes(&sound_stereo_acb, sizeof(sound_stereo_acb))) return false;
-  if (!emu_FileReadBytes(&beeper_tick, sizeof(beeper_tick))) return false;
   if (version == SUPPORTED_VERSION_1)
   {
     unsigned int dummy;
     if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
-    // mic_xxx and cassette_xxx variables will be initialised as sound reset called before smapshot load
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
+    // mic_xxx and vsync_xxx variables will be initialised as sound reset called before smapshot load
   }
   else // SUPPORTED_VERSION_2
   {
@@ -813,17 +660,21 @@ bool sound_load_snap(uint32_t version)
 #else
   // These reads will be overwritten later
   if (!emu_FileReadBytes(&change, sizeof(change))) return false;
-  if (!emu_FileReadBytes(&cassette, sizeof(cassette))) return false;
+  if (!emu_FileReadBytes(&vsync, sizeof(vsync))) return false;
 #endif
   }
 
-  if (!emu_FileReadBytes(&cassette, sizeof(cassette))) return false;
+  if (!emu_FileReadBytes(&vsync, sizeof(vsync))) return false;
 
-  if (!emu_FileReadBytes(&sound_oldpos, sizeof(sound_oldpos))) return false;
-  if (!emu_FileReadBytes(&sound_fillpos, sizeof(sound_fillpos))) return false;
-  if (!emu_FileReadBytes(&sound_oldval, sizeof(sound_oldval))) return false;
-  if (!emu_FileReadBytes(&sound_oldval_orig, sizeof(sound_oldval_orig))) return false;
-  if (!emu_FileReadBytes(&beeper_last_subpos, sizeof(beeper_last_subpos))) return false;
+  if (version == SUPPORTED_VERSION_1)
+  {
+    int dummy;
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
+  }
   if (!emu_FileReadBytes(&ay_noise_tick, sizeof(ay_noise_tick))) return false;
   if (!emu_FileReadBytes(&ay_env_tick, sizeof(ay_env_tick))) return false;
   if (!emu_FileReadBytes(&ay_env_subcycles, sizeof(ay_env_subcycles))) return false;

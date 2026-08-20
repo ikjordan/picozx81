@@ -102,10 +102,10 @@ unsigned int __not_in_flash_func(in)(int h, int l)
     int data=0x80;
     LastInstruction=LASTINSTINFE;
 
-    SOUND_CASSETTE(0);
+    SOUND_MIC(0);
     if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
     {
-        sound_beeper(0);
+        sound_vsync(0);
     }
 
     if (running_rom)
@@ -155,11 +155,11 @@ unsigned int __not_in_flash_func(in)(int h, int l)
 
 void __not_in_flash_func(out)(int h, int l, int a)
 {
-  SOUND_CASSETTE(1);
+  SOUND_MIC(1);
 
   if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
   {
-      sound_beeper(1);
+      sound_vsync(1);
   }
 
 #ifdef SUPPORT_CHROMA
