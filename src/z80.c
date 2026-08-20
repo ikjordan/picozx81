@@ -371,7 +371,10 @@ void resetZ80(void)
 static void loadAndSaveROM(void)
 {
   static int sound_cache;
+
+#ifdef DEBUG_LOAD_AND_SAVE
   printf("loadAndSaveROM %04x\n", pc);
+#endif
 
   if (!running_rom)
   {

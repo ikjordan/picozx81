@@ -14,10 +14,7 @@ endif()
 # Look for board file in local board directory
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
 if (NOT PICO_BOARD)
-    #set(PICO_BOARD "vgaboard")
-    #set(PICO_BOARD "dviboard")
-    set(PICO_BOARD "olimexpcboard")
-    #set(PICO_BOARD "olimexrp2350pcboard")
+    set(PICO_BOARD "vgaboard")
 endif()
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
@@ -302,8 +299,8 @@ if (${OVER_VOLT})
     target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
 endif()
 
-# always support Chroma and emulated load and save
-target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA -DLOAD_AND_SAVE)
+# always support Chroma
+target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA)
 
 target_compile_options(${PROJECT} PRIVATE -Wall ${EXTRA_CHECK})
 
