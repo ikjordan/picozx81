@@ -201,24 +201,12 @@ void emu_linein_set_frame_tstate(uint32_t tstates)
     linein_frame_tstates = tstates - ((tsmax + LINEIN_BUFF_SIZE) / (2 * LINEIN_BUFF_SIZE));
 }
 
-#define BIT_HYSTERESIS 800
-#define BIT_TO_HIGH 400
-#define BIT_TO_LOW (BIT_TO_HIGH - BIT_HYSTERESIS)
+#define BIT_HIGH 1600
 
 bool emu_is_signal_high(uint32_t tstates)
 {
-  static bool prev_high = false;
-
   int16_t val = linein_value(tstates);
-
-  if (prev_high) {
-    if (val < BIT_TO_LOW) {
-      prev_high = false;
-    }
-  } else if (val > BIT_TO_HIGH) {
-    prev_high = true;
-  }
-  return prev_high;
+  return (val > BIT_HIGH);
 }
 
 // For debug only
