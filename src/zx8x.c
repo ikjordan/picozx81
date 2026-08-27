@@ -240,6 +240,19 @@ char* z8x_getFilenameDirectory(void)
     strcpy(fname, emu_GetDirectory());
     return fname;
 }
+static bool check_file_system(void)
+{
+  bool ret = emu_fsInitialised();
+  if (!ret)
+  {
+    printf("No SD Card\n");
+    if (!rom4k)
+    {
+      ERROR_D();
+    }
+  }
+  return ret;
+}
 
 bool load_p(int name_addr, bool defer_rom)
 {
@@ -252,6 +265,11 @@ bool load_p(int name_addr, bool defer_rom)
   bool from_menu = false;
 
   bool defer = false;
+
+  if (!check_file_system())
+  {
+    return false;
+  }
 
   memset(fname, 0, sizeof(fname));
 
@@ -486,7 +504,7 @@ bool load_p(int name_addr, bool defer_rom)
   else
   {
     // Report error D
-    printf("File open failed, generating error D\n");
+    printf("load_p: File open failed, generating error D\n");
     if (!rom4k)
     {
       ERROR_D();
@@ -508,6 +526,11 @@ bool save_p(int name_addr, bool defer_rom)
   int length = 0;
   bool found = false;
   bool defer = false;
+
+  if (!check_file_system())
+  {
+    return false;
+  }
 
   memset(fname,0,sizeof(fname));
   strcat(fname, emu_GetDirectory());
@@ -671,7 +694,9 @@ void rom8kPatches()
   rom_patches.load.start = LOAD_START_8K;
   rom_patches.load.use_rom = emu_loadUsingROMRequested();
   rom_patches.retAddr = LOAD_SAVE_RET_8K;
-  rom_patches.rstrtAddr = LOAD_SAVE_RSTRT_8K;
+  rom_patches.load_rstrtAddr = LOAD_RSTRT_8K;
+  rom_patches.save_rstrtAddr = SAVE_RSTRT_8K;
+  rom_patches.pfailAddr = LOAD_SAVE_PFAIL_8K;
 }
 
 void rom4kPatches()
@@ -681,7 +706,9 @@ void rom4kPatches()
   rom_patches.load.start = LOAD_START_4K;
   rom_patches.load.use_rom = emu_loadUsingROMRequested();
   rom_patches.retAddr = LOAD_SAVE_RET_4K;
-  rom_patches.rstrtAddr = LOAD_SAVE_RSTRT_4K;
+  rom_patches.load_rstrtAddr = LOAD_SAVE_RSTRT_4K;
+  rom_patches.save_rstrtAddr = LOAD_SAVE_RSTRT_4K;
+  rom_patches.pfailAddr = LOAD_SAVE_PFAIL_4K;
 }
 
 static void initmem(void)

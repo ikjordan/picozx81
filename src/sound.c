@@ -68,7 +68,7 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 #define AMPL_AY_TONE        2048
 
 #if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
-#define VSYNC_ON            ((RANGE >> 2) * 3)
+#define VSYNC_ON            (RANGE - 1)
 #define VSYNC_OFF           0
 
 #ifndef PICO_PICOZXREAL_BOARD
@@ -85,7 +85,7 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 // Not realistic to load from HDMI, so can make quieter
 #define VSYNC_ON            0x500
 #else
-#define VSYNC_ON            0x2000
+#define VSYNC_ON            0x4000
 #endif
 #define VSYNC_OFF           (-VSYNC_ON)
 #endif
@@ -95,7 +95,7 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 #ifdef SOUND_I2S
 #define MIC_ON              (-ZEROMIC)
 #else
-#define MIC_ON              ((RANGE >> 2) * 3)
+#define MIC_ON              (RANGE -1)
 #endif
 #endif
 

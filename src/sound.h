@@ -33,15 +33,15 @@ extern "C" {
 #if defined (SOUND_I2S) || defined (SOUND_HDMI)
 #define ZEROSOUND 0             // Zero point for I2S sound
 #else
-#define ZEROSOUND (RANGE << 1)  // Zero point for PWM sound
+#define ZEROSOUND (RANGE >> 1)  // Zero point for PWM sound
 #endif
 
 
 #ifdef MIC_SOUND
 #ifdef SOUND_I2S
-#define ZEROMIC   -0x2000       // 0 in pulse train for I2S sound
+#define ZEROMIC   -0x4000       // 0 in pulse train for I2S sound
 #else
-#define ZEROMIC   (RANGE >> 2)  // 0 in pulse train for PWM sound
+#define ZEROMIC   0             // 0 in pulse train for PWM sound
 #endif
 #endif
 

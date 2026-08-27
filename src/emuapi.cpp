@@ -169,7 +169,7 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
   }
   else
   {
-    printf("file open failed\n");
+    printf("saveFile: file open failed\n");
     return false;
   }
 
@@ -1387,7 +1387,7 @@ bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
   }
   else
   {
-    printf("file open failed\n");
+    printf("load snapshotspecific: open failed\n");
   }
   EMU_UNLOCK_SDCARD
   return ret;
@@ -1442,7 +1442,7 @@ bool emu_loadSnapshotData(const char* fullpathname)
   }
   else
   {
-    printf("file open failed\n");
+    printf("loadSnapshot: file open failed\n");
   }
   EMU_UNLOCK_SDCARD
   return ret;
@@ -1505,7 +1505,7 @@ bool emu_saveSnapshot(const char* fullpathname)
   }
   else
   {
-    printf("file open failed\n");
+    printf("saveSnapshot: file open failed\n");
   }
   EMU_UNLOCK_SDCARD
   return ret;
@@ -1686,7 +1686,6 @@ void emu_WaitFor50HzTimer(void)
 #endif
     total_time = 0;
     underrun = 0;
-
 #ifdef FLASH_LED
     static bool led_on = false;
     led_on = !led_on;

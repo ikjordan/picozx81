@@ -388,7 +388,7 @@ static void loadAndSaveROM(void)
       {
         if (!load_p(rom4k ? hl : de, (rom_patches.load.use_rom == ROM_SD_CARD)))
         {
-          pc = rom_patches.rstrtAddr;
+          pc = rom_patches.pfailAddr;
         }
         else
         {
@@ -406,7 +406,7 @@ static void loadAndSaveROM(void)
       {
         if (!save_p(hl, (rom_patches.save.use_rom != ROM_OFF)))
         {
-          pc = rom_patches.rstrtAddr;
+          pc = rom_patches.pfailAddr;
         }
         else
         {
@@ -423,7 +423,7 @@ static void loadAndSaveROM(void)
   }
   else
   {
-    if ((pc == rom_patches.retAddr) || (pc == rom_patches.rstrtAddr))
+    if ((pc == rom_patches.retAddr) || (pc == rom_patches.load_rstrtAddr) || (pc == rom_patches.save_rstrtAddr))
     {
       // Restore the sound mode
       if (sound_cache != sound_type)
