@@ -1678,11 +1678,15 @@ void emu_WaitFor50HzTimer(void)
     printf("ms: %lld U: %lu\n", total_time / 1000, underrun);
 #ifdef INPUT_EAR
     printf("I: %lld S: %ld L: %ld\n", ints, sound, lineints);
+    printf("Ma: %d Mi %d\n", max_vol_val, min_vol_val);
+    max_vol_val = 0;
+    min_vol_val = 0;
 #else
     printf("I: %lld S: %ld\n", ints, sound);
 #endif
     total_time = 0;
     underrun = 0;
+
 #ifdef FLASH_LED
     static bool led_on = false;
     led_on = !led_on;

@@ -142,6 +142,29 @@ static int16_t linein_value(uint32_t tstates)
     return (int16_t)(linein_buffer[linein_buffer_available][linein_index] & 0xffff);
 }
 
+// High pass filter 3400Hz
+#define HPF_B0   24331      // 0.742517 in Q15
+#define HPF_A1   15894      // 0.485035 in Q15
+
+static inline int16_t hpf3400(int16_t input)
+{
+    static int32_t x1 = 0;
+    static int32_t y1 = 0;
+    int32_t x  = input;
+    int32_t dx = x - x1;
+
+    int32_t y = (HPF_B0 * dx + HPF_A1 * y1 + 16384) >> 15;
+
+    x1 = x;
+    y1 = y;
+
+    // 16-bit saturation
+    if (y > 32767)  y = 32767;
+    if (y < -32768) y = -32768;
+
+    return (int16_t)y;
+}
+
 // External API
 
 // Initialise the linein capture
@@ -199,14 +222,53 @@ void emu_linein_set_frame_tstate(uint32_t tstates)
 {
     // Store the tstate count at the start of the frame
     linein_frame_tstates = tstates - ((tsmax + LINEIN_BUFF_SIZE) / (2 * LINEIN_BUFF_SIZE));
+
+    // Apply high pass filter
+    int16_t* buff16 = (int16_t*)linein_buffer[linein_buffer_available];
+    int32_t i = 0;
+
+    while (i < LINEIN_BUFF_SIZE * 2)
+    {
+        int16_t val = hpf3400(buff16[i]);
+        buff16[i++] = val;
+        buff16[i++] = val;
+    }
 }
 
-#define BIT_HIGH 1600
+#ifdef TIME_SPARE
+int max_vol_val = 0;
+int min_vol_val = 0;
+#endif
+
+#define HYSTERESIS 1000
+#define BIT_HIGH   2000
+#define BIT_LOW    (BIT_HIGH - HYSTERESIS)
 
 bool emu_is_signal_high(uint32_t tstates)
 {
+  static bool last_val = false;
   int16_t val = linein_value(tstates);
-  return (val > BIT_HIGH);
+
+  if (last_val)
+  {
+    if (val < BIT_LOW)
+    {
+        last_val = false;
+    }
+  }
+  else
+  {
+    if (val > BIT_HIGH)
+    {
+        last_val = true;
+    }
+
+  }
+#ifdef TIME_SPARE
+  if (val > max_vol_val) max_vol_val = val;
+  if (val < min_vol_val) min_vol_val = val;
+#endif
+  return last_val;
 }
 
 // For debug only
