@@ -142,7 +142,7 @@ static int16_t linein_value(uint32_t tstates)
     return (int16_t)(linein_buffer[linein_buffer_available][linein_index] & 0xffff);
 }
 
-// High pass filter 3400Hz
+// High pass filter 3400Hz - emulates the ZX80/81 EAR hardware high pass filter
 #define HPF_B0   24331      // 0.742517 in Q15
 #define HPF_A1   15894      // 0.485035 in Q15
 
@@ -222,53 +222,53 @@ void emu_linein_set_frame_tstate(uint32_t tstates)
 {
     // Store the tstate count at the start of the frame
     linein_frame_tstates = tstates - ((tsmax + LINEIN_BUFF_SIZE) / (2 * LINEIN_BUFF_SIZE));
+}
 
-    // Apply high pass filter
+#ifdef TIME_SPARE
+int16_t max_vol_r = -32767;
+int16_t min_vol_r = 32767;
+int16_t max_vol_f = -32767;
+int16_t min_vol_f = 32767;
+#endif
+
+void emu_linein_apply_filter(void)
+{
+    // Apply the high pass filter to the available buffer
     int16_t* buff16 = (int16_t*)linein_buffer[linein_buffer_available];
     int32_t i = 0;
 
     while (i < LINEIN_BUFF_SIZE * 2)
     {
+#ifdef TIME_SPARE
+        int16_t raw = buff16[i];
+        if (raw > max_vol_r) max_vol_r = raw;
+        if (raw < min_vol_r) min_vol_r = raw;
+#endif
         int16_t val = hpf3400(buff16[i]);
         buff16[i++] = val;
         buff16[i++] = val;
+#ifdef TIME_SPARE
+        if (val > max_vol_f) max_vol_f = val;
+        if (val < min_vol_f) min_vol_f = val;
+#endif
     }
 }
-
-#ifdef TIME_SPARE
-int max_vol_val = 0;
-int min_vol_val = 0;
-#endif
 
 #define HYSTERESIS 1000
 #define BIT_HIGH   2000
 #define BIT_LOW    (BIT_HIGH - HYSTERESIS)
 
+// Obtain whether signal is high or low
+// Incorporates a Schmitt trigger, which is not in the original hardware
 bool emu_is_signal_high(uint32_t tstates)
 {
-  static bool last_val = false;
-  int16_t val = linein_value(tstates);
+    static bool last_state = false;
 
-  if (last_val)
-  {
-    if (val < BIT_LOW)
-    {
-        last_val = false;
-    }
-  }
-  else
-  {
-    if (val > BIT_HIGH)
-    {
-        last_val = true;
-    }
+    int16_t val = linein_value(tstates);
 
-  }
-#ifdef TIME_SPARE
-  if (val > max_vol_val) max_vol_val = val;
-  if (val < min_vol_val) min_vol_val = val;
-#endif
-  return last_val;
+    last_state = last_state ? (val > BIT_LOW) : (val > BIT_HIGH);
+
+    return last_state;
 }
 
 // For debug only

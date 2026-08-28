@@ -1649,12 +1649,16 @@ void emu_WaitFor50HzTimer(void)
 
   uint64_t start = time_us_64();
 #endif
+
   // Wait for the fifty Hz timer to fire
   sem_acquire_blocking(&timer_sem);
 
 #ifdef INPUT_EAR
   // Update the lineIn API with the tstate
   emu_linein_set_frame_tstate(tstates);
+
+  // Apply a high pass filter to the data
+  emu_linein_apply_filter();
 #endif
 
 #ifdef TIME_SPARE
@@ -1671,18 +1675,19 @@ void emu_WaitFor50HzTimer(void)
     int32_t sound = sound_count + sound_prev;
     sound_prev = -sound_count;
 #ifdef INPUT_EAR
-    int32_t lineints = linein_count + linein_prev;
+    int32_t linein_ints = linein_count + linein_prev;
     linein_prev = -linein_count;
 #endif
 
     printf("ms: %lld U: %lu\n", total_time / 1000, underrun);
-#ifdef INPUT_EAR
-    printf("I: %lld S: %ld L: %ld\n", ints, sound, lineints);
-    printf("Ma: %d Mi %d\n", max_vol_val, min_vol_val);
-    max_vol_val = 0;
-    min_vol_val = 0;
-#else
     printf("I: %lld S: %ld\n", ints, sound);
+#ifdef INPUT_EAR
+    printf("L: %ld MaR: %d MiR: %d MaF: %d MiF: %d\n", linein_ints, max_vol_r, min_vol_r, max_vol_f, min_vol_f);
+    max_vol_r = -32767;
+    min_vol_r = -max_vol_r;
+    max_vol_f = max_vol_r;
+    min_vol_f = min_vol_r;
+#else
 #endif
     total_time = 0;
     underrun = 0;
