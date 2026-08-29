@@ -19,7 +19,7 @@ typedef struct
 } chroma_t;
 #endif
 
-mutex_t next_frame_mutex;
+static mutex_t next_frame_mutex;
 semaphore_t display_initialised;
 
 bool blank = true;
@@ -67,6 +67,10 @@ static inline void set_chroma_used(uint8_t* buff, bool used);
 //
 // Public functions
 //
+void displayCommonInit(void)
+{
+    mutex_init(&next_frame_mutex);
+}
 
 void displayAllocateBuffers(uint16_t minBuffByte, uint16_t stride, uint16_t height)
 {

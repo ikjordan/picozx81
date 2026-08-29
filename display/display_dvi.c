@@ -82,8 +82,6 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     }
 #endif
 
-    mutex_init(&next_frame_mutex);
-
     // Determine the video mode
     video_mode = (!fiveSevenSix) ? &dvi_timing_640x480p_60hz : (match) ? &dvi_timing_720x576p_51hz : &dvi_timing_720x576p_50hz;
 
@@ -95,6 +93,7 @@ uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint
     stride = minBuffByte + CHARACTER_WIDTH;
 
     // Allocate the buffers
+    displayCommonInit();
     displayAllocateBuffers(minBuffByte, stride, HEIGHT);
 
     // Return the values
