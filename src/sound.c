@@ -608,8 +608,8 @@ bool sound_save_snap(void)
   if (!emu_FileWriteBytes(&sound_stereo_acb, sizeof(sound_stereo_acb))) return false;
 
 #ifdef MIC_SOUND
-  if (!emu_FileReadBytes(&mic_change, sizeof(mic_change))) return false;
-  if (!emu_FileReadBytes(&mic, sizeof(mic))) return false;
+  if (!emu_FileWriteBytes(&mic_change, sizeof(mic_change))) return false;
+  if (!emu_FileWriteBytes(&mic, sizeof(mic))) return false;
 #else
   // These reads will be overwritten later
   if (!emu_FileWriteBytes(&change, sizeof(change))) return false;
