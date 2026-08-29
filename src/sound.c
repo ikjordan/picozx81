@@ -607,7 +607,6 @@ bool sound_save_snap(void)
   if (!emu_FileWriteBytes(&sound_enabled, sizeof(sound_enabled))) return false;
   if (!emu_FileWriteBytes(&sound_stereo_acb, sizeof(sound_stereo_acb))) return false;
 
-
 #ifdef MIC_SOUND
   if (!emu_FileReadBytes(&mic_change, sizeof(mic_change))) return false;
   if (!emu_FileReadBytes(&mic, sizeof(mic))) return false;
@@ -648,8 +647,8 @@ bool sound_load_snap(uint32_t version)
   if (version == SUPPORTED_VERSION_1)
   {
     unsigned int dummy;
-    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
-    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // beeper_tick
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // beeper_tick_incr
     // mic_xxx and vsync_xxx variables will be initialised as sound reset called before smapshot load
   }
   else // SUPPORTED_VERSION_2
@@ -662,18 +661,17 @@ bool sound_load_snap(uint32_t version)
     if (!emu_FileReadBytes(&change, sizeof(change))) return false;
     if (!emu_FileReadBytes(&vsync, sizeof(vsync))) return false;
 #endif
+    if (!emu_FileReadBytes(&vsync, sizeof(vsync))) return false;
   }
-
-  if (!emu_FileReadBytes(&vsync, sizeof(vsync))) return false;
 
   if (version == SUPPORTED_VERSION_1)
   {
     int dummy;
-    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
-    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
-    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
-    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
-    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // sound_oldpos
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // sound_fillpos
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // sound_oldval
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // sound_oldval_orig
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // beeper_last_subpos 
   }
   if (!emu_FileReadBytes(&ay_noise_tick, sizeof(ay_noise_tick))) return false;
   if (!emu_FileReadBytes(&ay_env_tick, sizeof(ay_env_tick))) return false;
