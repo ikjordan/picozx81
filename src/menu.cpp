@@ -1574,6 +1574,8 @@ static void setConvert(bool zx80)
         ascii2zx['=' - 32] = 0x16;
         ascii2zx['>' - 32] = 0x17;
         ascii2zx['<' - 32] = 0x18;
+        ascii2zx[13] = 0x12;
+        ascii2zx[63] = 0x12;
     }
     else
     {
