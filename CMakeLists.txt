@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.13)
 
 # Determine the MCU type and configure accordingly
 set(PICO_MCU "rp2040" CACHE STRING "Specify Pico MCU type")
-#set(PICO_MCU "rp2350" CACHE STRING "Specify Pico MCU type")
 
 if (${PICO_MCU} STREQUAL "rp2350")
     set(PICO_PLATFORM "rp2350-arm-s")
