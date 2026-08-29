@@ -39,20 +39,19 @@ extern "C" {
 
 #ifdef MIC_SOUND
 #ifdef SOUND_I2S
-#define ZEROMIC   -0x4000       // 0 in pulse train for I2S sound
+#define MIC_OFF   -0x4000       // 0 in pulse train for I2S sound
 #else
-#define ZEROMIC   0             // 0 in pulse train for PWM sound
+#define MIC_OFF   0             // 0 in pulse train for PWM sound
 #endif
 #endif
 
 #define SAMPLE_FREQ   32000
 
 extern void sound_create(void);
-extern void sound_init(bool acb, bool force_reset);
+extern void sound_init(int new_sound_type, bool acb, bool force_reset);
 extern void sound_ay_write(int reg,int val);
 extern void sound_frame(uint16_t* buff);
 extern void sound_vsync(int on);
-extern void sound_change_type(int new_sound_type);
 
 extern bool sound_save_snap(void);
 extern bool sound_load_snap(uint32_t version);

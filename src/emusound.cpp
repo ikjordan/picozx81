@@ -44,28 +44,27 @@ uint16_t emu_sndGetSampleRate(void)
   return SAMPLE_FREQ;
 }
 
-void emu_sndInit(bool force_reset)
+void emu_sndInit(int new_sound_type, bool force_reset)
 {
   static bool soundCreated = false;
 
   change_count = 0;   // in case a changed was queued
 
-  // This can be called multiple times
+  // This will be called multiple times
   if (!soundCreated)
   {
     sound_create();
-    sound_init(emu_ACBRequested(), force_reset);
-    emu_sndSilence();
+  }
 
+  // Call each time, as sound type may have changed
+  sound_init(new_sound_type, emu_ACBRequested(), force_reset);
+  emu_sndSilence();
+
+  if (!soundCreated)
+  {
     // audio drives the 50Hz timer
     beginAudio();
     soundCreated = true;
-  }
-  else
-  {
-    // Call each time, as sound type may have changed
-    sound_init(emu_ACBRequested(), force_reset);
-    emu_sndSilence();
   }
 }
 
@@ -78,7 +77,7 @@ int emu_sndImmediateChange(int current_sound_type, int new_sound_type)
   {
     // There is, so the queued change becomes the cache
     old_sound = queued_sound_type;
-    sound_change_type(new_sound_type);
+    emu_sndInit(new_sound_type, false);
     change_count = 0;
   }
   else
@@ -87,8 +86,7 @@ int emu_sndImmediateChange(int current_sound_type, int new_sound_type)
     old_sound = current_sound_type;
     if (current_sound_type != new_sound_type)
     {
-      sound_change_type(new_sound_type);
-      emu_sndInit(false);
+      emu_sndInit(new_sound_type, false);
     }
   }
   return old_sound;
@@ -116,8 +114,7 @@ void emu_sndGenerateSamples(void)
   {
     if (--change_count == 0)
     {
-      sound_change_type(queued_sound_type);
-      emu_sndInit(false);
+      emu_sndInit(queued_sound_type, false);
     }
   }
 }
@@ -166,7 +163,7 @@ void emu_sndSilence(void)
   {
     soundBuffer16[i] = ZEROSOUND;
 #ifdef MIC_SOUND
-    micBuffer16[i] = ZEROMIC;
+    micBuffer16[i] = MIC_OFF;
 #endif
   }
 }

@@ -68,8 +68,10 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 #define AMPL_AY_TONE        2048
 
 #if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
-#define VSYNC_ON            (RANGE - 1)
-#define VSYNC_OFF           0
+#define CASSETTE_ON         (RANGE - 1)
+#define CASSETTE_OFF        0
+#define VSYNC_ON            (3 * (RANGE >> 2))
+#define VSYNC_OFF           (RANGE >> 2)
 
 #ifndef PICO_PICOZXREAL_BOARD
 /* For PWM max value is 999, mid point 499.5 mid for each channel is 499.5 / 4 = 124
@@ -81,21 +83,17 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 #define PWM_SOUND_SHIFT_REDUCE  3
 #endif
 #else
-#if (defined (SOUND_HDMI))
-// Not realistic to load from HDMI, so can make quieter
+#define CASSETTE_ON         0x4000
+#define CASSETTE_OFF        (-CASSETTE_ON)
 #define VSYNC_ON            0x500
-#else
-#define VSYNC_ON            0x4000
-#endif
 #define VSYNC_OFF           (-VSYNC_ON)
 #endif
 
 #ifdef MIC_SOUND
-#define MIC_OFF             ZEROMIC
 #ifdef SOUND_I2S
-#define MIC_ON              (-ZEROMIC)
+#define MIC_ON              (-MIC_OFF)
 #else
-#define MIC_ON              (RANGE -1)
+#define MIC_ON              (RANGE - 1)
 #endif
 #endif
 
@@ -155,7 +153,8 @@ static vsync_status_tag mic;
 #endif
 
 /* Private function declarations */
-static void sound_vsync_reset(void);
+static void sound_reset(int prev_sound_type);
+static void sound_vsync_reset(bool full);
 static void sound_ay_reset(void);
 static void sound_ay_setvol(void);
 static void sound_ay_overlay(int16_t* buff);
@@ -204,41 +203,31 @@ static void sound_capture_mic(int on, vsync_status_tag* status, change_tag* c);
  */
 void sound_create(void)
 {
+  sound_type = SOUND_TYPE_NONE;
+  sound_enabled=0;
+
   sound_ay_setvol();
   sound_ay_reset();
-  sound_vsync_reset();
+  sound_vsync_reset(true);
 }
 
-void sound_init(bool acb, bool force_reset)
+void sound_init(int new_sound_type, bool acb, bool force_reset)
 {
-  static int last_sound_type = SOUND_TYPE_NONE;
+  int last_sound_type = force_reset ? SOUND_TYPE_NONE : sound_type;
+  sound_type = new_sound_type;
 
   sound_stereo_acb = (AUDIO_PIN_L != AUDIO_PIN_R) ? acb : 0;
 
   if (force_reset || (sound_type != last_sound_type))
   {
-    last_sound_type = sound_type;
     sound_enabled=1;
-
-    if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CHROMA) || (sound_type == SOUND_TYPE_CASSETTE))
-    {
-      sound_vsync_reset();
-    }
-    else if ((sound_type == SOUND_TYPE_QUICKSILVA) || (sound_type == SOUND_TYPE_ZONX))
-    {
-      sound_ay_reset();
-    }
+    sound_reset(last_sound_type);
   }
 }
 
 void sound_end(void)
 {
   sound_enabled=0;
-}
-
-void sound_change_type(int new_sound_type)
-{
-    sound_type = new_sound_type;
 }
 
 void __not_in_flash_func(sound_frame)(uint16_t* buff)
@@ -383,6 +372,18 @@ static void __not_in_flash_func(sound_capture_mic)(int on, vsync_status_tag* sta
   }
 }
 
+static void sound_reset(int prev_sound_type)
+{
+  if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CHROMA) || (sound_type == SOUND_TYPE_CASSETTE))
+  {
+    sound_vsync_reset((prev_sound_type != SOUND_TYPE_VSYNC) && (prev_sound_type != SOUND_TYPE_CHROMA) && (prev_sound_type != SOUND_TYPE_CASSETTE));
+  }
+  else if ((sound_type == SOUND_TYPE_QUICKSILVA) || (sound_type == SOUND_TYPE_ZONX))
+  {
+    sound_ay_reset();
+  }
+}
+
 static void sound_ay_setvol(void)
 {
   int f;
@@ -420,21 +421,25 @@ static void sound_ay_reset(void)
   ay_tick_incr=(int)(65536.*clock/SAMPLE_FREQ);
 }
 
-static void sound_vsync_reset(void)
+static void sound_vsync_reset(bool full)
 {
-  // vsync reset
-  vsync.initial_state = false;
-  vsync.current_state = false;
-  vsync.change_count = 0;
-  vsync.volume_on = VSYNC_ON;
-  vsync.volume_off = VSYNC_OFF;
+  vsync.volume_on = (sound_type == SOUND_TYPE_CASSETTE) ? CASSETTE_ON : VSYNC_ON;
+  vsync.volume_off = (sound_type == SOUND_TYPE_CASSETTE) ? CASSETTE_OFF : VSYNC_OFF;
+
+  if (full)
+  {
+    // vsync reset
+    vsync.initial_state = false;
+    vsync.current_state = false;
+    vsync.change_count = 0;
 #ifdef MIC_SOUND
-  mic.initial_state = false;
-  mic.current_state = false;
-  mic.change_count = 0;
-  mic.volume_on = MIC_ON;
-  mic.volume_off = MIC_OFF;
+    mic.initial_state = false;
+    mic.current_state = false;
+    mic.change_count = 0;
+    mic.volume_on = MIC_ON;
+    mic.volume_off = MIC_OFF;
 #endif
+  }
 }
 
 static int rng=1;
@@ -662,7 +667,7 @@ bool sound_load_snap(uint32_t version)
     if (!emu_FileReadBytes(&vsync, sizeof(vsync))) return false;
 #endif
     if (!emu_FileReadBytes(&vsync, sizeof(vsync))) return false;
-  }
+    }
 
   if (version == SUPPORTED_VERSION_1)
   {
@@ -671,7 +676,7 @@ bool sound_load_snap(uint32_t version)
     if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // sound_fillpos
     if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // sound_oldval
     if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // sound_oldval_orig
-    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // beeper_last_subpos 
+    if (!emu_FileReadBytes(&dummy, sizeof(dummy))) return false;  // beeper_last_subpos
   }
   if (!emu_FileReadBytes(&ay_noise_tick, sizeof(ay_noise_tick))) return false;
   if (!emu_FileReadBytes(&ay_env_tick, sizeof(ay_env_tick))) return false;

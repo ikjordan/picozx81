@@ -848,7 +848,6 @@ void z8x_Init(void)
   zx80 = emu_ZX80Requested();
   rom4k = emu_ROM4KRequested();
   ramsize = emu_MemoryRequested();
-  sound_type = emu_SoundRequested();
   m1not = emu_M1NOTRequested();
   chr128 = emu_CHR128Requested();
   LowRAM = emu_LowRAMRequested();
@@ -862,6 +861,9 @@ void z8x_Init(void)
   setDisplayBoundaries();
   emu_KeyboardInitialise(keyboard);
   emu_JoystickInitialiseNinePin();
+
+  // Initialise sound, values will be updated if snap loaded
+  emu_sndInit(emu_SoundRequested(), true);
 
   /* load rom with ghosting at 0x2000 */
   int siz=(rom4k?4096:8192);
@@ -890,7 +892,6 @@ void z8x_Init(void)
   memset( keyboard, 255, sizeof( keyboard ) );
 
   resetZ80();
-  emu_sndInit(true);
 
   if (load_snap)
   {
@@ -901,8 +902,7 @@ void z8x_Init(void)
 
 void z8x_updateValues(void)
 {
-  sound_type = emu_SoundRequested();
-  emu_sndInit(false);
+  emu_sndInit(emu_SoundRequested(), false);
 
   useWRX = emu_WRXRequested();
   useNTSC = emu_NTSCRequested();
