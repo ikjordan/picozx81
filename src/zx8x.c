@@ -254,7 +254,7 @@ static bool check_file_system(void)
   return ret;
 }
 
-bool load_p(int name_addr, bool defer_rom)
+LoadSaveResult_t load_p(int name_addr, bool defer_rom)
 {
   int max_read;
   char* ptr=(char*)mem + (name_addr & 0x7fff);
@@ -264,11 +264,9 @@ bool load_p(int name_addr, bool defer_rom)
   int offset = 0;
   bool from_menu = false;
 
-  bool defer = false;
-
   if (!check_file_system())
   {
-    return false;
+    return LOAD_SAVE_FAILED;
   }
 
   memset(fname, 0, sizeof(fname));
@@ -302,7 +300,7 @@ bool load_p(int name_addr, bool defer_rom)
         {
           printf("Mem load address parse error, generating error 1\n");
           ERROR_INV1();
-          return defer;
+          return LOAD_SAVE_FAILED;
         }
 
         // Series of checks to ensure start is in the right area
@@ -372,7 +370,7 @@ bool load_p(int name_addr, bool defer_rom)
       ERROR_D();
     }
     EMU_UNLOCK_SDCARD
-    return defer;
+    return LOAD_SAVE_FAILED;
   }
   else if (size <= offset)
   {
@@ -380,7 +378,7 @@ bool load_p(int name_addr, bool defer_rom)
     printf("No data to write to RAM, generating error 3\n");
     ERROR_INV3();
     EMU_UNLOCK_SDCARD
-    return defer;
+    return LOAD_SAVE_FAILED;
   }
 
   if ((!autoload) && (start < 0)) /* if start address is given then don't search for settings */
@@ -413,7 +411,7 @@ bool load_p(int name_addr, bool defer_rom)
       z8x_Start(emu_GetFileName());
       resetRequired = true;
       EMU_UNLOCK_SDCARD
-      return defer;
+      return LOAD_SAVE_REBOOT_NEEDED;
     }
   }
 
@@ -452,14 +450,12 @@ bool load_p(int name_addr, bool defer_rom)
         ERROR_INV3();
         emu_FileClose();
         EMU_UNLOCK_SDCARD
-        return defer;
+        return LOAD_SAVE_FAILED;
       }
     }
     else
     {
       // A plain load
-      defer = defer_rom;
-
       if (rom4k)
       {
         start = 0x4000;
@@ -489,7 +485,7 @@ bool load_p(int name_addr, bool defer_rom)
 
     // Finally load the file
     size  = (size < max_read) ? size : max_read;
-    if (!defer)
+    if (!defer_rom)
     {
       emu_FileRead(mem + start, size, offset);
       emu_FileClose();
@@ -510,13 +506,13 @@ bool load_p(int name_addr, bool defer_rom)
       ERROR_D();
     }
     EMU_UNLOCK_SDCARD
-    return defer;
+    return LOAD_SAVE_FAILED;
   }
   EMU_UNLOCK_SDCARD
-  return defer;
+  return defer_rom ? LOAD_SAVE_ROM : LOAD_SAVE_COMPLETED;
 }
 
-bool save_p(int name_addr, bool defer_rom)
+LoadSaveResult_t save_p(int name_addr, bool defer_rom)
 {
   char* ptr=(char*)(mem+name_addr);
   char* dptr=fname;
@@ -525,11 +521,10 @@ bool save_p(int name_addr, bool defer_rom)
   int start = 0;
   int length = 0;
   bool found = false;
-  bool defer = false;
 
   if (!check_file_system())
   {
-    return false;
+    return LOAD_SAVE_FAILED;
   }
 
   memset(fname,0,sizeof(fname));
@@ -621,14 +616,14 @@ bool save_p(int name_addr, bool defer_rom)
           {
             printf("Illegal start address, generating error 1\n");
             ERROR_INV1();
-            return defer;
+            return LOAD_SAVE_FAILED;
           }
 
           if (!parseNumber(comma, 1, 0x10000, 0, (unsigned int*)&length))
           {
             printf("Illegal length, generating error 2\n");
             ERROR_INV2();
-            return defer;
+            return LOAD_SAVE_FAILED;
           }
 
           // Check that the end address is within 64kB
@@ -636,7 +631,7 @@ bool save_p(int name_addr, bool defer_rom)
           {
             printf("Start %i + length %i too large, generating error 3\n", start, length);
             ERROR_INV3();
-            return defer;
+            return LOAD_SAVE_FAILED;
           }
         }
       }
@@ -668,7 +663,6 @@ bool save_p(int name_addr, bool defer_rom)
       start = 0x4009;
       length = fetch2(16404)-0x4009;
     }
-    defer = defer_rom;
   }
 
   EMU_LOCK_SDCARD
@@ -679,10 +673,10 @@ bool save_p(int name_addr, bool defer_rom)
     {
       ERROR_D();
     }
-    defer = false;
+    return LOAD_SAVE_FAILED;
   }
   EMU_UNLOCK_SDCARD
-  return defer;
+  return defer_rom ? LOAD_SAVE_ROM : LOAD_SAVE_COMPLETED;
 }
 
 RomPatches_T rom_patches;
@@ -694,10 +688,9 @@ void rom8kPatches()
   rom_patches.load.start = LOAD_START_8K;
   rom_patches.load.use_rom = emu_loadUsingROMRequested();
   rom_patches.retAddr = LOAD_SAVE_RET_8K;
-  rom_patches.load_rstrtAddr = LOAD_RSTRT_8K;
-  rom_patches.save_rstrtAddr = SAVE_RSTRT_8K;
-  rom_patches.pfailAddr = LOAD_SAVE_PFAIL_8K;
-}
+  rom_patches.successAddr = LOAD_SAVE_SUCCESS_8K;
+  rom_patches.failureAddr = LOAD_SAVE_FAILURE_8K;
+ }
 
 void rom4kPatches()
 {
@@ -706,9 +699,8 @@ void rom4kPatches()
   rom_patches.load.start = LOAD_START_4K;
   rom_patches.load.use_rom = emu_loadUsingROMRequested();
   rom_patches.retAddr = LOAD_SAVE_RET_4K;
-  rom_patches.load_rstrtAddr = LOAD_SAVE_RSTRT_4K;
-  rom_patches.save_rstrtAddr = LOAD_SAVE_RSTRT_4K;
-  rom_patches.pfailAddr = LOAD_SAVE_PFAIL_4K;
+  rom_patches.successAddr = LOAD_SAVE_SUCCESS_4K;
+  rom_patches.failureAddr = LOAD_SAVE_FAILURE_4K;
 }
 
 static void initmem(void)

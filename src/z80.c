@@ -19,14 +19,15 @@
  */
 
 
-#include <string.h>   /* for memset */
 #include "pico.h"     /* For not in flash */
-#include "z80.h"
+#include <string.h>   /* for memset */
 #include <stdio.h>
+#include <stdlib.h>   /* for exit */
 #include "emuapi.h"
 #include "emuvideo.h"
 #include "emusound.h"
 #include "display.h"
+#include "z80.h"
 
 #define parity(a) (partable[a])
 
@@ -298,6 +299,11 @@ void resetZ80(void)
     displayGetChromaBuffer(&scrnbmpc_new, scrnbmp_new);
 #endif
   }
+  else
+  {
+    printf("Failed to get screen buffer\n");
+    exit(-1);
+  }
 
   if(autoload)
   {
@@ -373,11 +379,13 @@ static void loadAndSaveROM(void)
   static int sound_cache;
 
 #ifdef DEBUG_LOAD_AND_SAVE
-  printf("loadAndSaveROM %04x\n", pc);
+  printf("loadAndSaveROM %04x Running ROM %s\n", pc, running_rom ? "Yes" : "No");
 #endif
 
   if (!running_rom)
   {
+    int sound_target = SOUND_TYPE_VSYNC;
+
     if (pc == rom_patches.load.start) // load
     {
       if (rom_patches.load.use_rom == ROM_EAR_MIC)
@@ -386,13 +394,32 @@ static void loadAndSaveROM(void)
       }
       else
       {
-        if (!load_p(rom4k ? hl : de, (rom_patches.load.use_rom == ROM_SD_CARD)))
+        LoadSaveResult_t load_result = load_p(rom4k ? hl : de, (rom_patches.load.use_rom == ROM_SD_CARD));
+#ifdef DEBUG_LOAD_AND_SAVE
+        printf("loadAndSaveROM: load_result %d\n", load_result);
+#endif
+        switch (load_result)
         {
-          pc = rom_patches.pfailAddr;
-        }
-        else
-        {
-          running_rom = true;
+          case LOAD_SAVE_COMPLETED:
+            pc = rom_patches.retAddr;
+          break;
+
+          break;
+          case LOAD_SAVE_REBOOT_NEEDED:
+            pc = 0;
+          break;
+
+          case LOAD_SAVE_FAILED:
+            pc = rom_patches.retAddr;
+          break;
+
+          case LOAD_SAVE_ROM:
+            running_rom = true;
+          break;
+
+          default:
+            printf("load_p returned %d\n", load_result);
+          break;
         }
       }
     }
@@ -400,17 +427,36 @@ static void loadAndSaveROM(void)
     {
       if (rom_patches.save.use_rom == ROM_EAR_MIC)
       {
+#ifndef MIC_SOUND
+        // Full volume if saving though audio port
+        sound_target = SOUND_TYPE_CASSETTE;
+#endif
         running_rom = true;
       }
       else
       {
-        if (!save_p(hl, (rom_patches.save.use_rom != ROM_OFF)))
+        LoadSaveResult_t save_result = save_p(hl, (rom_patches.save.use_rom != ROM_OFF));
+
+#ifdef DEBUG_LOAD_AND_SAVE
+        printf("loadAndSaveROM: save_result %d\n", save_result);
+#endif
+        switch (save_result)
         {
-          pc = rom_patches.pfailAddr;
-        }
-        else
-        {
-          running_rom = true;
+          case LOAD_SAVE_COMPLETED:
+            pc = rom_patches.retAddr;
+          break;
+
+          case LOAD_SAVE_FAILED:
+            pc = rom_patches.retAddr;
+          break;
+
+          case LOAD_SAVE_ROM:
+            running_rom = true;
+          break;
+
+          default:
+            printf("save_p returned %d\n", save_result);
+          break;
         }
       }
     }
@@ -418,12 +464,12 @@ static void loadAndSaveROM(void)
     if (running_rom)
     {
       // Run the ROM, generating MIC (save) / EAR (load) sounds
-      sound_cache = emu_sndImmediateChange(sound_type, SOUND_TYPE_CASSETTE);
+      sound_cache = emu_sndImmediateChange(sound_type, sound_target);
     }
   }
   else
   {
-    if ((pc == rom_patches.retAddr) || (pc == rom_patches.load_rstrtAddr) || (pc == rom_patches.save_rstrtAddr))
+    if ((pc == rom_patches.successAddr) || (pc == rom_patches.failureAddr))
     {
       // Restore the sound mode
       if (sound_cache != sound_type)
@@ -440,6 +486,12 @@ static void __not_in_flash_func(displayAndNewScreen)(bool sync)
   // Display the current screen
   displayBuffer(scrnbmp_new, sync, true, (chromamode != 0));
   displayGetFreeBuffer(&scrnbmp_new);
+
+  if (!scrnbmp_new)
+  {
+    printf("No free buffers\n");
+    exit(-1);
+  }
 
 #ifdef SUPPORT_CHROMA
   /* Need a chroma buffer ready in case it is switched on mid frame */
