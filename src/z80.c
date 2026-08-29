@@ -487,12 +487,6 @@ static void __not_in_flash_func(displayAndNewScreen)(bool sync)
   displayBuffer(scrnbmp_new, sync, true, (chromamode != 0));
   displayGetFreeBuffer(&scrnbmp_new);
 
-  if (!scrnbmp_new)
-  {
-    printf("No free buffers\n");
-    exit(-1);
-  }
-
 #ifdef SUPPORT_CHROMA
   /* Need a chroma buffer ready in case it is switched on mid frame */
   displayGetChromaBuffer(&scrnbmpc_new, scrnbmp_new);
@@ -988,7 +982,7 @@ void __not_in_flash_func(execZX80)(void)
       break;
     }
 
-     if (videoFlipFlop3Q && (sync_len > 0))
+    if (videoFlipFlop3Q && (sync_len > 0))
     {
       // The line is now complete
       if (sync_len <= ZX80HSyncAcceptanceDuration)

@@ -153,6 +153,7 @@ void __not_in_flash_func(displayGetFreeBuffer)(uint8_t** buff)
         {
             // To get here is unexpected!
             printf("In displayGetFreeBuffer No buffers\n");
+            exit(-1);
         }
     }
     mutex_exit(&next_frame_mutex);
