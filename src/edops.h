@@ -505,18 +505,6 @@ instr(0xbb,12);
    }
 endinstr;
 
-#ifndef LOAD_AND_SAVE
-/* Action ROM patches */
-
-instr(0xfc,4);
-   load_p(hl, false);
-endinstr;
-
-instr(0xfd,4);
-   save_p(hl, false);
-endinstr;
-#endif
-
 default: tstates+=4;
 
 }}

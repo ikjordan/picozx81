@@ -12,6 +12,7 @@ extern void emu_linein_initialise(void);
 extern void emu_linein_start(void);
 
 extern void emu_linein_set_frame_tstate(uint32_t tstates);
+extern void emu_linein_apply_filter(void);
 extern bool emu_is_signal_high(uint32_t tstates);
 
 // Helper function for debug

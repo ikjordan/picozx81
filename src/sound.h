@@ -26,24 +26,44 @@
 extern "C" {
 #endif
 
-#if defined (I2S) || defined (SOUND_HDMI)
-#define ZEROSOUND 0         // Zero point for I2S sound
-#else
-#define ZEROSOUND 500       // Zero point for PWM sound
+#if defined (SOUND_DMA) || defined (SOUND_PWM)
 #define RANGE     1000
+#endif
+
+#if defined (SOUND_I2S) || defined (SOUND_HDMI)
+#define ZEROSOUND 0             // Zero point for I2S sound
+#else
+#define ZEROSOUND (RANGE >> 1)  // Zero point for PWM sound
+#endif
+
+
+#ifdef MIC_SOUND
+#ifdef SOUND_I2S
+#define MIC_OFF   -0x4000       // 0 in pulse train for I2S sound
+#else
+#define MIC_OFF   0             // 0 in pulse train for PWM sound
+#endif
 #endif
 
 #define SAMPLE_FREQ   32000
 
 extern void sound_create(void);
-extern void sound_init(bool acb, bool reset);
+extern void sound_init(int new_sound_type, bool acb, bool force_reset);
 extern void sound_ay_write(int reg,int val);
 extern void sound_frame(uint16_t* buff);
-extern void sound_beeper(int on);
-extern void sound_change_type(int new_sound_type);
+extern void sound_vsync(int on);
 
 extern bool sound_save_snap(void);
 extern bool sound_load_snap(uint32_t version);
+
+#ifdef MIC_SOUND
+extern void sound_mic(int on);
+extern void mic_frame(uint16_t* buff);
+
+    #define SOUND_MIC(on) sound_mic((on))
+#else
+    #define SOUND_MIC(on)
+#endif
 
 #ifdef __cplusplus
 }

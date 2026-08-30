@@ -27,7 +27,8 @@
 + Emulation runs at accurate speed of a 3.25MHz ZX81
 + Supports saving of snapshots. No need to restart from the beginning after you die in a game!
 + Optionally emulates real-time ZX81/80 program load and save with realistic sound and graphics
-+ Supports load and save from a cassette recorder on the Olimex RP2350PC board
++ Can connect the sound output to the EAR socket of a real ZX81 and load programs onto the real ZX81
++ Supports load from a cassette recorder on the Olimex RP2350PC board
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
 + Load `.p`, `.81`, `.o`, `.s` (picozx81 snapshot), `.80` and `.p81` files from micro SD Card. Save `.p`, `.o` and `.s` files
@@ -54,7 +55,7 @@
 + [PICOZX with LCD](https://hackaday.io/project/186039-pico-zx-spectrum-128k) All in one board with VGA and LCD output, built in keyboard and 9-pin joystick port
 + [PICOZX for ZX-Spectrum case](https://www.pcbway.com/project/shareproject/PICOZX_motherboard_for_ZX_Spectrum_original_case_5bbde8be.html) All in one board with VGA output, designed to be put in a ZX-Spectrum case with keyboard and 9-pin joystick port
 
-Both the RP2040 and RP2350A is supported
+Both the RP2040 and RP2350A and B is supported
 
 ### Examples
 
@@ -251,7 +252,7 @@ The following can be configured:
 4. A higher tolerance value set for `VTOL` results in faster screen stabilisation. As for a real TV, a low tolerance level results in vertical sync being lost for some programs, such as [QS Defenda](http://www.zx81stuff.org.uk/zx81/tape/QSDefenda) and [Nova2005](http://web.archive.org/web/20170309171559/http://www.user.dccnet.com/wrigter/index_files/NOVA2005.p). Set the value to 15 to emulate a TV that struggles to maintain vertical lock. Run the [Flicker program](examples/ZX81/flicker.p) to see the effects of PAUSE on lock
 5. The "Big Bang" ROM can double the speed of BASIC programs
 6. The Waveshare LCD 2.8 board has no sound capabilities
-7. The `TV` sound option emulates the sound generated through the TV speaker by VSYNC pulses. The `CHROMA` sound option emulates the sound generated through the TV speaker by the Chroma interface when VSYNC pulses are not frame synchronised. `CASSETTE` is similar to `TV` but does not emulate attenuation of VSYNC signals, allowing them to be saved to cassette, or to a PC in WAV format, and then later loaded back into a ZX81
+7. The `TV` sound option emulates the sound generated through the TV speaker by VSYNC pulses. The `CHROMA` sound option emulates the sound generated through the TV speaker by the Chroma interface when VSYNC pulses are not frame synchronised. `CASSETTE` is similar to `TV` but it is 2 to 4 times louder, allowing the signal to be saved to cassette, to a PC in WAV format, or loaded directly into the EAR socket of a ZX81
 8. When `FiveSevenSix` is specified in the `[default]` section of the `config.ini` file in the root directory of the SD Card it sets the display resolution and refresh rate of picozx81 at start-up. If set for a specific program, then the resolution and refresh rate is set when the program is loaded. If necessary,picozx81 will reset and restart with the requested display before the program is loaded
 
 #### Joystick
@@ -280,8 +281,8 @@ Ten extra options apply across all programs and can only be set in the `[default
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.s`, `.81`, `.80` and `.p81` are initially displayed|Off|
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2 | 1 |
-| LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated. Set to On to enable. <br><br> On the RP2350PC set the value to EAR and connect a cassette player to the LineIn socket to load directly from a cassette. Can also load directly from a WAV file played into the LineIn socket | Off |
-| SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated. Set to On to enable. When set to MIC the audio save tones will be created, but the file will not be saved to SD-Card. <br><br> The signals can be recorded to a cassette recorder. The Signals are at Line level voltages, use an attenuating lead if connecting to a cassette recorder the requires microphone level voltages. Can also connect to a PC to save a WAV file | Off |
+| LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated. Set to On to enable. <br><br> On the RP2350PC set the value to EAR and connect a cassette player to the LineIn socket to load directly from a cassette. Cassette recorded from a real ZX81 have been successfully loaded. Can also load directly from a WAV file played into the LineIn socket | Off |
+| SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated. Set to On to enable. When set to MIC the audio save tones will be created, but the file will not be saved to SD-Card. <br><br> The signals can be recorded to a cassette recorder. The Signals are at Line level voltages, use an attenuating lead if connecting to a cassette recorder the requires microphone level voltages.<br><br> If the LineOut is connected to the ZX81 EAR socket, picozx81 can be used to load programs directly into the ZX81. Can also connect to a PC to save a WAV file | Off |
 | NinePinJoystick | When set to `on` Enables reading a 9 pin joystick, if supported in hardware | Off |
 | VGA | When set to `on` enables VGA output for the PICOZX + LCD board | off |
 
@@ -291,7 +292,8 @@ Ten extra options apply across all programs and can only be set in the `[default
 2. By default, the European ZX81 generates frames slightly faster than 50Hz (50.65 Hz). Setting `FiveSevenSix` to `Match` enables a display mode slightly faster than the 50Hz TV standard, so that better synchronisation between the frame generates by the emulator and frames sent to the monitor can be achieved. If there are issues with a TV or monitor locking to 50.65 Hz, then `FiveSevenSix` can be set to `On` to generate an exact 50 Hz frame rate
 3. The LCD supported displays all have a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for these displays (50 Hz, 50.65 Hz or 60 Hz)
 4. Due to the low speed of the ZX8x cassette interface, files can take many minutes to load and save when `LoadUsingROM` and `SaveUsingROM` is enabled
-5. A mono plug must be used for the RP2350PC LineIn connection. A stereo input will result in garbled data being received by the emulator. If a PC is used as the source of the sound data, consider using a stereo to mono converter cable
+5. On devices that support both HDMI and LineOut sound, the HDMI sound build also routes cassette sounds (at maximum volume) over the LineOut port. This makes it easier to send sounds to a real ZX81
+6. A mono plug must be used for the RP2350PC LineIn connection. A stereo input will result in garbled data being received by the emulator. If a PC is used as the source of the sound data, consider using a stereo to mono converter cable
 
 #### Examples
 
@@ -761,12 +763,12 @@ This will be named `picozx81_vga_rp2040.uf2`
 + Program debug support is limited to that provided by the ZX81 "in period", i.e. non-existent. It is recommended that one of the PC or Linux based ZX81 emulators with single step and breakpoint support are used to debug Z80 assembly programs
 + To achieve a full speed emulation the Pico is overclocked to 252MHz (640x480) and 270MHz (720x576). There is a very slight risk that this may damage the Pico. However many other applications run the Pico at this frequency. By default the stock voltage is used (1.1V), this has been successfully tested on multiple Picos. If the emulator appears unstable it can be built to use 1.2V, add `-DOVER_VOLT` to the cmake command
 + The Pico only has 1 USB port. The Pimoroni, Olimex PICO PC and Waveshare PiZero boards can be powered through a second on board USB power connector, allowing a keyboard to be connected to the Pico using an OTG adaptor
-+ The Olimex RP2350PC board has a built in USB A hub, so keyboards and joysticks can be easily connected. It is powered through a separate USB C connector
 + To connect more than one peripheral (e.g. a keyboard and joystick) at the same time, a powered USB OTG hub is required. These 3 hubs have been successfully tested. [1](https://www.amazon.co.uk/dp/B083WML1XB), [2](https://www.amazon.co.uk/dp/B078M3Z84Z), [3](https://www.amazon.co.uk/dp/B07Z4RHJ2D). Plug the hub directly into the USB port on the Pico. The USB-A connector on the PICOZX boards can also be used  
-
 **Note:** Testing has shown that all of these hubs can support OTG and power delivery to the Pico simultaneously
 
-+ On rare occasion, some USB keyboards and joysticks fail to be detected when connected via powered hubs. A re-boot of the Pico often results in successful detection
++ The Olimex RP2350PC board has a built in USB A hub, so keyboards and joysticks can be easily connected. It is powered through a separate USB C connector
+
++ On rare occasions in the past, some USB keyboards and joysticks have failed to be detected when connected via powered hubs. This issue appears to have been resolved in the latest pico SDK
 
 ### Board Specific
 
@@ -968,7 +970,7 @@ Data is stored in little endian format. The first 3 values in the snapshot forma
 
 ##### Version
 
-Major (16 bits) and minor (16 bit) version numbers
+Major (16 bits) and minor (16 bit) version numbers. Th elatest version is 2.1
 
 ##### Video Mode
 
@@ -980,9 +982,11 @@ The header is followed by the state data. A full `.s` file is roughly 66kB in si
 
 In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
-The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 83% of the available RP2040 CPU clock cycles with sound disabled and 87% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation. Figures are much lower for the RP2350 (56.5% without sound, 59% with sound)
+The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 83% of the available RP2040 CPU clock cycles with sound disabled and 87% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation. Figures are much lower for the RP2350 (56.5% without sound, 59% with sound).
 
-ZX80 hardware emulation takes more CPU. Emulating an idle ZX80 with Zonx sound enabled takes approximately 94% of a 252 MHz RP2040 based Pico. Due to the nature of the ZX80 hardware display emulation, the CPU load drops, both in B&W and Chroma, when a ZX80 program is running. The CPU load is much lower on a RP2350 based Pico. An idle ZX80 with Zonx sound enabled takes approximately 65% of a 252 MHz RP2350 based Pico
+Measurements are given for the the worst case board, the Olimex PC, as that board requires the sound ISR to be serviced 32000 times per second. The build was configured for HDMI sound, plus simultaneous MIC sound on LineOut
+
+ZX80 hardware emulation takes more CPU. Emulating an idle ZX80 with Zonx sound enabled takes approximately 92% of a 252 MHz RP2040 based Olimex PC board configured for Zonx sound on HDMI and Mic sound on LineOut. Due to the nature of the ZX80 hardware display emulation, the CPU load drops, both in B&W and Chroma, when a ZX80 program is running. The CPU load is much lower on a RP2350 based Pico. An idle ZX80 with Zonx sound enabled takes approximately 65% of a 252 MHz RP2350 based Pico
 
 The 640x480 display mode uses an overclock to 252MHz. The 720x576 display mode uses an overclock to 270MHz
 
@@ -990,9 +994,9 @@ Corrections to the tstate timings were made for `ld a,n; ld c,n; ld e,n; ld l,n;
 
 ### Possible Future Developments
 
-+ Support for USB gamepads as well as joysticks
-+ For boards that support both HDMI and LineOut sound, continually emulate the VSYNC signals presented on the MIC socket via the LineOut socket. This will enable normal sound effects to be played via HDMI, whilst programs can be saved to cassette via LineOut
 + Support the direct connection of the ZX81 keyboard to the RP2350PC
++ Support for USB gamepads as well as joysticks
++ Add emulation of [OpenSpand](https://codeberg.org/NollKollTroll/OpenSpand)
 + Move to a Pi Zero to greatly increase processing power and use [circle](https://github.com/rsta2/circle) for fast boot times
 
 ### Comparison to MCUME
@@ -1011,6 +1015,7 @@ This emulator offers the following over MCUME:
 + Support for Chroma 80 and Chroma 81
 + Support for programs which use more than 32 columns or 24 rows of characters
 + ZonX, QS and TV Sound emulation
++ Ability to save and load to cassette
 + Emulated QS UDG
 + 50Hz and 60Hz emulation
 + Emulator display refresh decoupled from Pico display rate

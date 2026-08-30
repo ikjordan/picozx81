@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.13)
 # Determine the MCU type and configure accordingly
 set(PICO_MCU "rp2040" CACHE STRING "Specify Pico MCU type")
 
-if ((${PICO_MCU} STREQUAL "rp2350"))
+if (${PICO_MCU} STREQUAL "rp2350")
     set(PICO_PLATFORM "rp2350-arm-s")
 else()
     set(PICO_PLATFORM "rp2040")
@@ -100,10 +100,6 @@ set(ZX8X_SOURCES
     src/sound.c
     src/menu.cpp)
 
-if (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
-    list(APPEND ZX8X_SOURCES src/emulinein.c)
-endif()
-
 set(INI_SOURCES
     inih/ini.c)
 
@@ -133,47 +129,82 @@ set(USB_SOURCES
     usb/hid_ri.c
     usb/hid_rip.c)
 
+# Create the correct sound additions
+if (${PICO_BOARD} STREQUAL "wspizeroboard")
+    # always only HDMI sound
+    list(APPEND ZX8X_SOURCES src/emusound_hdmi.cpp)
+    set(_HDMI_SOUND ON)
+elseif((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard"))
+    if(${HDMI_SOUND})
+        list(APPEND ZX8X_SOURCES src/emusound_hdmi.cpp)
+        set(_HDMI_SOUND ON)
+        set(_MIC_SOUND ON)
+    endif()
+
+    if(_MIC_SOUND OR (NOT _HDMI_SOUND))
+        if(${PICO_BOARD} STREQUAL "dviboard")
+            list(APPEND ZX8X_SOURCES src/emusound_i2s.cpp)
+            set(_I2S_SOUND ON)
+        elseif(${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
+            list(APPEND ZX8X_SOURCES src/emusound_dma.cpp)
+            list(APPEND ZX8X_SOURCES src/emusound_pwm.cpp)
+            list(APPEND ZX8X_SOURCES src/emulinein.c)
+            set(_DMA_SOUND ON)
+            set(_INPUT_EAR ON)
+        else() # olimexpcboard
+            list(APPEND ZX8X_SOURCES src/emusound_pwm.cpp)
+            set(_PWM_SOUND ON)
+        endif()
+    endif()
+elseif (${PICO_BOARD} STREQUAL "vgaboard")
+    list(APPEND ZX8X_SOURCES src/emusound_i2s.cpp)
+    set(_I2S_SOUND ON)
+else()
+    # All other board types have PWM sound driven by DMA
+    list(APPEND ZX8X_SOURCES src/emusound_dma.cpp)
+    list(APPEND ZX8X_SOURCES src/emusound_pwm.cpp)
+    set(_DMA_SOUND ON)
+endif()
+
 add_executable(${PROJECT}
                ${ZX8X_SOURCES}
                ${INI_SOURCES}
                ${DISPLAY_SOURCES}
                ${USB_SOURCES})
 
-# Determine sound system
-if ((((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")) AND ${HDMI_SOUND}) OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
-    # HDMI - The check also ensures that HDMI_SOUND is ignored if set for non HDMI boards
+# Configure the sound system
+if(_HDMI_SOUND)
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_HDMI)
-    if (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
-        target_link_libraries(${PROJECT} hardware_i2c)
-        pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/linein.pio)
-    endif()
-else()
-    if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "vgaboard"))
-        # I2S loaded by DMA sound
-        target_compile_definitions(${PROJECT} PRIVATE -DI2S)
-        # Default to I2S sound. Note that Pimoroni VGA board can also use PWM
-        # but values cannot be loaded by DMA, as l and r are on different slices
-        target_link_libraries(${PROJECT}
-                            hardware_pio
-                            hardware_dma)
-        pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/audio_i2s.pio)
-    elseif (NOT (${PICO_BOARD} STREQUAL "olimexpcboard"))
-        # DMA driven PWM unless Olimexpc (which has channels on different slices)
-        target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
-        target_link_libraries(${PROJECT} hardware_dma)
-        target_link_libraries(${PROJECT} hardware_pwm)
-        if (${PICO_BOARD} STREQUAL "olimexrp2350pcboard")
-            target_link_libraries(${PROJECT} hardware_i2c)
-            target_compile_definitions(${PROJECT} PRIVATE -DINPUT_EAR)
-            pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/linein.pio)
-        endif()
-    else()
-        # Pure PWM
-        target_link_libraries(${PROJECT} hardware_pwm)
-    endif()
 endif()
 
-# Determine video system and name uf2
+if(_I2S_SOUND)
+    target_compile_definitions(${PROJECT} PRIVATE -DSOUND_I2S)
+    target_link_libraries(${PROJECT} hardware_pio hardware_dma)
+    pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/audio_i2s.pio)
+endif()
+
+if(_DMA_SOUND)
+    target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
+    target_link_libraries(${PROJECT} hardware_dma hardware_pwm)
+endif()
+
+if(_PWM_SOUND)
+    target_compile_definitions(${PROJECT} PRIVATE -DSOUND_PWM)
+    target_link_libraries(${PROJECT} hardware_pwm)
+endif()
+
+if(_INPUT_EAR)
+    target_compile_definitions(${PROJECT} PRIVATE -DINPUT_EAR)
+    target_link_libraries(${PROJECT} hardware_i2c)
+    pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/src/linein.pio)
+endif()
+
+if (_MIC_SOUND)
+    target_compile_definitions(${PROJECT} PRIVATE -DMIC_SOUND)
+endif()
+
+
+# Configure the video system and build name
 set (EXTRA_CHECK "-Wextra")
 if ((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcboard") OR (${PICO_BOARD} STREQUAL "olimexrp2350pcboard") OR (${PICO_BOARD} STREQUAL "wspizeroboard"))
     target_compile_definitions(${PROJECT} PUBLIC
@@ -267,8 +298,8 @@ if (${OVER_VOLT})
     target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
 endif()
 
-# always support Chroma and emulated load and save
-target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA -DLOAD_AND_SAVE)
+# always support Chroma
+target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA)
 
 target_compile_options(${PROJECT} PRIVATE -Wall ${EXTRA_CHECK})
 

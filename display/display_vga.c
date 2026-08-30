@@ -178,8 +178,6 @@ uint displayInitialiseVGA
 {
     (void)info;
 
-    mutex_init(&next_frame_mutex);
-
     // Determine the video mode
     video_mode = (!fiveSevenSix) ? &vga_mode_320x240_60d : (match) ? &vga_mode_360x288_51 : &vga_mode_360x288_50;
 
@@ -191,6 +189,7 @@ uint displayInitialiseVGA
     stride = minBuffByte + BYTE_WIDTH;
 
     // Allocate the buffers
+    displayCommonInit();
     displayAllocateBuffers(minBuffByte, stride, HEIGHT);
 
     // Return the values

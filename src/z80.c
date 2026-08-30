@@ -19,14 +19,15 @@
  */
 
 
-#include <string.h>   /* for memset */
 #include "pico.h"     /* For not in flash */
-#include "z80.h"
+#include <string.h>   /* for memset */
 #include <stdio.h>
+#include <stdlib.h>   /* for exit */
 #include "emuapi.h"
 #include "emuvideo.h"
 #include "emusound.h"
 #include "display.h"
+#include "z80.h"
 
 #define parity(a) (partable[a])
 
@@ -125,10 +126,7 @@ static void vsync_lower(void);
 static inline int z80_interrupt(void);
 static inline int nmi_interrupt(void);
 static unsigned long z80_op(void);
-
-#ifdef LOAD_AND_SAVE
 static void loadAndSaveROM(void);
-#endif
 
 int sound_type = SOUND_TYPE_NONE;
 bool m1not = false;
@@ -301,6 +299,11 @@ void resetZ80(void)
     displayGetChromaBuffer(&scrnbmpc_new, scrnbmp_new);
 #endif
   }
+  else
+  {
+    printf("Failed to get screen buffer\n");
+    exit(-1);
+  }
 
   if(autoload)
   {
@@ -371,13 +374,18 @@ void resetZ80(void)
   }
 }
 
-#ifdef LOAD_AND_SAVE
-static void __not_in_flash_func(loadAndSaveROM)(void)
+static void loadAndSaveROM(void)
 {
   static int sound_cache;
 
+#ifdef DEBUG_LOAD_AND_SAVE
+  printf("loadAndSaveROM %04x Running ROM %s\n", pc, running_rom ? "Yes" : "No");
+#endif
+
   if (!running_rom)
   {
+    int sound_target = SOUND_TYPE_VSYNC;
+
     if (pc == rom_patches.load.start) // load
     {
       if (rom_patches.load.use_rom == ROM_EAR_MIC)
@@ -386,31 +394,69 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
       }
       else
       {
-        if (!load_p(rom4k ? hl : de, (rom_patches.load.use_rom == ROM_SD_CARD)))
+        LoadSaveResult_t load_result = load_p(rom4k ? hl : de, (rom_patches.load.use_rom == ROM_SD_CARD));
+#ifdef DEBUG_LOAD_AND_SAVE
+        printf("loadAndSaveROM: load_result %d\n", load_result);
+#endif
+        switch (load_result)
         {
-          pc = rom_patches.rstrtAddr;
-        }
-        else
-        {
-          running_rom = true;
+          case LOAD_SAVE_COMPLETED:
+            pc = rom_patches.retAddr;
+          break;
+
+          break;
+          case LOAD_SAVE_REBOOT_NEEDED:
+            pc = 0;
+          break;
+
+          case LOAD_SAVE_FAILED:
+            pc = rom_patches.retAddr;
+          break;
+
+          case LOAD_SAVE_ROM:
+            running_rom = true;
+          break;
+
+          default:
+            printf("load_p returned %d\n", load_result);
+          break;
         }
       }
     }
     else if (pc == rom_patches.save.start) // save
     {
-      if (rom_patches.load.use_rom == ROM_EAR_MIC)
+      if (rom_patches.save.use_rom == ROM_EAR_MIC)
       {
+#ifndef MIC_SOUND
+        // Full volume if saving though audio port
+        sound_target = SOUND_TYPE_CASSETTE;
+#endif
         running_rom = true;
       }
       else
       {
-        if (!save_p(hl, (rom_patches.save.use_rom != ROM_OFF)))
+        LoadSaveResult_t save_result = save_p(hl, (rom_patches.save.use_rom != ROM_OFF));
+
+#ifdef DEBUG_LOAD_AND_SAVE
+        printf("loadAndSaveROM: save_result %d\n", save_result);
+#endif
+        switch (save_result)
         {
-          pc = rom_patches.rstrtAddr;
-        }
-        else
-        {
-          running_rom = true;
+          case LOAD_SAVE_COMPLETED:
+            pc = rom_patches.retAddr;
+          break;
+
+          case LOAD_SAVE_FAILED:
+            pc = rom_patches.retAddr;
+          break;
+
+          case LOAD_SAVE_ROM:
+            running_rom = true;
+          break;
+
+          default:
+            printf("save_p returned %d\n", save_result);
+          break;
         }
       }
     }
@@ -418,12 +464,12 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
     if (running_rom)
     {
       // Run the ROM, generating MIC (save) / EAR (load) sounds
-      sound_cache = emu_sndImmediateChange(sound_type, SOUND_TYPE_CASSETTE);
+      sound_cache = emu_sndImmediateChange(sound_type, sound_target);
     }
   }
   else
   {
-    if (pc == rom_patches.retAddr)
+    if ((pc == rom_patches.successAddr) || (pc == rom_patches.failureAddr))
     {
       // Restore the sound mode
       if (sound_cache != sound_type)
@@ -434,7 +480,6 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
     }
   }
 }
-#endif
 
 static void __not_in_flash_func(displayAndNewScreen)(bool sync)
 {
@@ -904,8 +949,10 @@ void __not_in_flash_func(execZX80)(void)
           if (sync_len > ZX80HSyncAcceptanceDuration)
           {
             videoFlipFlop3Q = 1;
+            vsync_lower();
           }
         }
+
         LastInstruction = LASTINSTNONE;
       break;
 
@@ -913,6 +960,7 @@ void __not_in_flash_func(execZX80)(void)
         if (videoFlipFlop3Q)
         {
           sync_len = PortActiveDuration;
+          vsync_raise();
         }
         else
         {
@@ -932,15 +980,6 @@ void __not_in_flash_func(execZX80)(void)
           sync_len += ts;
         }
       break;
-    }
-
-    if (prevVideoFlipFlop3Q != videoFlipFlop3Q)
-    {
-      videoFlipFlop3Q ? vsync_lower() : vsync_raise();
-      // ZX80 HSYNC sound - excluded if Chroma
-      if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE)) {
-        sound_beeper(videoFlipFlop3Q);
-      }
     }
 
     if (videoFlipFlop3Q && (sync_len > 0))

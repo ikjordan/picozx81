@@ -98,7 +98,7 @@ static void es8311_init_capture(void) {
 
     // ADC volume full-scale, High pass filter (HPF) on, EQ bypass
     es8311_write(0x16, 0x20);       // Synchronise filter counter, ADC gain scale up 0dB
-    es8311_write(0x17, 0xef);       // ADC volume: +32dB - 16 * 0.5 = +24.5dB
+    es8311_write(0x17, 0xea);       // ADC volume: +32dB - 21 * 0.5 = +21.5dB
     es8311_write(0x18, 0x00);       // ALC disabled
     es8311_write(0x1c, 0x6f);       // ADCEQ bypass, Dynamic HPF, ADCHPF stage2 coeff = 0x0f
 }
@@ -140,6 +140,29 @@ static int16_t linein_value(uint32_t tstates)
         linein_index = LINEIN_BUFF_SIZE - 1;
     }
     return (int16_t)(linein_buffer[linein_buffer_available][linein_index] & 0xffff);
+}
+
+// High pass filter 3400Hz - emulates the ZX80/81 EAR hardware high pass filter
+#define HPF_B0   24331      // 0.742517 in Q15
+#define HPF_A1   15894      // 0.485035 in Q15
+
+static inline int16_t hpf3400(int16_t input)
+{
+    static int32_t x1 = 0;
+    static int32_t y1 = 0;
+    int32_t x  = input;
+    int32_t dx = x - x1;
+
+    int32_t y = (HPF_B0 * dx + HPF_A1 * y1 + 16384) >> 15;
+
+    x1 = x;
+    y1 = y;
+
+    // 16-bit saturation
+    if (y > 32767)  y = 32767;
+    if (y < -32768) y = -32768;
+
+    return (int16_t)y;
 }
 
 // External API
@@ -201,24 +224,51 @@ void emu_linein_set_frame_tstate(uint32_t tstates)
     linein_frame_tstates = tstates - ((tsmax + LINEIN_BUFF_SIZE) / (2 * LINEIN_BUFF_SIZE));
 }
 
-#define BIT_HYSTERESIS 800
-#define BIT_TO_HIGH 400
-#define BIT_TO_LOW (BIT_TO_HIGH - BIT_HYSTERESIS)
+#ifdef TIME_SPARE
+int16_t max_vol_r = -32767;
+int16_t min_vol_r = 32767;
+int16_t max_vol_f = -32767;
+int16_t min_vol_f = 32767;
+#endif
 
+void emu_linein_apply_filter(void)
+{
+    // Apply the high pass filter to the available buffer
+    int16_t* buff16 = (int16_t*)linein_buffer[linein_buffer_available];
+    int32_t i = 0;
+
+    while (i < LINEIN_BUFF_SIZE * 2)
+    {
+#ifdef TIME_SPARE
+        int16_t raw = buff16[i];
+        if (raw > max_vol_r) max_vol_r = raw;
+        if (raw < min_vol_r) min_vol_r = raw;
+#endif
+        int16_t val = hpf3400(buff16[i]);
+        buff16[i++] = val;
+        buff16[i++] = val;
+#ifdef TIME_SPARE
+        if (val > max_vol_f) max_vol_f = val;
+        if (val < min_vol_f) min_vol_f = val;
+#endif
+    }
+}
+
+#define HYSTERESIS 1000
+#define BIT_HIGH   2000
+#define BIT_LOW    (BIT_HIGH - HYSTERESIS)
+
+// Obtain whether signal is high or low
+// Incorporates a Schmitt trigger, which is not in the original hardware
 bool emu_is_signal_high(uint32_t tstates)
 {
-  static bool prev_high = false;
+    static bool last_state = false;
 
-  int16_t val = linein_value(tstates);
+    int16_t val = linein_value(tstates);
 
-  if (prev_high) {
-    if (val < BIT_TO_LOW) {
-      prev_high = false;
-    }
-  } else if (val > BIT_TO_HIGH) {
-    prev_high = true;
-  }
-  return prev_high;
+    last_state = last_state ? (val > BIT_LOW) : (val > BIT_HIGH);
+
+    return last_state;
 }
 
 // For debug only

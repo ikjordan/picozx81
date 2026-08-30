@@ -118,12 +118,11 @@ uint displayInitialiseLCD
 
     if (skip) period <<= 1;
 
-    mutex_init(&next_frame_mutex);
-
     // Is padding requested? For LCD can pad a single byte
     stride = minBuffByte + (PIXEL_WIDTH >> 3);
 
     // Allocate the buffers
+    displayCommonInit();
     displayAllocateBuffers(minBuffByte, stride, HEIGHT);
 
     // Return the values

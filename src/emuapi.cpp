@@ -169,7 +169,7 @@ bool emu_SaveFile(const char *filepath, void *buf, int size)
   }
   else
   {
-    printf("file open failed\n");
+    printf("saveFile: file open failed\n");
     return false;
   }
 
@@ -341,7 +341,7 @@ int emu_SoundRequested(void)
 bool emu_ACBRequested(void)
 {
   // Do not allow stereo on a mono board
-#if defined(I2S) || defined(SOUND_HDMI)
+#if defined(SOUND_I2S) || defined(SOUND_HDMI)
   return specific.acb;
 #else
   return specific.acb && (AUDIO_PIN_L != AUDIO_PIN_R);
@@ -1090,7 +1090,6 @@ static int handler(void *user, const char *section, const char *name,
       }
       else if ((!strcasecmp(name, "LoadUsingROM")))
       {
-#ifdef LOAD_AND_SAVE
         if (isEnabled(value))
         {
 #ifdef INPUT_EAR
@@ -1106,26 +1105,21 @@ static int handler(void *user, const char *section, const char *name,
         } else {
           c->conf->loadUsingROM = ROM_OFF;
         }
-#else
-        c->conf->loadUsingROM = ROM_OFF;
-#endif
       }
       else if ((!strcasecmp(name, "SaveUsingROM")))
       {
-#ifdef LOAD_AND_SAVE
+#ifndef PICO_NO_SOUND
         if (isEnabled(value))
         {
-#ifdef PICO_OLIMEXRP2350PC_BOARD
           if (!strcasecmp(value, "MIC"))
           {
             c->conf->saveUsingROM = ROM_EAR_MIC;
           } else {
             c->conf->saveUsingROM = ROM_SD_CARD;
           }
-#else
-          c->conf->saveUsingROM = ROM_SD_CARD;
-#endif
-        } else {
+        }
+        else
+        {
           c->conf->saveUsingROM = ROM_OFF;
         }
 #else
@@ -1336,9 +1330,8 @@ void emu_ReadSpecificValues(const char *filename)
 /********************************
  * Snapshot
  ********************************/
-#define SNAPSHOT_ID       0x50414E53          // Little endian 'SNAP'
-#define SUPPORTED_VERSION 0x00010001          // Major and minor versions
-#define SECOND_OFFSET     57                  // Start of second data section
+#define SNAPSHOT_ID         0x50414E53          // Little endian 'SNAP'
+#define SECOND_OFFSET       57                  // Start of second data section
 
 #ifdef __cplusplus
 extern "C" {
@@ -1369,7 +1362,8 @@ bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
     {
       printf("emu_loadSnapshotSpecific wrong id\n");
     }
-    else if (!emu_FileReadBytes(&id, sizeof(id)) || (id != SUPPORTED_VERSION))
+    else if ((!emu_FileReadBytes(&id, sizeof(id))) ||
+             ((id != SUPPORTED_VERSION_1) && (id != SUPPORTED_VERSION_2)))
     {
       printf("emu_loadSnapshotSpecific wrong version %li\n", id);
     }
@@ -1394,7 +1388,7 @@ bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
   }
   else
   {
-    printf("file open failed\n");
+    printf("load snapshotspecific: open failed\n");
   }
   EMU_UNLOCK_SDCARD
   return ret;
@@ -1416,7 +1410,8 @@ bool emu_loadSnapshotData(const char* fullpathname)
     {
       printf("emu_loadSnapshotData wrong id\n");
     }
-    else if (!emu_FileReadBytes(&version, sizeof(version)) || version != SUPPORTED_VERSION)
+    else if ((!emu_FileReadBytes(&version, sizeof(version))) ||
+             ((version != SUPPORTED_VERSION_1) && (version != SUPPORTED_VERSION_2)))
     {
       printf("emu_loadSnapshotData wrong version %li\n", version);
     }
@@ -1448,7 +1443,7 @@ bool emu_loadSnapshotData(const char* fullpathname)
   }
   else
   {
-    printf("file open failed\n");
+    printf("loadSnapshot: file open failed\n");
   }
   EMU_UNLOCK_SDCARD
   return ret;
@@ -1466,7 +1461,7 @@ bool emu_saveSnapshot(const char* fullpathname)
   {
     // write identifer
     uint32_t id = SNAPSHOT_ID;
-    uint32_t version = SUPPORTED_VERSION;
+    uint32_t version = SUPPORTED_VERSION_2;
     if (!emu_FileWriteBytes(&id, sizeof(id)))
     {
       printf("emu_saveSnapshot write id failed\n");
@@ -1511,7 +1506,7 @@ bool emu_saveSnapshot(const char* fullpathname)
   }
   else
   {
-    printf("file open failed\n");
+    printf("saveSnapshot: file open failed\n");
   }
   EMU_UNLOCK_SDCARD
   return ret;
@@ -1655,12 +1650,16 @@ void emu_WaitFor50HzTimer(void)
 
   uint64_t start = time_us_64();
 #endif
+
   // Wait for the fifty Hz timer to fire
   sem_acquire_blocking(&timer_sem);
 
 #ifdef INPUT_EAR
   // Update the lineIn API with the tstate
   emu_linein_set_frame_tstate(tstates);
+
+  // Apply a high pass filter to the data
+  emu_linein_apply_filter();
 #endif
 
 #ifdef TIME_SPARE
@@ -1677,15 +1676,19 @@ void emu_WaitFor50HzTimer(void)
     int32_t sound = sound_count + sound_prev;
     sound_prev = -sound_count;
 #ifdef INPUT_EAR
-    int32_t lineints = linein_count + linein_prev;
+    int32_t linein_ints = linein_count + linein_prev;
     linein_prev = -linein_count;
 #endif
 
     printf("ms: %lld U: %lu\n", total_time / 1000, underrun);
-#ifdef INPUT_EAR
-    printf("I: %lld S: %ld L: %ld\n", ints, sound, lineints);
-#else
     printf("I: %lld S: %ld\n", ints, sound);
+#ifdef INPUT_EAR
+    printf("L: %ld MaR: %d MiR: %d MaF: %d MiF: %d\n", linein_ints, max_vol_r, min_vol_r, max_vol_f, min_vol_f);
+    max_vol_r = -32767;
+    min_vol_r = -max_vol_r;
+    max_vol_f = max_vol_r;
+    min_vol_f = min_vol_r;
+#else
 #endif
     total_time = 0;
     underrun = 0;

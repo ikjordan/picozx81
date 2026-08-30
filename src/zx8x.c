@@ -17,9 +17,7 @@
 #include "hid_usb.h"
 #include "menu.h"
 #include "display.h"
-#ifdef LOAD_AND_SAVE
 #include "loadp.h"
-#endif
 
 char *strzx80_to_ascii(int memaddr);
 bool parseNumber(const char* input,
@@ -104,12 +102,12 @@ unsigned int __not_in_flash_func(in)(int h, int l)
     int data=0x80;
     LastInstruction=LASTINSTINFE;
 
+    SOUND_MIC(0);
     if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
     {
-        sound_beeper(0);
+        sound_vsync(0);
     }
 
-#ifdef LOAD_AND_SAVE
     if (running_rom)
     {
       data = useNTSC ? 0x40 : 0;
@@ -124,7 +122,6 @@ unsigned int __not_in_flash_func(in)(int h, int l)
         data |= loadPGetBit() ? 0x0 : 0x80;   // Reversed as use xor below
       }
     }
-#endif
 
     switch(h)
     {
@@ -158,9 +155,11 @@ unsigned int __not_in_flash_func(in)(int h, int l)
 
 void __not_in_flash_func(out)(int h, int l, int a)
 {
+  SOUND_MIC(1);
+
   if ((sound_type == SOUND_TYPE_VSYNC) || (sound_type == SOUND_TYPE_CASSETTE) || ((sound_type == SOUND_TYPE_CHROMA) && frameNotSync))
   {
-      sound_beeper(1);
+      sound_vsync(1);
   }
 
 #ifdef SUPPORT_CHROMA
@@ -241,8 +240,21 @@ char* z8x_getFilenameDirectory(void)
     strcpy(fname, emu_GetDirectory());
     return fname;
 }
+static bool check_file_system(void)
+{
+  bool ret = emu_fsInitialised();
+  if (!ret)
+  {
+    printf("No SD Card\n");
+    if (!rom4k)
+    {
+      ERROR_D();
+    }
+  }
+  return ret;
+}
 
-bool load_p(int name_addr, bool defer_rom)
+LoadSaveResult_t load_p(int name_addr, bool defer_rom)
 {
   int max_read;
   char* ptr=(char*)mem + (name_addr & 0x7fff);
@@ -252,7 +264,10 @@ bool load_p(int name_addr, bool defer_rom)
   int offset = 0;
   bool from_menu = false;
 
-  bool defer = false;
+  if (!check_file_system())
+  {
+    return LOAD_SAVE_FAILED;
+  }
 
   memset(fname, 0, sizeof(fname));
 
@@ -285,7 +300,7 @@ bool load_p(int name_addr, bool defer_rom)
         {
           printf("Mem load address parse error, generating error 1\n");
           ERROR_INV1();
-          return defer;
+          return LOAD_SAVE_FAILED;
         }
 
         // Series of checks to ensure start is in the right area
@@ -355,7 +370,7 @@ bool load_p(int name_addr, bool defer_rom)
       ERROR_D();
     }
     EMU_UNLOCK_SDCARD
-    return defer;
+    return LOAD_SAVE_FAILED;
   }
   else if (size <= offset)
   {
@@ -363,7 +378,7 @@ bool load_p(int name_addr, bool defer_rom)
     printf("No data to write to RAM, generating error 3\n");
     ERROR_INV3();
     EMU_UNLOCK_SDCARD
-    return defer;
+    return LOAD_SAVE_FAILED;
   }
 
   if ((!autoload) && (start < 0)) /* if start address is given then don't search for settings */
@@ -396,7 +411,7 @@ bool load_p(int name_addr, bool defer_rom)
       z8x_Start(emu_GetFileName());
       resetRequired = true;
       EMU_UNLOCK_SDCARD
-      return defer;
+      return LOAD_SAVE_REBOOT_NEEDED;
     }
   }
 
@@ -435,14 +450,12 @@ bool load_p(int name_addr, bool defer_rom)
         ERROR_INV3();
         emu_FileClose();
         EMU_UNLOCK_SDCARD
-        return defer;
+        return LOAD_SAVE_FAILED;
       }
     }
     else
     {
       // A plain load
-      defer = defer_rom;
-
       if (rom4k)
       {
         start = 0x4000;
@@ -472,39 +485,34 @@ bool load_p(int name_addr, bool defer_rom)
 
     // Finally load the file
     size  = (size < max_read) ? size : max_read;
-    printf("start=%i size=%i\n", start, size);
-#ifdef LOAD_AND_SAVE
-    if (!defer)
-#endif
+    if (!defer_rom)
     {
       emu_FileRead(mem + start, size, offset);
       emu_FileClose();
     }
-#ifdef LOAD_AND_SAVE
     else
     {
       // Close the open file and defer loading to ROM routine
       emu_FileClose();
       loadPInitialise(fname, name_addr, rom4k);
     }
-#endif
   }
   else
   {
     // Report error D
-    printf("File open failed, generating error D\n");
+    printf("load_p: File open failed, generating error D\n");
     if (!rom4k)
     {
       ERROR_D();
     }
     EMU_UNLOCK_SDCARD
-    return defer;
+    return LOAD_SAVE_FAILED;
   }
   EMU_UNLOCK_SDCARD
-  return defer;
+  return defer_rom ? LOAD_SAVE_ROM : LOAD_SAVE_COMPLETED;
 }
 
-bool save_p(int name_addr, bool defer_rom)
+LoadSaveResult_t save_p(int name_addr, bool defer_rom)
 {
   char* ptr=(char*)(mem+name_addr);
   char* dptr=fname;
@@ -513,7 +521,11 @@ bool save_p(int name_addr, bool defer_rom)
   int start = 0;
   int length = 0;
   bool found = false;
-  bool defer = false;
+
+  if (!check_file_system())
+  {
+    return LOAD_SAVE_FAILED;
+  }
 
   memset(fname,0,sizeof(fname));
   strcat(fname, emu_GetDirectory());
@@ -604,14 +616,14 @@ bool save_p(int name_addr, bool defer_rom)
           {
             printf("Illegal start address, generating error 1\n");
             ERROR_INV1();
-            return defer;
+            return LOAD_SAVE_FAILED;
           }
 
           if (!parseNumber(comma, 1, 0x10000, 0, (unsigned int*)&length))
           {
             printf("Illegal length, generating error 2\n");
             ERROR_INV2();
-            return defer;
+            return LOAD_SAVE_FAILED;
           }
 
           // Check that the end address is within 64kB
@@ -619,7 +631,7 @@ bool save_p(int name_addr, bool defer_rom)
           {
             printf("Start %i + length %i too large, generating error 3\n", start, length);
             ERROR_INV3();
-            return defer;
+            return LOAD_SAVE_FAILED;
           }
         }
       }
@@ -651,7 +663,6 @@ bool save_p(int name_addr, bool defer_rom)
       start = 0x4009;
       length = fetch2(16404)-0x4009;
     }
-    defer = defer_rom;
   }
 
   EMU_LOCK_SDCARD
@@ -662,55 +673,34 @@ bool save_p(int name_addr, bool defer_rom)
     {
       ERROR_D();
     }
-    defer = false;
+    return LOAD_SAVE_FAILED;
   }
   EMU_UNLOCK_SDCARD
-  return defer;
+  return defer_rom ? LOAD_SAVE_ROM : LOAD_SAVE_COMPLETED;
 }
 
-#ifdef LOAD_AND_SAVE
 RomPatches_T rom_patches;
-#endif
 
 void rom8kPatches()
 {
-#ifdef LOAD_AND_SAVE
   rom_patches.save.start = SAVE_START_8K;
   rom_patches.save.use_rom = emu_saveUsingROMRequested();
   rom_patches.load.start = LOAD_START_8K;
   rom_patches.load.use_rom = emu_loadUsingROMRequested();
   rom_patches.retAddr = LOAD_SAVE_RET_8K;
-  rom_patches.rstrtAddr = LOAD_SAVE_RSTRT_8K;
-#else
-  /* patch save routine */
-  mem[0x2fc]=0xed; mem[0x2fd]=0xfd;
-  mem[0x2fe]=0xc3; mem[0x2ff]=0x07; mem[0x300]=0x02;
-
-  /* patch load routine */
-  mem[0x347]=0xeb;
-  mem[0x348]=0xed; mem[0x349]=0xfc;
-  mem[0x34a]=0xc3; mem[0x34b]=0x07; mem[0x34c]=0x02;
-#endif
-}
+  rom_patches.successAddr = LOAD_SAVE_SUCCESS_8K;
+  rom_patches.failureAddr = LOAD_SAVE_FAILURE_8K;
+ }
 
 void rom4kPatches()
 {
-#ifdef LOAD_AND_SAVE
   rom_patches.save.start = SAVE_START_4K;
   rom_patches.save.use_rom = emu_saveUsingROMRequested();
   rom_patches.load.start = LOAD_START_4K;
   rom_patches.load.use_rom = emu_loadUsingROMRequested();
   rom_patches.retAddr = LOAD_SAVE_RET_4K;
-  rom_patches.rstrtAddr = LOAD_SAVE_RSTRT_4K;
-#else
-  /* patch save routine */
-  mem[0x1b6]=0xed; mem[0x1b7]=0xfd;
-  mem[0x1b8]=0xc3; mem[0x1b9]=0x83; mem[0x1ba]=0x02;
-
-  /* patch load routine */
-  mem[0x206]=0xed; mem[0x207]=0xfc;
-  mem[0x208]=0xc3; mem[0x209]=0x83; mem[0x20a]=0x02;
-#endif
+  rom_patches.successAddr = LOAD_SAVE_SUCCESS_4K;
+  rom_patches.failureAddr = LOAD_SAVE_FAILURE_4K;
 }
 
 static void initmem(void)
@@ -850,7 +840,6 @@ void z8x_Init(void)
   zx80 = emu_ZX80Requested();
   rom4k = emu_ROM4KRequested();
   ramsize = emu_MemoryRequested();
-  sound_type = emu_SoundRequested();
   m1not = emu_M1NOTRequested();
   chr128 = emu_CHR128Requested();
   LowRAM = emu_LowRAMRequested();
@@ -864,6 +853,9 @@ void z8x_Init(void)
   setDisplayBoundaries();
   emu_KeyboardInitialise(keyboard);
   emu_JoystickInitialiseNinePin();
+
+  // Initialise sound, values will be updated if snap loaded
+  emu_sndInit(emu_SoundRequested(), true);
 
   /* load rom with ghosting at 0x2000 */
   int siz=(rom4k?4096:8192);
@@ -892,7 +884,6 @@ void z8x_Init(void)
   memset( keyboard, 255, sizeof( keyboard ) );
 
   resetZ80();
-  emu_sndInit(sound_type != SOUND_TYPE_NONE, true);
 
   if (load_snap)
   {
@@ -903,8 +894,7 @@ void z8x_Init(void)
 
 void z8x_updateValues(void)
 {
-  sound_type = emu_SoundRequested();
-  emu_sndInit(sound_type != SOUND_TYPE_NONE, false);
+  emu_sndInit(emu_SoundRequested(), false);
 
   useWRX = emu_WRXRequested();
   useNTSC = emu_NTSCRequested();
@@ -924,10 +914,7 @@ bool z8x_Step(void)
     return false;
   }
 
-  if (sound_type != SOUND_TYPE_NONE)
-  {
-    emu_sndGenerateSamples();
-  }
+  emu_sndGenerateSamples();
   return true;
 }
 

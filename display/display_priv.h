@@ -25,7 +25,6 @@ extern const KEYBOARD_PIC* keyboard;
 extern bool showKeyboard;
 
 // Synchronisation primitives
-extern mutex_t next_frame_mutex;
 extern semaphore_t display_initialised;
 
 // Display blank screen
@@ -45,6 +44,7 @@ extern void core1_main_lcd(void);
 extern void core1_main(void);
 #endif
 extern void displayAllocateBuffers(uint16_t minBuffByte, uint16_t width, uint16_t height);
+extern void displayCommonInit(void);
 extern void displayStartCommon(void);
 extern void newFrame(void);
 

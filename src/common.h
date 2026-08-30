@@ -12,18 +12,23 @@ typedef enum
     ROM_EAR_MIC
 } SLRomType_T;
 
-#ifdef LOAD_AND_SAVE
-
-/* ROM Patching */
+/* ROM load and save detection */
+// Detection of start of save and load
 #define LOAD_START_4K       0x207       // POP DE           D1
 #define SAVE_START_4K       0x1b7       // POP DE           D1
-#define LOAD_SAVE_RET_4K    0x203       // POP HL           E1
-#define LOAD_SAVE_RSTRT_4K  0x283
-
 #define LOAD_START_8K       0x347       // RRC D            CB 10
 #define SAVE_START_8K       0x2ff       // LD DE,$12CB      11
-#define LOAD_SAVE_RET_8K    0x20A       // LD HL,$403B      21
-#define LOAD_SAVE_RSTRT_8K  0x207
+
+// Restart addresses after loading without using the ROM
+#define LOAD_SAVE_RET_4K    0x203
+#define LOAD_SAVE_RET_8K    0x207
+
+// Detection of success and failure when using the ROM
+#define LOAD_SAVE_SUCCESS_4K  0x204     // JP $0283
+#define LOAD_SAVE_FAILURE_4K  0x24e     // DEC D
+#define LOAD_SAVE_SUCCESS_8K  0x20A     // LD HL,$403B
+#define LOAD_SAVE_FAILURE_8K  0x207     // POP HL - NOT USED
+
 
 typedef struct
 {
@@ -36,11 +41,19 @@ typedef struct
     RomPatch_T load;
     RomPatch_T save;
     uint16_t   retAddr;
-    uint16_t   rstrtAddr;
+    uint16_t   successAddr;
+    uint16_t   failureAddr;
 } RomPatches_T;
 
 extern RomPatches_T rom_patches;
-#endif
+
+typedef enum
+{
+    LOAD_SAVE_COMPLETED = 0,
+    LOAD_SAVE_ROM,
+    LOAD_SAVE_FAILED,
+    LOAD_SAVE_REBOOT_NEEDED
+} LoadSaveResult_t;
 
 /* SOUND board types */
 #define SOUND_TYPE_NONE         0
@@ -88,10 +101,11 @@ extern "C" {
 
 extern unsigned int in(int h, int l);
 extern void out(int h, int l, int a);
-extern bool save_p(int name_addr, bool defer_rom);
-extern bool load_p(int name_addr, bool defer_rom);
+extern LoadSaveResult_t save_p(int name_addr, bool defer_rom);
+extern LoadSaveResult_t load_p(int name_addr, bool defer_rom);
 
 #ifdef __cplusplus
 }
 #endif
 #endif
+
