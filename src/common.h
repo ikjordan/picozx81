@@ -32,20 +32,14 @@ typedef enum
 
 typedef struct
 {
-    uint16_t        start;
-    SLRomType_T     use_rom;
-} RomPatch_T;
+    uint16_t    load_start;
+    uint16_t    save_start;
+    uint16_t    ret;
+    uint16_t    success;
+    uint16_t    failure;
+} RomAddresses_T;
 
-typedef struct
-{
-    RomPatch_T load;
-    RomPatch_T save;
-    uint16_t   retAddr;
-    uint16_t   successAddr;
-    uint16_t   failureAddr;
-} RomPatches_T;
-
-extern RomPatches_T rom_patches;
+extern RomAddresses_T rom_addresses;
 
 typedef enum
 {
@@ -65,8 +59,8 @@ typedef enum
 
 #define MEMORYRAM_SIZE 0x10000
 
-extern unsigned char mem[MEMORYRAM_SIZE];
-extern unsigned char *memptr[64];
+extern byte mem[MEMORYRAM_SIZE];
+extern byte* memptr[64];
 extern int memattr[64];
 extern int sound_type;
 extern unsigned long tstates;

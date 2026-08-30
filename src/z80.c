@@ -308,68 +308,70 @@ void resetZ80(void)
   if(autoload)
   {
     // Have already read the new specific parameters
-    if (rom4k)
-    {
-      /* Registers (common values) */
-      a = 0x00; f = 0x44; b = 0x00; c = 0x00;
-      d = 0x07; e = 0xae; h = 0x40; l = 0x2a;
-      pc = 0x0283;
-      ix = 0x0000; iy = 0x4000; i = 0x0e; r = 0xdd;
-      a1 = 0x00; f1 = 0x00; b1 = 0x00; c1 = 0x21;
-      d1 = 0xd8; e1 = 0xf0; h1 = 0xd8; l1 = 0xf0;
-      iff1 = 0x00; iff2 = 0x00; im = 0x02;
-      radjust = 0x6a;
-
-      /* Machine Stack (common values) */
-      sp =  (ramsize >= 16) ? (0x8000 - 4) : (0x4000 - 4 + ramsize * 1024);
-
-      mem[sp + 0] = 0x47;
-      mem[sp + 1] = 0x04;
-      mem[sp + 2] = (ramsize >= 16) ? 0x22 : 0xba;
-      mem[sp + 3] = 0x3f;
-    }
-    else
-    {
-      /* Registers (common values) */
-      a = 0x0b; f = 0x00; b = 0x00; c = 0x02;
-      d = 0x40; e = 0x9b; h = 0x40; l = 0x99;
-      pc = 0x0207;
-      ix = 0x0281; iy = 0x4000; i = 0x1e; r = 0xdd;
-      a1 = 0xf8; f1 = 0xa9; b1 = 0x00; c1 = 0x00;
-      d1 = 0x00; e1 = 0x2b; h1 = 0x00; l1 = 0x00;
-      iff1 = 0; iff2 = 0; im = 2;
-      radjust = 0xa4;
-
-      /* GOSUB Stack (common values) */
-      sp = (ramsize >= 16) ? (0x8000 - 4) : (0x4000 - 4 + ramsize * 1024);
-
-      mem[sp + 0] = 0x76;
-      mem[sp + 1] = 0x06;
-      mem[sp + 2] = 0x00;
-      mem[sp + 3] = 0x3e;
-
-      /* Update values for larger RAM sizes,
-         without these changes Multi-scroll sometimes fails to start */
-      if (ramsize >= 4)
+      if (rom4k)
       {
-        d = 0x43; h = 0x43;
-        a1 = 0xec; b1 = 0x81; c1 = 0x02;
-        radjust = 0xa9;
+        /* Registers (common values) */
+        a = 0x00; f = 0x44; b = 0x00; c = 0x00;
+        d = 0x07; e = 0xae; h = 0x40; l = 0x2a;
+        pc = 0x0283;
+        ix = 0x0000; iy = 0x4000; i = 0x0e; r = 0xdd;
+        a1 = 0x00; f1 = 0x00; b1 = 0x00; c1 = 0x21;
+        d1 = 0xd8; e1 = 0xf0; h1 = 0xd8; l1 = 0xf0;
+        iff1 = 0x00; iff2 = 0x00; im = 0x02;
+        radjust = 0x6a;
+
+        /* Machine Stack (common values) */
+        sp =  (ramsize >= 16) ? (0x8000 - 4) : (0x4000 - 4 + ramsize * 1024);
+
+        mem[sp + 0] = 0x47;
+        mem[sp + 1] = 0x04;
+        mem[sp + 2] = (ramsize >= 16) ? 0x22 : 0xba;
+        mem[sp + 3] = 0x3f;
+      }
+      else
+      {
+        /* Registers (common values) */
+        a = 0x0b; f = 0x00; b = 0x00; c = 0x02;
+        d = 0x40; e = 0x9b; h = 0x40; l = 0x99;
+        pc = 0x0207;
+        ix = 0x0281; iy = 0x4000; i = 0x1e; r = 0xdd;
+        a1 = 0xf8; f1 = 0xa9; b1 = 0x00; c1 = 0x00;
+        d1 = 0x00; e1 = 0x2b; h1 = 0x00; l1 = 0x00;
+        iff1 = 0; iff2 = 0; im = 2;
+        radjust = 0xa4;
+
+        /* GOSUB Stack (common values) */
+        sp = (ramsize >= 16) ? (0x8000 - 4) : (0x4000 - 4 + ramsize * 1024);
+
+        mem[sp + 0] = 0x76;
+        mem[sp + 1] = 0x06;
+        mem[sp + 2] = 0x00;
+        mem[sp + 3] = 0x3e;
+
+        /* Update values for larger RAM sizes,
+          without these changes Multi-scroll sometimes fails to start */
+        if (ramsize >= 4)
+        {
+          d = 0x43; h = 0x43;
+          a1 = 0xec; b1 = 0x81; c1 = 0x02;
+          radjust = 0xa9;
+        }
+
+        /* System variables */
+        mem[0x4000] = 0xff;               /* ERR_NR */
+        mem[0x4001] = 0x80;;              /* FLAGS */
+        mem[0x4002] = sp & 0xff;;         /* ERR_SP lo */
+        mem[0x4003] = sp >> 8;            /* ERR_SP hi */
+        mem[0x4004] = (sp + 4) & 0xff;    /* RAMTOP lo */
+        mem[0x4005] = (sp + 4) >> 8;      /* RAMTOP hi */
+        mem[0x4006] = 0x00;               /* MODE */
+        mem[0x4007] = 0xfe;               /* PPC lo */
+        mem[0x4008] = 0xff;               /* PPC hi */
       }
 
-      /* System variables */
-      mem[0x4000] = 0xff;               /* ERR_NR */
-      mem[0x4001] = 0x80;;              /* FLAGS */
-      mem[0x4002] = sp & 0xff;;         /* ERR_SP lo */
-      mem[0x4003] = sp >> 8;            /* ERR_SP hi */
-      mem[0x4004] = (sp + 4) & 0xff;    /* RAMTOP lo */
-      mem[0x4005] = (sp + 4) >> 8;      /* RAMTOP hi */
-      mem[0x4006] = 0x00;               /* MODE */
-      mem[0x4007] = 0xfe;               /* PPC lo */
-      mem[0x4008] = 0xff;               /* PPC hi */
-    }
-
-    /* finally, load. Reset (via resetZ80) occurs if load fails. */
+    // finally, load. Reset (via resetZ80) occurs if load fails.
+    // Note that always do a fast load here, i.e. load from
+    // SD Card or EAR ignored
     load_p(0x8000, false);
   }
 }
@@ -386,22 +388,22 @@ static void loadAndSaveROM(void)
   {
     int sound_target = SOUND_TYPE_VSYNC;
 
-    if (pc == rom_patches.load.start) // load
+    if (pc == rom_addresses.load_start) // load
     {
-      if (rom_patches.load.use_rom == ROM_EAR_MIC)
+      if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
       {
         running_rom = true;
       }
       else
       {
-        LoadSaveResult_t load_result = load_p(rom4k ? hl : de, (rom_patches.load.use_rom == ROM_SD_CARD));
+        LoadSaveResult_t load_result = load_p(rom4k ? hl : de, (emu_loadUsingROMRequested() == ROM_SD_CARD));
 #ifdef DEBUG_LOAD_AND_SAVE
         printf("loadAndSaveROM: load_result %d\n", load_result);
 #endif
         switch (load_result)
         {
           case LOAD_SAVE_COMPLETED:
-            pc = rom_patches.retAddr;
+            pc = rom_addresses.ret;
           break;
 
           break;
@@ -410,7 +412,7 @@ static void loadAndSaveROM(void)
           break;
 
           case LOAD_SAVE_FAILED:
-            pc = rom_patches.retAddr;
+            pc = rom_addresses.ret;
           break;
 
           case LOAD_SAVE_ROM:
@@ -423,9 +425,9 @@ static void loadAndSaveROM(void)
         }
       }
     }
-    else if (pc == rom_patches.save.start) // save
+    else if (pc == rom_addresses.save_start) // save
     {
-      if (rom_patches.save.use_rom == ROM_EAR_MIC)
+      if (emu_saveUsingROMRequested() == ROM_EAR_MIC)
       {
 #ifndef MIC_SOUND
         // Full volume if saving though audio port
@@ -435,7 +437,7 @@ static void loadAndSaveROM(void)
       }
       else
       {
-        LoadSaveResult_t save_result = save_p(hl, (rom_patches.save.use_rom != ROM_OFF));
+        LoadSaveResult_t save_result = save_p(hl, (emu_saveUsingROMRequested() != ROM_OFF));
 
 #ifdef DEBUG_LOAD_AND_SAVE
         printf("loadAndSaveROM: save_result %d\n", save_result);
@@ -443,11 +445,11 @@ static void loadAndSaveROM(void)
         switch (save_result)
         {
           case LOAD_SAVE_COMPLETED:
-            pc = rom_patches.retAddr;
+            pc = rom_addresses.ret;
           break;
 
           case LOAD_SAVE_FAILED:
-            pc = rom_patches.retAddr;
+            pc = rom_addresses.ret;
           break;
 
           case LOAD_SAVE_ROM:
@@ -469,7 +471,7 @@ static void loadAndSaveROM(void)
   }
   else
   {
-    if ((pc == rom_patches.successAddr) || (pc == rom_patches.failureAddr))
+    if ((pc == rom_addresses.success) || (pc == rom_addresses.failure))
     {
       // Restore the sound mode
       if (sound_cache != sound_type)

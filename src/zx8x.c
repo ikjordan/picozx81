@@ -19,20 +19,22 @@
 #include "display.h"
 #include "loadp.h"
 
-char *strzx80_to_ascii(int memaddr);
-bool parseNumber(const char* input,
-                 unsigned int min,
-                 unsigned int max,
-                 char term,
-                 unsigned int* out);
+static bool strzx80_to_ascii(int memaddr, char* buffer, int max_len);
+static bool parseNumber(const char* input,
+                        unsigned int min,
+                        unsigned int max,
+                        char term,
+                        unsigned int* out);
 
 #define ERROR_D() mem[16384] = 12;
 #define ERROR_INV1() mem[16384] = 128;
 #define ERROR_INV2() mem[16384] = 129;
 #define ERROR_INV3() mem[16384] = 130;
 
+static char fname[MAX_FULLPATH_LEN];
+
 byte mem[MEMORYRAM_SIZE];
-unsigned char *memptr[64];
+byte* memptr[64];
 int memattr[64];
 int ramsize=16;
 
@@ -233,13 +235,12 @@ void __not_in_flash_func(out)(int h, int l, int a)
   }
 }
 
-static char fname[256];
-
 char* z8x_getFilenameDirectory(void)
 {
     strcpy(fname, emu_GetDirectory());
     return fname;
 }
+
 static bool check_file_system(void)
 {
   bool ret = emu_fsInitialised();
@@ -555,7 +556,7 @@ LoadSaveResult_t save_p(int name_addr, bool defer_rom)
         if (index < idxend)
         {
           mem[--idxend] |= 0x80;                /* +80h marks last char */
-          strcat(fname, strzx80_to_ascii(index));
+          strzx80_to_ascii(index, &fname[strlen(fname)], MAX_FILENAME_LEN - strlen(fname) - 1);
           mem[idxend] &= ~0x80;                 /* Remove +80h */
           index = vars;                         /* Exit loop */
         }
@@ -679,28 +680,24 @@ LoadSaveResult_t save_p(int name_addr, bool defer_rom)
   return defer_rom ? LOAD_SAVE_ROM : LOAD_SAVE_COMPLETED;
 }
 
-RomPatches_T rom_patches;
+RomAddresses_T rom_addresses;
 
-void rom8kPatches()
+void rom8k_addresses()
 {
-  rom_patches.save.start = SAVE_START_8K;
-  rom_patches.save.use_rom = emu_saveUsingROMRequested();
-  rom_patches.load.start = LOAD_START_8K;
-  rom_patches.load.use_rom = emu_loadUsingROMRequested();
-  rom_patches.retAddr = LOAD_SAVE_RET_8K;
-  rom_patches.successAddr = LOAD_SAVE_SUCCESS_8K;
-  rom_patches.failureAddr = LOAD_SAVE_FAILURE_8K;
+  rom_addresses.save_start = SAVE_START_8K;
+  rom_addresses.load_start = LOAD_START_8K;
+  rom_addresses.ret = LOAD_SAVE_RET_8K;
+  rom_addresses.success = LOAD_SAVE_SUCCESS_8K;
+  rom_addresses.failure = LOAD_SAVE_FAILURE_8K;
  }
 
-void rom4kPatches()
+void rom4k_addresses()
 {
-  rom_patches.save.start = SAVE_START_4K;
-  rom_patches.save.use_rom = emu_saveUsingROMRequested();
-  rom_patches.load.start = LOAD_START_4K;
-  rom_patches.load.use_rom = emu_loadUsingROMRequested();
-  rom_patches.retAddr = LOAD_SAVE_RET_4K;
-  rom_patches.successAddr = LOAD_SAVE_SUCCESS_4K;
-  rom_patches.failureAddr = LOAD_SAVE_FAILURE_4K;
+  rom_addresses.save_start = SAVE_START_4K;
+  rom_addresses.load_start = LOAD_START_4K;
+  rom_addresses.ret = LOAD_SAVE_RET_4K;
+  rom_addresses.success = LOAD_SAVE_SUCCESS_4K;
+  rom_addresses.failure = LOAD_SAVE_FAILURE_4K;
 }
 
 static void initmem(void)
@@ -818,10 +815,7 @@ static void set_mem_attribute_and_ptr(void)
       }
   }
 
-  if(rom4k)
-    rom4kPatches();
-  else
-    rom8kPatches();
+  (rom4k) ? rom4k_addresses() : rom8k_addresses();
 }
 
 #define ZX80_PIXEL_OFFSET       6
@@ -865,14 +859,8 @@ void z8x_Init(void)
   }
   else
   {
-    if (emu_ComputerRequested() == ZX81X2)
-    {
-      memcpy( mem + 0x0000, zx81x2rom, siz );
-    }
-    else
-    {
-      memcpy( mem + 0x0000, zx81rom, siz );
-    }
+      memcpy(mem + 0x0000,
+             (emu_ComputerRequested() == ZX81X2) ? zx81x2rom : zx81rom, siz );
   }
   memcpy(mem+siz,mem,siz);
   if(rom4k)
@@ -919,7 +907,7 @@ bool z8x_Step(void)
 }
 
 // Set the tape name and validate it
-void z8x_Start(const char * filename)
+void z8x_Start(const char* filename)
 {
   char c;
 
@@ -977,11 +965,11 @@ void z8x_Start(const char * filename)
 // Term: Required terminating character
 // Out: Contains value read if successful
 // Return value: True if value parsed successfully, false otherwise
-bool parseNumber(const char* input,
-                 unsigned int min,
-                 unsigned int max,
-                 char term,
-                 unsigned int* out)
+static bool parseNumber(const char* input,
+                        unsigned int min,
+                        unsigned int max,
+                        char term,
+                        unsigned int* out)
 {
   *out = 0;
 
@@ -995,21 +983,25 @@ bool parseNumber(const char* input,
 /***************************************************************************
  * Sinclair ZX80 String to ASCII String                                    *
  ***************************************************************************/
-/* This will translate a ZX80 string of characters into an ASCII equivalent.
+/* Translates a ZX80 string of characters into an ASCII equivalent.
  * All alphabetical characters are converted to lowercase.
  * Those characters that won't translate are replaced with underscores.
  *
- * On entry: int memaddr = the string's address within mem[]
- *  On exit: returns a pointer to the translated string */
+ * On entry: memaddr The string's address within mem[]
+ *           buffer  The buffer to receive the null terminated string
+ *           size    The size of the buffer
+ * On exit:  True if all string translated, false if truncated
+ * */
 
-char *strzx80_to_ascii(int memaddr)
+static bool strzx80_to_ascii(int memaddr, char* buffer, int size)
 {
-  static unsigned char zx81table[16] = {'_', '$', ':', '?', '(', ')',
+  static unsigned char zx80table[16] = {'_', '$', ':', '?', '(', ')',
     '-', '+', '*', '/', '=', '>', '<', ';', ',', '.'};
-  static char translated[256];
   unsigned char sinchar;
   char asciichar;
   int index = 0;
+
+  if (size < 1) return false;
 
   do
   {
@@ -1022,7 +1014,7 @@ char *strzx80_to_ascii(int memaddr)
       asciichar = '\"';
     } else if (sinchar >= 0x0c && sinchar <= 0x1b)
     {
-      asciichar = zx81table[sinchar - 0x0c];
+      asciichar = zx80table[sinchar - 0x0c];
     } else if (sinchar >= 0x1c && sinchar <= 0x25)
     {
       asciichar = '0' + sinchar - 0x1c;
@@ -1033,11 +1025,11 @@ char *strzx80_to_ascii(int memaddr)
     {
       asciichar = '_';
     }
-    translated[index] = asciichar;
-    translated[index++ + 1] = 0;
-  } while (mem[memaddr++] < 0x80);
+    buffer[index++] = asciichar;
+    buffer[index] = 0;
+  } while ((mem[memaddr++] < 0x80) && (index < size));
 
-  return translated;
+  return (mem[memaddr - 1] >= 0x80);
 }
 
 bool save_snap_zx8x(void)
