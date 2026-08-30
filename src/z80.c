@@ -349,7 +349,7 @@ void resetZ80(void)
       mem[sp + 3] = 0x3e;
 
       /* Update values for larger RAM sizes,
-         without these changes Multi-scroll sometimes fails to start */
+        without these changes Multi-scroll sometimes fails to start */
       if (ramsize >= 4)
       {
         d = 0x43; h = 0x43;
@@ -369,7 +369,9 @@ void resetZ80(void)
       mem[0x4008] = 0xff;               /* PPC hi */
     }
 
-    /* finally, load. Reset (via resetZ80) occurs if load fails. */
+    // finally, load. Reset (via resetZ80) occurs if load fails.
+    // Note that always do a fast load here, i.e. load from
+    // SD Card or EAR ignored
     load_p(0x8000, false);
   }
 }
@@ -386,22 +388,22 @@ static void loadAndSaveROM(void)
   {
     int sound_target = SOUND_TYPE_VSYNC;
 
-    if (pc == rom_patches.load.start) // load
+    if (pc == rom_addresses.load_start) // load
     {
-      if (rom_patches.load.use_rom == ROM_EAR_MIC)
+      if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
       {
         running_rom = true;
       }
       else
       {
-        LoadSaveResult_t load_result = load_p(rom4k ? hl : de, (rom_patches.load.use_rom == ROM_SD_CARD));
+        LoadSaveResult_t load_result = load_p(rom4k ? hl : de, (emu_loadUsingROMRequested() == ROM_SD_CARD));
 #ifdef DEBUG_LOAD_AND_SAVE
         printf("loadAndSaveROM: load_result %d\n", load_result);
 #endif
         switch (load_result)
         {
           case LOAD_SAVE_COMPLETED:
-            pc = rom_patches.retAddr;
+            pc = rom_addresses.ret;
           break;
 
           break;
@@ -410,7 +412,7 @@ static void loadAndSaveROM(void)
           break;
 
           case LOAD_SAVE_FAILED:
-            pc = rom_patches.retAddr;
+            pc = rom_addresses.ret;
           break;
 
           case LOAD_SAVE_ROM:
@@ -423,9 +425,9 @@ static void loadAndSaveROM(void)
         }
       }
     }
-    else if (pc == rom_patches.save.start) // save
+    else if (pc == rom_addresses.save_start) // save
     {
-      if (rom_patches.save.use_rom == ROM_EAR_MIC)
+      if (emu_saveUsingROMRequested() == ROM_EAR_MIC)
       {
 #ifndef MIC_SOUND
         // Full volume if saving though audio port
@@ -435,7 +437,7 @@ static void loadAndSaveROM(void)
       }
       else
       {
-        LoadSaveResult_t save_result = save_p(hl, (rom_patches.save.use_rom != ROM_OFF));
+        LoadSaveResult_t save_result = save_p(hl, (emu_saveUsingROMRequested() != ROM_OFF));
 
 #ifdef DEBUG_LOAD_AND_SAVE
         printf("loadAndSaveROM: save_result %d\n", save_result);
@@ -443,11 +445,11 @@ static void loadAndSaveROM(void)
         switch (save_result)
         {
           case LOAD_SAVE_COMPLETED:
-            pc = rom_patches.retAddr;
+            pc = rom_addresses.ret;
           break;
 
           case LOAD_SAVE_FAILED:
-            pc = rom_patches.retAddr;
+            pc = rom_addresses.ret;
           break;
 
           case LOAD_SAVE_ROM:
@@ -469,7 +471,7 @@ static void loadAndSaveROM(void)
   }
   else
   {
-    if ((pc == rom_patches.successAddr) || (pc == rom_patches.failureAddr))
+    if ((pc == rom_addresses.success) || (pc == rom_addresses.failure))
     {
       // Restore the sound mode
       if (sound_cache != sound_type)

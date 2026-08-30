@@ -506,16 +506,17 @@ The `LoadUsingROM` and `SaveUsingROM` configuration options allow the ROM code t
 
 Picozx81 generates realistic load and save sounds and graphics for the 8K ROM. The 4K ROM generates sounds and graphics when saving, which picozx81 emulates. The 4K ROM does not generate a load screen. Picozx81 will show a black screen when the 4K ROM is loading a program
 
-The save sounds generated for both the 4K and 8K ROMs have been recorded as wav files and then successfully loaded into the EightyOne emulator
+The save sounds generated for both the 4K and 8K ROMs have been recorded as wav files and then successfully loaded into the EightyOne emulator and a real ZX81
 
 The ROM is used for program loading if either the filename is specified on the command line, e.g. `LOAD "FILENAME.P"` or (for the ZX81) an empty filename is supplied e.g. `LOAD ""`. If a file extension exists (`.p`, `.o` etc) then it must be supplied. Directories can be specified as part of the filename e.g. `LOAD "SUBDIR/FILENAME.P"`
 
 ##### Limitations
 
-The config file is read prior to loading. If the configuration file requires the emulator to be reconfigured so that it requires a reboot (e.g. the computer type or memory size changes) then the ROM will not be used for loading, and the file will be loaded immediately, as if `LoadUsingROM` was set to `OFF`. The ROM is also not used for loading if the file to be loaded is selected by pressing `F2`
+The config file is read prior to loading. If the configuration file requires the emulator to be reconfigured so that it requires a reboot (e.g. the computer type or memory size changes) then the ROM will not be used for loading, and the file will be loaded immediately, as if `LoadUsingROM` was set to `OFF`. The ROM is also not used for loading if the file to be loaded is selected by pressing `F2`. ROM loading is not used the automatic loading of a program specified in the `Load` entry within the `[default]` section of `config.ini`
 
-When loading, picozx81 will read a `.p`, `.o` or `.p81` file and generate values which the ROM reads through IN statements  
-**Note**: A program cannot be loaded directly from a wav file
+When loading, picozx81 will read a `.p`, `.o` or `.p81` file and generate values which the ROM reads through IN statements
+
+**Note**: Support for loading a program directly from a wav file via the LineIn socket is available for the OlimexRP2350PC board
 
 ## Applications Tested
 
@@ -982,7 +983,7 @@ The header is followed by the state data. A full `.s` file is roughly 66kB in si
 
 In an ideal world the latest versions of the excellent sz81 or EightyOne emulators would have been ported. An initial port showed that they are too processor intensive for an (overclocked) ARM M0+. An earlier version of sz81 ([2.1.8](https://github.com/ikjordan/sz81_2_1_8)) was used as a basis, with some Z80 timing corrections and back porting of the 207 tstate counter code from the latest sz81 (2.3.12). See [here](#applications-tested) for a list of applications tested
 
-The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 83% of the available RP2040 CPU clock cycles with sound disabled and 87% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation. Figures are much lower for the RP2350 (56.5% without sound, 59% with sound).
+The initial port from sz81 2.3.12 onto the Pico ran at approximately 10% of real time speed. Use of the Z80 emulator originally written for xz80 by Ian Collier, plus optimisation of the ZX81 memory access, display and plot routines allows the emulator to run at 100% of real time speed. The display of a full 320 by 240 image in real time (e.g. [Maxhrg](https://bodo4all.fortunecity.ws/zx/maxdemo.html)) uses approximately 83% of the available RP2040 CPU clock cycles with sound disabled and 86% with Zonx sound enabled when picozx81 is running with a 640x460 display and ZX81 hardware emulation. Figures are much lower for the RP2350 (56.5% without sound, 59% with sound).
 
 Measurements are given for the the worst case board, the Olimex PC, as that board requires the sound ISR to be serviced 32000 times per second. The build was configured for HDMI sound, plus simultaneous MIC sound on LineOut
 

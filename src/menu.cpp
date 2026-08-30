@@ -26,10 +26,12 @@ typedef enum
 #ifndef PICO_NO_SOUND
     PSOUNDTYPE = PWRX + PINCF6,
     PSTEREOACB = PSOUNDTYPE + PINCF6,
-    PBOTTOMF6 = PSTEREOACB
+    PLOADROM = PSTEREOACB + PINCF6,
 #else
-    PBOTTOMF6 = PWRX
+    PLOADROM = PVTOL + PINCF6,
 #endif
+    PSAVEROM = PLOADROM + PINCF6,
+    PBOTTOMF6 = PSAVEROM
 } PositionF6_T;
 
 typedef enum
@@ -40,9 +42,7 @@ typedef enum
     PMSIZE = PCOMPUTER + PINCF7,
     PLOWRAM = PMSIZE + PINCF7,
     PM1NOT = PLOWRAM + PINCF7,
-    PLOADROM = PM1NOT + PINCF7,
-    PSAVEROM = PLOADROM + PINCF7,
-    PQSUDG = PSAVEROM + PINCF7,
+    PQSUDG = PM1NOT + PINCF7,
     PCHR128 = PQSUDG + PINCF7,
     PBOTTOMF7 = PCHR128
 } PositionF7_T;
@@ -56,16 +56,17 @@ typedef struct
     bool        wrx;
     uint16_t    sound;
     bool        stereo;
+    SLRomType_T loadROM;
+    SLRomType_T saveROM;
+
 } ModifyF6_T;
 
 typedef struct
 {
     ComputerType_T  computer;
     uint16_t        msize;
-    SLRomType_T     loadROM;
     bool            lowRAM;
     bool            m1not;
-    SLRomType_T     saveROM;
     bool            qsudg;
     bool            chr128;
 } RestartF7_T;
@@ -731,6 +732,9 @@ bool modifyMenu(void)
     modify.wrx = emu_WRXRequested();
     modify.sound = emu_SoundRequested();
     modify.stereo = emu_ACBRequested();
+    modify.loadROM = emu_loadUsingROMRequested();
+    modify.saveROM = emu_saveUsingROMRequested();
+
 
     if (!buildMenu(false))
         return false;
@@ -822,6 +826,44 @@ bool modifyMenu(void)
                             modify.stereo = ! modify.stereo;
                     }
 #endif
+                    else if (field == PLOADROM)
+                    {
+#ifdef INPUT_EAR
+                        switch (modify.loadROM)
+                        {
+                            case ROM_OFF:
+                                modify.loadROM = ROM_SD_CARD;
+                            break;
+                            case ROM_SD_CARD:
+                                modify.loadROM = ROM_EAR_MIC;
+                            break;
+                            default:
+                                modify.loadROM = ROM_OFF;
+                            break;
+                        }
+#else
+                        modify.loadROM = (modify.loadROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
+#endif
+                    }
+                    else if (field == PSAVEROM)
+                    {
+#ifndef PICO_NO_SOUND
+                        switch (modify.saveROM)
+                        {
+                            case ROM_OFF:
+                                modify.saveROM = ROM_SD_CARD;
+                            break;
+                            case ROM_SD_CARD:
+                                modify.saveROM = ROM_EAR_MIC;
+                            break;
+                            default:
+                                modify.saveROM = ROM_OFF;
+                            break;
+                        }
+#else
+                        modify.saveROM = (modify.saveROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
+#endif
+                    }
                     showModify(field, &modify);
                 break;
 
@@ -862,6 +904,44 @@ bool modifyMenu(void)
                         modify.stereo = ! modify.stereo;
                     }
 #endif
+                    else if (field == PLOADROM)
+                    {
+#ifdef INPUT_EAR
+                        switch (modify.loadROM)
+                        {
+                            case ROM_OFF:
+                                modify.loadROM = ROM_EAR_MIC;
+                            break;
+                            case ROM_SD_CARD:
+                                modify.loadROM = ROM_OFF;
+                            break;
+                            default:
+                                modify.loadROM = ROM_SD_CARD;
+                            break;
+                        }
+#else
+                        modify.loadROM = (modify.loadROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
+#endif
+                    }
+                    else if (field == PSAVEROM)
+                    {
+#ifndef PICO_NO_SOUND
+                        switch (modify.saveROM)
+                        {
+                            case ROM_OFF:
+                                modify.saveROM = ROM_EAR_MIC;
+                            break;
+                            case ROM_SD_CARD:
+                                modify.saveROM = ROM_OFF;
+                            break;
+                            default:
+                                modify.saveROM = ROM_SD_CARD;
+                            break;
+                        }
+#else
+                        modify.saveROM = (modify.saveROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
+#endif
+                    }
                     showModify(field, &modify);
                 break;
             }
@@ -882,6 +962,8 @@ bool modifyMenu(void)
         emu_SetWRX(modify.wrx);
         emu_SetSound(modify.sound);
         emu_SetACB(modify.stereo);
+        emu_SetLoadROM(modify.loadROM);
+        emu_SetSaveROM(modify.saveROM);
     }
     debounceExit(update);
     endMenu(false);
@@ -903,8 +985,6 @@ bool restartMenu(void)
     restart.lowRAM = emu_LowRAMRequested();
     restart.m1not = emu_M1NOTRequested();
     restart.computer = emu_ComputerRequested();
-    restart.loadROM = emu_loadUsingROMRequested();
-    restart.saveROM = emu_saveUsingROMRequested();
     restart.qsudg = emu_QSUDGRequested();
     restart.chr128 = emu_CHR128Requested();
 
@@ -992,44 +1072,6 @@ bool restartMenu(void)
                     {
                         restart.m1not = !restart.m1not;
                     }
-                    else if (field == PLOADROM)
-                    {
-#ifdef INPUT_EAR
-                        switch (restart.loadROM)
-                        {
-                            case ROM_OFF:
-                                restart.loadROM = ROM_SD_CARD;
-                            break;
-                            case ROM_SD_CARD:
-                                restart.loadROM = ROM_EAR_MIC;
-                            break;
-                            default:
-                                restart.loadROM = ROM_OFF;
-                            break;
-                        }
-#else
-                        restart.loadROM = (restart.loadROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
-#endif
-                    }
-                    else if (field == PSAVEROM)
-                    {
-#ifndef PICO_NO_SOUND
-                        switch (restart.saveROM)
-                        {
-                            case ROM_OFF:
-                                restart.saveROM = ROM_SD_CARD;
-                            break;
-                            case ROM_SD_CARD:
-                                restart.saveROM = ROM_EAR_MIC;
-                            break;
-                            default:
-                                restart.saveROM = ROM_OFF;
-                            break;
-                        }
-#else
-                        restart.saveROM = ROM_OFF;
-#endif
-                    }
                     else if (field == PQSUDG)
                     {
                         restart.qsudg = !restart.qsudg;
@@ -1073,44 +1115,6 @@ bool restartMenu(void)
                     {
                         restart.m1not = !restart.m1not;
                     }
-                    else if (field == PLOADROM)
-                    {
-#ifdef INPUT_EAR
-                        switch (restart.loadROM)
-                        {
-                            case ROM_OFF:
-                                restart.loadROM = ROM_EAR_MIC;
-                            break;
-                            case ROM_SD_CARD:
-                                restart.loadROM = ROM_OFF;
-                            break;
-                            default:
-                                restart.loadROM = ROM_SD_CARD;
-                            break;
-                        }
-#else
-                        restart.loadROM = (restart.loadROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
-#endif
-                    }
-                    else if (field == PSAVEROM)
-                    {
-#ifndef PICO_NO_SOUND
-                        switch (restart.saveROM)
-                        {
-                            case ROM_OFF:
-                                restart.saveROM = ROM_EAR_MIC;
-                            break;
-                            case ROM_SD_CARD:
-                                restart.saveROM = ROM_OFF;
-                            break;
-                            default:
-                                restart.saveROM = ROM_SD_CARD;
-                            break;
-                        }
-#else
-                        restart.saveROM = ROM_OFF;
-#endif
-                    }
                     else if (field == PQSUDG)
                     {
                         restart.qsudg = !restart.qsudg;
@@ -1137,8 +1141,6 @@ bool restartMenu(void)
             (restart.m1not != emu_M1NOTRequested()) ||
             (restart.msize != emu_MemoryRequested()) ||
             (restart.lowRAM != emu_LowRAMRequested()) ||
-            (restart.loadROM != emu_loadUsingROMRequested()) ||
-            (restart.saveROM != emu_saveUsingROMRequested()) ||
             (restart.qsudg != emu_QSUDGRequested()) ||
             (restart.chr128 != emu_CHR128Requested()))
         {
@@ -1146,8 +1148,6 @@ bool restartMenu(void)
             emu_SetMemory(restart.msize);
             emu_SetLowRAM(restart.lowRAM);
             emu_SetM1NOT(restart.m1not);
-            emu_SetLoadROM(restart.loadROM);
-            emu_SetSaveROM(restart.saveROM);
             emu_SetQSUDG(restart.qsudg);
             emu_SetCHR128(restart.chr128);
         }
@@ -1410,6 +1410,11 @@ static void showModify(PositionF6_T pos, ModifyF6_T* modify)
     else
         writeString("N/A", rhs , lcount + PositionF6_T::PSTEREOACB);
 #endif
+    writeInvertString("LOAD ROM", lhs, lcount + PositionF6_T::PLOADROM, pos == PositionF6_T::PLOADROM);
+    writeString((modify->loadROM == ROM_EAR_MIC) ? "Ear  " : (modify->loadROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF6_T::PLOADROM);
+
+    writeInvertString("SAVE ROM", lhs, lcount + PositionF6_T::PSAVEROM, pos == PositionF6_T::PSAVEROM);
+    writeString((modify->saveROM == ROM_EAR_MIC) ? "Mic  " : (modify->saveROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF6_T::PSAVEROM);
 }
 
 static void showRestart(PositionF7_T pos, RestartF7_T* restart)
@@ -1458,12 +1463,6 @@ static void showRestart(PositionF7_T pos, RestartF7_T* restart)
 
     writeInvertString("MINOT:", lhs, lcount + PositionF7_T::PM1NOT, pos == PositionF7_T::PM1NOT);
     writeString((restart->m1not) ? "On " : "Off", rhs , lcount + PositionF7_T::PM1NOT);
-
-    writeInvertString("LOAD ROM", lhs, lcount + PositionF7_T::PLOADROM, pos == PositionF7_T::PLOADROM);
-    writeString((restart->loadROM == ROM_EAR_MIC) ? "Ear  " : (restart->loadROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF7_T::PLOADROM);
-
-    writeInvertString("SAVE ROM", lhs, lcount + PositionF7_T::PSAVEROM, pos == PositionF7_T::PSAVEROM);
-    writeString((restart->saveROM == ROM_EAR_MIC) ? "Mic  " : (restart->saveROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF7_T::PSAVEROM);
 
     writeInvertString("CHAR$128:", lhs, lcount + PositionF7_T::PCHR128, pos == PositionF7_T::PCHR128);
     writeString((restart->chr128) ? "On " : "Off", rhs , lcount + PositionF7_T::PCHR128);
