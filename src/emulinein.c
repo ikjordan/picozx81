@@ -39,27 +39,32 @@ int32_t linein_count = 0;
 #endif
 
 
-static void die_if_i2c_err(int rc, const char *what) {
-    if (rc < 0) {
+static void exit_if_i2c_err(int rc, const char *what)
+{
+    if (rc < 0)
+    {
         printf("I2C error during %s: %d\n", what, rc);
-        while (true) sleep_ms(1000);
+        exit(-1);
     }
 }
 
-static void es8311_write(uint8_t reg, uint8_t val) {
+static void es8311_write(uint8_t reg, uint8_t val)
+{
     uint8_t b[2] = {reg, val};
     int rc = i2c_write_blocking(i2c0, PICO_ES8311_ADDR, b, 2, false);
-    die_if_i2c_err(rc, "write");
+    exit_if_i2c_err(rc, "write");
 }
 
-static void codec_power_on(void) {
+static void codec_power_on(void)
+{
     gpio_init(PICO_CODEC_PWR_DIS_PIN);
     gpio_set_dir(PICO_CODEC_PWR_DIS_PIN, GPIO_OUT);
     gpio_put(PICO_CODEC_PWR_DIS_PIN, 1);
     sleep_ms(100);
 }
 
-static void i2c_setup(void) {
+static void i2c_setup(void)
+{
     i2c_init(i2c_default, 400 * 1000);
     gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
@@ -67,7 +72,8 @@ static void i2c_setup(void) {
     gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
 }
 
-static void es8311_init_capture(void) {
+static void es8311_init_capture(void)
+{
     // Reset sequence
     es8311_write(0x00, 0x1f);
     sleep_ms(6);
@@ -98,12 +104,12 @@ static void es8311_init_capture(void) {
 
     // ADC volume full-scale, High pass filter (HPF) on, EQ bypass
     es8311_write(0x16, 0x20);       // Synchronise filter counter, ADC gain scale up 0dB
-    es8311_write(0x17, 0xea);       // ADC volume: +32dB - 21 * 0.5 = +21.5dB
+    es8311_write(0x17, 0xec);       // ADC volume: +32dB - 19 * 0.5 = +22.5dB
     es8311_write(0x18, 0x00);       // ALC disabled
-    es8311_write(0x1c, 0x6f);       // ADCEQ bypass, Dynamic HPF, ADCHPF stage2 coeff = 0x0f
+    es8311_write(0x1c, 0x68);       // ADCEQ bypass, Dynamic HPF, ADCHPF stage2 coeff = 0x08
 }
 
-static inline void linein_start_dma_transfer()
+static inline void linein_start_dma_transfer(void)
 {
     dma_channel_config c = dma_get_channel_config(LINEIN_DMA_CHANNEL);
     channel_config_set_write_increment(&c, true);
@@ -114,7 +120,7 @@ static inline void linein_start_dma_transfer()
 }
 
 // irq handler for LineIn DMA
-static void __isr __time_critical_func(linein_dma_irq_handler)()
+static void __isr __time_critical_func(linein_dma_irq_handler)(void)
 {
     if (dma_irqn_get_channel_status(LINEIN_DMA_IRQ_INDEX, LINEIN_DMA_CHANNEL))
     {

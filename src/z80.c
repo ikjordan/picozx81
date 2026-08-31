@@ -1147,6 +1147,7 @@ void __not_in_flash_func(execZX80)(void)
   while (tstates < tsmax);
 
   tstates -= tsmax;
+  tstates_frame++;
 }
 
 static unsigned long z80_op(void)

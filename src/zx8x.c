@@ -110,21 +110,22 @@ unsigned int __not_in_flash_func(in)(int h, int l)
         sound_vsync(0);
     }
 
-    if (running_rom)
-    {
-      data = useNTSC ? 0x40 : 0;
+    data = useNTSC ? 0x40 : 0;
 #ifdef INPUT_EAR
-      if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
-      {
-        data |= emu_is_signal_high(tstates) ? 0x0 : 0x80;  // Reversed as use xor below
-      }
-      else
-#endif
-      {
-        data |= loadPGetBit() ? 0x0 : 0x80;   // Reversed as use xor below
-      }
+    if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
+    {
+      data |= emu_is_signal_high(tstates) ? 0x0 : 0x80;  // Reversed as use xor below
     }
-
+    else
+    {
+#endif
+    if ((emu_loadUsingROMRequested() == ROM_SD_CARD) && running_rom)
+    {
+      data |= loadPGetBit() ? 0x0 : 0x80;   // Reversed as use xor below
+    }
+#ifdef INPUT_EAR
+    }
+#endif
     switch(h)
     {
       case 0xfe:  return(keyboard[0] ^ data);
