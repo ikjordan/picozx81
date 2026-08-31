@@ -106,6 +106,7 @@ static void es8311_init_capture(void)
     es8311_write(0x16, 0x20);       // Synchronise filter counter, ADC gain scale up 0dB
     es8311_write(0x17, 0xec);       // ADC volume: +32dB - 19 * 0.5 = +22.5dB
     es8311_write(0x18, 0x00);       // ALC disabled
+    es8311_write(0x1b, 0x08);       // ADCHPF stage1 coeff = 0x08
     es8311_write(0x1c, 0x68);       // ADCEQ bypass, Dynamic HPF, ADCHPF stage2 coeff = 0x08
 }
 
