@@ -27,7 +27,7 @@
 + Emulation runs at accurate speed of a 3.25MHz ZX81
 + Supports saving of snapshots. No need to restart from the beginning after you die in a game!
 + Optionally emulates real-time ZX81/80 program load and save with realistic sound and graphics
-+ Can connect the sound output to the EAR socket of a real ZX81 and load programs onto the real ZX81
++ Can connect the sound output to the EAR socket of a real ZX81 and load programs onto the real ZX81 and ZX80 clones (Minstrel 2 and 4)
 + Supports load from a cassette recorder on the Olimex RP2350PC board
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
@@ -294,6 +294,7 @@ Ten extra options apply across all programs and can only be set in the `[default
 4. Due to the low speed of the ZX8x cassette interface, files can take many minutes to load and save when `LoadUsingROM` and `SaveUsingROM` is enabled
 5. On devices that support both HDMI and LineOut sound, the HDMI sound build also routes cassette sounds (at maximum volume) over the LineOut port. This makes it easier to send sounds to a real ZX81
 6. A mono plug must be used for the RP2350PC LineIn connection. A stereo input will result in garbled data being received by the emulator. If a PC is used as the source of the sound data, consider using a stereo to mono converter cable
+7. The ZX80 appears more "deaf" compared to a ZX81. Programs have been successfully loaded onto a ZX80 clone (Minstrel 2) using the Pimoroni VGA and DVI boards. These boards have dedicated I2S outputs, which can produce a louder signal than the other supported boards that rely on PWM GPIO sound output. The PWM based boards can successfully load to a ZX81, but not a ZX80
 
 #### Examples
 

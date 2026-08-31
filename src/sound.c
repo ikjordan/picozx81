@@ -68,7 +68,7 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 #define AMPL_AY_TONE        2048
 
 #if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
-#define CASSETTE_ON         (RANGE - 1)
+#define CASSETTE_ON         RANGE
 #define CASSETTE_OFF        0
 #define VSYNC_ON            (3 * (RANGE >> 2))
 #define VSYNC_OFF           (RANGE >> 2)
@@ -93,7 +93,7 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 #ifdef SOUND_I2S
 #define MIC_ON              (-MIC_OFF)
 #else
-#define MIC_ON              (RANGE - 1)
+#define MIC_ON              RANGE
 #endif
 #endif
 
