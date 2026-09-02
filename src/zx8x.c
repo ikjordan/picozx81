@@ -689,7 +689,7 @@ void rom8k_addresses()
   rom_addresses.load_start = LOAD_START_8K;
   rom_addresses.ret = LOAD_SAVE_RET_8K;
   rom_addresses.success = LOAD_SAVE_SUCCESS_8K;
-  rom_addresses.failure = LOAD_SAVE_FAILURE_8K;
+  rom_addresses.failure = LOAD_SAVE_SUCCESS_8K;
  }
 
 void rom4k_addresses()

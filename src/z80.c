@@ -149,6 +149,11 @@ unsigned char intsample = 0;
 unsigned char op;
 unsigned short m1cycles;
 
+#ifdef DEBUG_LOAD_AND_SAVE
+uint16_t load_bytes_total = 0;
+uint16_t load_bytes_detected = 0;
+#endif
+
 /* ZX80 specific */
 #define SYNCNONE        0
 #define SYNCTYPEH       1
@@ -473,12 +478,18 @@ static void loadAndSaveROM(void)
   {
     if ((pc == rom_addresses.success) || (pc == rom_addresses.failure))
     {
+#ifdef DEBUG_LOAD_AND_SAVE
+      printf("Load: Bytes expected: %u Bytes Detected: %u\n", load_bytes_total, load_bytes_detected);
+      load_bytes_total = 0;
+      load_bytes_detected = 0;
+#endif
       // Restore the sound mode
       if (sound_cache != sound_type)
       {
         emu_sndQueueChange(sound_cache);
       }
       running_rom = false;
+      tstates_frame = 0;
     }
   }
 }

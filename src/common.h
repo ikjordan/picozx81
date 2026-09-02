@@ -29,6 +29,10 @@ typedef enum
 #define LOAD_SAVE_SUCCESS_8K  0x20A     // LD HL,$403B
 #define LOAD_SAVE_FAILURE_8K  0x207     // POP HL - NOT USED
 
+#ifdef DEBUG_LOAD_AND_SAVE
+#define LOAD_SAVE_DETECT_4K   0x1FD     // LD HL,($400A)    2A
+#define LOAD_SAVE_DETECT_8K   0x201     // LD HL,($4014)    2A
+#endif
 
 typedef struct
 {

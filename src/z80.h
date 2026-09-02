@@ -15,7 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
+#ifndef _Z80_H_
+#define _Z80_H_
 #include "common.h"
 #include "sound.h"
 
@@ -109,3 +110,8 @@ inline static void store2func(unsigned short ad,unsigned char b1,unsigned char b
 #define de ((d<<8)|e)
 #define hl ((h<<8)|l)
 
+#ifdef DEBUG_LOAD_AND_SAVE
+extern uint16_t load_bytes_total;
+extern uint16_t load_bytes_detected;
+#endif
+#endif

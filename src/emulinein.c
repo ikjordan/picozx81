@@ -104,7 +104,7 @@ static void es8311_init_capture(void)
 
     // ADC volume full-scale, High pass filter (HPF) on, EQ bypass
     es8311_write(0x16, 0x20);       // Synchronise filter counter, ADC gain scale up 0dB
-    es8311_write(0x17, 0xec);       // ADC volume: +32dB - 19 * 0.5 = +22.5dB
+    es8311_write(0x17, 0xe9);       // ADC volume: +32dB - 22 * 0.5 = +21dB
     es8311_write(0x18, 0x00);       // ALC disabled
     es8311_write(0x1b, 0x08);       // ADCHPF stage1 coeff = 0x08
     es8311_write(0x1c, 0x68);       // ADCEQ bypass, Dynamic HPF, ADCHPF stage2 coeff = 0x08
@@ -261,8 +261,8 @@ void emu_linein_apply_filter(void)
     }
 }
 
-#define HYSTERESIS 1000
-#define BIT_HIGH   2000
+#define HYSTERESIS 1500
+#define BIT_HIGH   1500
 #define BIT_LOW    (BIT_HIGH - HYSTERESIS)
 
 // Obtain whether signal is high or low

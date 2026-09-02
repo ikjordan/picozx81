@@ -26,6 +26,7 @@ OPTION(FLASH_LED "Set to blink board led and measure idle time" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
 OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
 OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
+OPTION(DEBUG_LOAD_SAVE "Set to true to enable Load and Save diagnostics" OFF)
 
 # Set to "vgaboard" to build for Pimoroni vga board
 # e.g. cmake -DPICO_BOARD=vgaboard
@@ -292,6 +293,10 @@ if (${FLASH_LED})
     target_compile_definitions(${PROJECT} PRIVATE -DFLASH_LED -DTIME_SPARE)
 elseif (${TIME_SPARE})
     target_compile_definitions(${PROJECT} PRIVATE -DTIME_SPARE)
+endif()
+
+if (${DEBUG_LOAD_SAVE})
+    target_compile_definitions(${PROJECT} PRIVATE -DDEBUG_LOAD_AND_SAVE)
 endif()
 
 if (${OVER_VOLT})
