@@ -675,7 +675,13 @@ void __not_in_flash_func(execZX81)(void)
             int k = dest + RasterX;
             int kh = k >> 3;
             int kl = k & 7;
-
+#ifdef DEBUG_LOAD_AND_SAVE
+            if (kh >= disp.length)
+            {
+              printf("execZX81: kh out of range: %d", kh);
+              exit(-1);
+            }
+#endif
             if (kl)
             {
               scrnbmp_new[kh++] |= (v >> kl);
@@ -866,6 +872,13 @@ void __not_in_flash_func(execZX80)(void)
           int kh = k >> 3;
           int kl = k & 7;
 
+#ifdef DEBUG_LOAD_AND_SAVE
+          if (kh >= disp.length)
+          {
+            printf("execZX80: kh out of range: %d", kh);
+            exit(-1);
+          }
+#endif
           if (kl)
           {
             scrnbmp_new[kh++] |= (v >> kl);

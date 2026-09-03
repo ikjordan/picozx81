@@ -150,11 +150,20 @@ static int16_t linein_value(uint32_t tstates)
 }
 
 // High pass filter 3400Hz - emulates the ZX80/81 EAR hardware high pass filter
+// Incorporates a Schmitt trigger, which is not in the original hardware
+
 #define HPF_B0   24331      // 0.742517 in Q15
 #define HPF_A1   15894      // 0.485035 in Q15
 
+#define HYSTERESIS 1500
+#define BIT_HIGH   1500
+#define BIT_LOW    (BIT_HIGH - HYSTERESIS)
+#define HIGH_STATE 0xFFFF
+#define LOW_STATE  0
+
 static inline int16_t hpf3400(int16_t input)
 {
+    static bool last_state = false;
     static int32_t x1 = 0;
     static int32_t y1 = 0;
     int32_t x  = input;
@@ -165,11 +174,9 @@ static inline int16_t hpf3400(int16_t input)
     x1 = x;
     y1 = y;
 
-    // 16-bit saturation
-    if (y > 32767)  y = 32767;
-    if (y < -32768) y = -32768;
+    last_state = last_state ? (y > BIT_LOW) : (y > BIT_HIGH);
 
-    return (int16_t)y;
+    return last_state ? HIGH_STATE : LOW_STATE;
 }
 
 // External API
@@ -261,21 +268,10 @@ void emu_linein_apply_filter(void)
     }
 }
 
-#define HYSTERESIS 1500
-#define BIT_HIGH   1500
-#define BIT_LOW    (BIT_HIGH - HYSTERESIS)
-
 // Obtain whether signal is high or low
-// Incorporates a Schmitt trigger, which is not in the original hardware
 bool emu_is_signal_high(uint32_t tstates)
 {
-    static bool last_state = false;
-
-    int16_t val = linein_value(tstates);
-
-    last_state = last_state ? (val > BIT_LOW) : (val > BIT_HIGH);
-
-    return last_state;
+    return linein_value(tstates) != LOW_STATE;
 }
 
 // For debug only
