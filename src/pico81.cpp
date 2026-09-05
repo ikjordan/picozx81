@@ -40,7 +40,8 @@ int main(void)
     stdio_init_all();
 
 #ifdef INPUT_EAR
-    emu_linein_initialise();        // Need to initialise before display, due to sleeps
+    // Need to initialise before display, due to sleeps
+    emu_linein_initialise(emu_loadVolumeRequested());
 #endif
 
     // start the display generation

@@ -47,8 +47,8 @@ extern bool useLCD;
  */
 
 /* Display specific, defined for all display types */
-extern uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
-                              uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
+extern uint32_t displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+                                  uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
 extern void displayStart(void);
 
 extern bool displayShowKeyboard(bool ROM8K);

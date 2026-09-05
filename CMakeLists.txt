@@ -99,7 +99,11 @@ set(ZX8X_SOURCES
     src/pico81.cpp
     src/hid_usb.c
     src/sound.c
-    src/menu.cpp)
+    src/menu.cpp
+    src/chars.c
+    src/zx80rom.c
+    src/zx81rom.c
+    src/zx81x2rom.c)
 
 set(INI_SOURCES
     inih/ini.c)

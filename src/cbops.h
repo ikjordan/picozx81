@@ -67,7 +67,7 @@
    case  8: rrc(b); break;
    case  9: rrc(c); break;
    case 10: rrc(d);
-     if ((pc == LOAD_START_8K) && (!rom4k)) loadAndSaveROM();
+     if ((pc == LOAD_START_8K) && (running_rom == ROM_EXECUTE_OFF) && (!rom4k)) loadAndSaveROM();
    break;
    case 11: rrc(e); break;
    case 12: rrc(h); break;

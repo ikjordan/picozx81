@@ -12,6 +12,13 @@ typedef enum
     ROM_EAR_MIC
 } SLRomType_T;
 
+typedef enum
+{
+    LOAD_VOL_LOW,
+    LOAD_VOL_MEDIUM,
+    LOAD_VOL_HIGH,
+} LoadVolume_T;
+
 /* ROM load and save detection */
 // Detection of start of save and load
 #define LOAD_START_4K       0x207       // POP DE           D1
@@ -29,7 +36,7 @@ typedef enum
 #define LOAD_SAVE_SUCCESS_8K  0x20A     // LD HL,$403B
 #define LOAD_SAVE_FAILURE_8K  0x207     // POP HL - NOT USED
 
-#ifdef DEBUG_LOAD_AND_SAVE
+#ifdef INPUT_EAR
 #define LOAD_SAVE_DETECT_4K   0x1FD     // LD HL,($400A)    2A
 #define LOAD_SAVE_DETECT_8K   0x201     // LD HL,($4014)    2A
 #endif
@@ -52,6 +59,13 @@ typedef enum
     LOAD_SAVE_FAILED,
     LOAD_SAVE_REBOOT_NEEDED
 } LoadSaveResult_t;
+
+typedef enum
+{
+    ROM_EXECUTE_OFF = 0,
+    ROM_EXECUTE_SAVE,
+    ROM_EXECUTE_LOAD,
+} RomExecuteType_t;
 
 /* SOUND board types */
 #define SOUND_TYPE_NONE         0
@@ -82,7 +96,8 @@ extern bool LowRAM;
 extern bool chr128;
 extern bool useNTSC;
 extern bool frameSync;
-extern bool running_rom;
+extern RomExecuteType_t running_rom;
+extern bool display_load_stats;
 
 /* Chroma variables */
 extern int chromamode;

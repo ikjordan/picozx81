@@ -5,19 +5,19 @@
 
 #include "emuapi.h"
 #include "emuvideo.h"
-#include "zx80rom.h"
-#include "zx81rom.h"
+#include "roms.h"
 #include "zx8x.h"
 
 #include "hid_usb.h"
 #include "display.h"
 #include "ff.h"
 #include "menu.h"
+#include "chars.h"
 
 typedef enum
 {
     PINCF6 = 2,
-    PTOPF6 = 8,
+    PTOPF6 = 4,
     PSYNC = PTOPF6,
     PNTSC = PSYNC + PINCF6,
     PCENTRE = PNTSC + PINCF6,
@@ -31,7 +31,13 @@ typedef enum
     PLOADROM = PVTOL + PINCF6,
 #endif
     PSAVEROM = PLOADROM + PINCF6,
-    PBOTTOMF6 = PSAVEROM
+    PDISSTAT = PSAVEROM + PINCF6,
+#ifdef INPUT_EAR
+    PLOADVOL = PDISSTAT + PINCF6,
+    PBOTTOMF6 = PLOADVOL,
+#else
+    PBOTTOMF6 = PDISSTAT,
+#endif
 } PositionF6_T;
 
 typedef enum
@@ -49,16 +55,19 @@ typedef enum
 
 typedef struct
 {
-    FrameSync_T fsync;
-    bool        ntsc;
-    bool        centre;
-    uint16_t    vTol;
-    bool        wrx;
-    uint16_t    sound;
-    bool        stereo;
-    SLRomType_T loadROM;
-    SLRomType_T saveROM;
-
+    FrameSync_T  fsync;
+    bool         ntsc;
+    bool         centre;
+    uint16_t     vTol;
+    bool         wrx;
+    uint16_t     sound;
+    bool         stereo;
+    SLRomType_T  loadROM;
+    SLRomType_T  saveROM;
+    bool         displayStats;
+#ifdef INPUT_EAR
+    LoadVolume_T vol;
+#endif
 } ModifyF6_T;
 
 typedef struct
@@ -76,20 +85,13 @@ static void endMenu(bool blank);
 static void delay(void);
 static void debounceExit(bool selected);
 
-static void xorRow(uint row);
-static void invertChar(char c, uint col, uint row);
-static void writeChar(char c, uint col, uint row);
-static void writeString(const char* s, uint col, uint row);
-static void writeInvertString(const char* s, uint col, uint row, bool invert);
-
-static int populateFiles(const char* path, uint first);
-static bool getFile(char* inout, uint index, bool* direct);
+static int populateFiles(const char* path, uint32_t first);
+static bool getFile(char* inout, uint32_t index, bool* direct);
 
 static void showModify(PositionF6_T pos, ModifyF6_T* modify);
 static void showRestart(PositionF7_T pos, RestartF7_T* restart);
 static void showReboot(FiveSevenSix_T mode);
-static void showSave(const char* name, uint len, uint cursor, uint col, uint row);
-static void setConvert(bool zx80);
+static void showSave(const char* name, uint32_t len, uint32_t cursor, uint32_t col, uint32_t row);
 static bool endsWithKnownExtension(const char* filename);
 static void removeKnownExtension(char* filename);
 
@@ -120,7 +122,7 @@ bool loadMenu(void)
     char newdir[MAX_DIRECTORY_LEN];
     uint8_t key = 0;
     uint8_t detected = 0;
-    uint row = 0;
+    uint32_t row = 0;
     bool debounce = true;
     bool exit = false;
     bool change = false;
@@ -130,8 +132,8 @@ bool loadMenu(void)
 
     if (!emu_fsInitialised())
     {
-        writeString("SD Card not detected", (disp.width >> 4) - 10, disp.height >> 4);
-        writeString("Press New Line to continue", (disp.width >> 4) - 13, (disp.height >> 4) + 1);
+        charWriteString("SD Card not detected", (disp.width >> 4) - 10, disp.height >> 4);
+        charWriteString("Press New Line to continue", (disp.width >> 4) - 13, (disp.height >> 4) + 1);
         do
         {
             tuh_task();
@@ -150,17 +152,17 @@ bool loadMenu(void)
     }
     else
     {
-        uint fullrow = ((disp.height>>3)-(border<<1));
+        uint32_t fullrow = ((disp.height>>3)-(border<<1));
         allfiles = emu_AllFilesRequested();
 
         strcpy(working, emu_GetDirectory());
         strcpy(newdir,working);
-        uint entries = populateFiles(working, 0);
-        uint maxrow = (entries < fullrow) ? entries : fullrow;
-        uint offset = 0;
+        uint32_t entries = populateFiles(working, 0);
+        uint32_t maxrow = (entries < fullrow) ? entries : fullrow;
+        uint32_t offset = 0;
 
         // Highlight first line
-        xorRow(row + border);
+        charXorRow(row + border);
 
         do
         {
@@ -185,8 +187,8 @@ bool loadMenu(void)
                     case HID_KEY_ARROW_RIGHT:
                         if (((row + 1) < maxrow) && (key == HID_KEY_ARROW_DOWN))
                         {
-                            xorRow(row + border);
-                            xorRow(++row + border);
+                            charXorRow(row + border);
+                            charXorRow(++row + border);
                         }
                         else
                         {
@@ -199,7 +201,7 @@ bool loadMenu(void)
                                 populateFiles(working, offset);
                                 row = 0;
                                 maxrow = ((entries - offset) < fullrow) ? entries - offset : fullrow;
-                                xorRow(row + border);
+                                charXorRow(row + border);
                             }
                         }
                     break;
@@ -208,8 +210,8 @@ bool loadMenu(void)
                     case HID_KEY_ARROW_LEFT:
                         if (row && (key == HID_KEY_ARROW_UP))
                         {
-                            xorRow(row + border);
-                            xorRow(--row + border);
+                            charXorRow(row + border);
+                            charXorRow(--row + border);
                         }
                         else
                         {
@@ -221,7 +223,7 @@ bool loadMenu(void)
                                 populateFiles(working, offset);
                                 row = fullrow - 1;
                                 maxrow = fullrow;
-                                xorRow(row + border);
+                                charXorRow(row + border);
                             }
                         }
                     break;
@@ -239,7 +241,7 @@ bool loadMenu(void)
                                 entries = populateFiles(working, 0);
                                 row = 0;
                                 maxrow = (entries < fullrow) ? entries : fullrow;
-                                xorRow(row + border);
+                                charXorRow(row + border);
 
                                 // Need to debounce the enter key again
                                 debounce = true;
@@ -270,7 +272,7 @@ bool loadMenu(void)
                             memset(menuscreen, 0x00, disp.stride_byte * disp.height);
                             entries = populateFiles(working, 0);
                             maxrow = (entries < fullrow) ? entries : fullrow;
-                            xorRow(row + border);
+                            charXorRow(row + border);
                         }
                     break;
 
@@ -283,7 +285,7 @@ bool loadMenu(void)
                             memset(menuscreen, 0x00, disp.stride_byte * disp.height);
                             entries = populateFiles(working, 0);
                             maxrow = (entries < fullrow) ? entries : fullrow;
-                            xorRow(row + border);
+                            charXorRow(row + border);
                         }
                     break;
                 }
@@ -302,7 +304,7 @@ bool loadMenu(void)
 #define MAX_SAVE 30
 #define ROW_SPACING 12
 
-bool saveMenu(char* save, uint length, bool zx80)
+bool saveMenu(char* save, uint32_t length, bool zx80)
 {
     uint8_t key = 0;
     uint8_t detected = 0;
@@ -311,12 +313,12 @@ bool saveMenu(char* save, uint length, bool zx80)
     bool change = false;
 
     int col = disp.width >> 4;
-    uint row = disp.height >> 4;
+    uint32_t row = disp.height >> 4;
 
     length = (length > MAX_SAVE) ? MAX_SAVE : length;
     save[0] = 0;
-    uint len = 0;
-    uint cursor = 0;
+    uint32_t len = 0;
+    uint32_t cursor = 0;
 
 
     if (!buildMenu(false))
@@ -326,8 +328,8 @@ bool saveMenu(char* save, uint length, bool zx80)
     {
         bool debounce = true;
 
-        writeString("SD Card not detected", col - 10, row - ROW_SPACING - 1);
-        writeString("Press New Line to continue", col - 13, row - ROW_SPACING);
+        charWriteString("SD Card not detected", col - 10, row - ROW_SPACING - 1);
+        charWriteString("Press New Line to continue", col - 13, row - ROW_SPACING);
 
         do
         {
@@ -349,13 +351,13 @@ bool saveMenu(char* save, uint length, bool zx80)
     {
         if (zx80)
         {
-            writeString("Save ZX80", col - 5, row - ROW_SPACING - 1);
-            writeString("=========", col - 5, row - ROW_SPACING);
+            charWriteString("Save ZX80", col - 5, row - ROW_SPACING - 1);
+            charWriteString("=========", col - 5, row - ROW_SPACING);
         }
         else
         {
-            writeString("Save Snapshot", col - 7, row - ROW_SPACING - 1);
-            writeString("=============", col - 7, row - ROW_SPACING);
+            charWriteString("Save Snapshot", col - 7, row - ROW_SPACING - 1);
+            charWriteString("=============", col - 7, row - ROW_SPACING);
         }
 
         showSave(save, len, cursor, col - (MAX_SAVE >> 1), row + ROW_SPACING);
@@ -398,7 +400,7 @@ bool saveMenu(char* save, uint length, bool zx80)
                         if (cursor > 0)
                         {
                             // Make sure terminator is moved too
-                            for (uint i=cursor; i<=len; ++i)
+                            for (uint32_t i=cursor; i<=len; ++i)
                             {
                                 save[i-1] = save[i];
                             }
@@ -449,7 +451,7 @@ bool saveMenu(char* save, uint length, bool zx80)
 bool statusMenu(void)
 {
     uint8_t key = 0;
-    uint lcount = (disp.height >> 4) - 14;
+    uint32_t lcount = (disp.height >> 4) - 14;
 
     char c[20];
     int lhs = (disp.width >> 4) - 10;
@@ -458,10 +460,10 @@ bool statusMenu(void)
     if (!buildMenu(false))
         return false;
 
-    writeString("Status", lhs + 7, lcount++);
-    writeString("======", lhs + 7, lcount++);
+    charWriteString("Status", lhs + 7, lcount++);
+    charWriteString("======", lhs + 7, lcount++);
 
-    writeString("Computer:", lhs, ++lcount);
+    charWriteString("Computer:", lhs, ++lcount);
     switch (emu_ComputerRequested())
     {
         case ZX80_4K:
@@ -481,37 +483,37 @@ bool statusMenu(void)
         break;
     }
 
-    writeString(c, rhs, lcount++);
-    writeString("Memory:", lhs, lcount);
+    charWriteString(c, rhs, lcount++);
+    charWriteString("Memory:", lhs, lcount);
     sprintf(c,"%0d KB\n",emu_MemoryRequested());
-    writeString(c, rhs, lcount++);
-    writeString("WRX RAM:", lhs, lcount);
-    writeString(emu_WRXRequested() ? "Yes" : "No", rhs, lcount++);
-    writeString("8K-16K RAM:", lhs, lcount);
-    writeString(emu_LowRAMRequested() ? "Yes" : "No", rhs, lcount++);
-    writeString("M1NOT:", lhs, lcount);
-    writeString(emu_M1NOTRequested() ? "On" : "Off", rhs, lcount++);
-    writeString("Extend File:",lhs, lcount);
-    writeString(emu_ExtendFileRequested() ? "Yes" : "No", rhs, lcount++);
+    charWriteString(c, rhs, lcount++);
+    charWriteString("WRX RAM:", lhs, lcount);
+    charWriteString(emu_WRXRequested() ? "Yes" : "No", rhs, lcount++);
+    charWriteString("8K-16K RAM:", lhs, lcount);
+    charWriteString(emu_LowRAMRequested() ? "Yes" : "No", rhs, lcount++);
+    charWriteString("M1NOT:", lhs, lcount);
+    charWriteString(emu_M1NOTRequested() ? "On" : "Off", rhs, lcount++);
+    charWriteString("Extend File:",lhs, lcount);
+    charWriteString(emu_ExtendFileRequested() ? "Yes" : "No", rhs, lcount++);
 
-    writeString("Resolution:", lhs, ++lcount);
+    charWriteString("Resolution:", lhs, ++lcount);
 #ifndef PICO_LCD_CS_PIN
-    writeString((emu_576Requested() == OFF) ? "640x480x60" : (emu_576Requested() == MATCH) ? "720x568x50.6" : "720x568x50", rhs, lcount++);
+    charWriteString((emu_576Requested() == OFF) ? "640x480x60" : (emu_576Requested() == MATCH) ? "720x568x50.6" : "720x568x50", rhs, lcount++);
 #else
-    writeString((emu_576Requested() == OFF) ? "320x240x60" : (emu_576Requested() == MATCH) ? "320x240x50.6" : "320x240x50", rhs, lcount++);
+    charWriteString((emu_576Requested() == OFF) ? "320x240x60" : (emu_576Requested() == MATCH) ? "320x240x50.6" : "320x240x50", rhs, lcount++);
 #endif
-    writeString("Frame Sync:", lhs, lcount);
-    writeString((emu_FrameSyncRequested() == SYNC_OFF) ? "Off" : (emu_FrameSyncRequested() == SYNC_ON) ? "On" : "On Int", rhs, lcount++);
+    charWriteString("Frame Sync:", lhs, lcount);
+    charWriteString((emu_FrameSyncRequested() == SYNC_OFF) ? "Off" : (emu_FrameSyncRequested() == SYNC_ON) ? "On" : "On Int", rhs, lcount++);
 
-    writeString("Em TV Type:", lhs, ++lcount);
-    writeString(emu_NTSCRequested() ? "NTSC" : "PAL", rhs, lcount++);
-    writeString("Centre:", lhs, lcount);
-    writeString((emu_CentreY()!=0) ? "Yes" : "No", rhs, lcount++);
-    writeString("Vert Tol:", lhs, lcount);
+    charWriteString("Em TV Type:", lhs, ++lcount);
+    charWriteString(emu_NTSCRequested() ? "NTSC" : "PAL", rhs, lcount++);
+    charWriteString("Centre:", lhs, lcount);
+    charWriteString((emu_CentreY()!=0) ? "Yes" : "No", rhs, lcount++);
+    charWriteString("Vert Tol:", lhs, lcount);
     sprintf(c,"%d lines\n",emu_VTol());
-    writeString(c, rhs, lcount++);
+    charWriteString(c, rhs, lcount++);
 
-    writeString("Sound:", lhs, ++lcount);
+    charWriteString("Sound:", lhs, ++lcount);
     switch (emu_SoundRequested())
     {
         case SOUND_TYPE_QUICKSILVA:
@@ -538,61 +540,61 @@ bool statusMenu(void)
             strcpy(c,"NONE");
         break;
     }
-    writeString(c, rhs, lcount++);
+    charWriteString(c, rhs, lcount++);
     if ((emu_SoundRequested() == SOUND_TYPE_QUICKSILVA) ||
         (emu_SoundRequested() == SOUND_TYPE_ZONX))
     {
-        writeString("ACB Stereo:", lhs, lcount);
-        writeString(emu_ACBRequested() ? "ON" : "OFF", rhs, lcount++);
+        charWriteString("ACB Stereo:", lhs, lcount);
+        charWriteString(emu_ACBRequested() ? "ON" : "OFF", rhs, lcount++);
     }
 
-    writeString("LOAD ROM:", lhs, ++lcount);
+    charWriteString("LOAD ROM:", lhs, ++lcount);
     if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
     {
-        writeString("EAR", rhs, lcount++);
+        charWriteString("EAR", rhs, lcount++);
     } else {
-        writeString(emu_loadUsingROMRequested() == ROM_SD_CARD ? "CARD" : "OFF", rhs, lcount++);
+        charWriteString(emu_loadUsingROMRequested() == ROM_SD_CARD ? "CARD" : "OFF", rhs, lcount++);
     }
 
-    writeString("SAVE ROM:",lhs, lcount);
+    charWriteString("SAVE ROM:",lhs, lcount);
     if (emu_saveUsingROMRequested() == ROM_EAR_MIC)
     {
-        writeString("MIC", rhs, lcount++);
+        charWriteString("MIC", rhs, lcount++);
     } else {
-        writeString(emu_saveUsingROMRequested() == ROM_SD_CARD ? "CARD" : "OFF", rhs, lcount++);
+        charWriteString(emu_saveUsingROMRequested() == ROM_SD_CARD ? "CARD" : "OFF", rhs, lcount++);
     }
 
-    writeString("CHAR$128:", lhs, ++lcount);
-    writeString(emu_CHR128Requested() ? "ON" : "OFF", rhs, lcount++);
+    charWriteString("CHAR$128:", lhs, ++lcount);
+    charWriteString(emu_CHR128Requested() ? "ON" : "OFF", rhs, lcount++);
 
-    writeString("QS UDG:", lhs, lcount);
-    writeString(emu_QSUDGRequested() ? "ON" : "OFF", rhs, lcount++);
+    charWriteString("QS UDG:", lhs, lcount);
+    charWriteString(emu_QSUDGRequested() ? "ON" : "OFF", rhs, lcount++);
     if (emu_QSUDGRequested())
     {
-        writeString("QS UDG On:", lhs, lcount);
-        writeString(UDGEnabled ? "YES" : "NO", rhs, lcount++);
+        charWriteString("QS UDG On:", lhs, lcount);
+        charWriteString(UDGEnabled ? "YES" : "NO", rhs, lcount++);
     }
 
-    writeString("Directory:", lhs, ++lcount);
+    charWriteString("Directory:", lhs, ++lcount);
     if (!emu_GetDirectory()[0])
     {
-        writeString("<ROOT>", rhs, lcount++);
+        charWriteString("<ROOT>", rhs, lcount++);
     }
     else
     {
-        writeString(emu_GetDirectory(), rhs, lcount++);
+        charWriteString(emu_GetDirectory(), rhs, lcount++);
     }
 
 #ifdef NINEPIN_JOYSTICK
-    writeString("Nine Pin JS:", lhs, lcount);
-    writeString(emu_NinePinJoystickRequested() ? "Yes" : "No", rhs, lcount++);
+    charWriteString("Nine Pin JS:", lhs, lcount);
+    charWriteString(emu_NinePinJoystickRequested() ? "Yes" : "No", rhs, lcount++);
 #endif
-    //writeString("Menu Border:", lhs, lcount);
+    //charWriteString("Menu Border:", lhs, lcount);
     //sprintf(c,"%0d\n",emu_MenuBorderRequested());
-    //writeString(c, rhs, lcount++);
+    //charWriteString(c, rhs, lcount++);
 
-    //writeString("Fn Key Map:", lhs, ++lcount);
-    //writeString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
+    //charWriteString("Fn Key Map:", lhs, ++lcount);
+    //charWriteString(emu_DoubleShiftRequested() ? "Yes" : "No", rhs, lcount++);
 
     do
     {
@@ -617,10 +619,10 @@ void pauseMenu(void)
         return;
 
     // Display an inverted P in each corner - allowing for over scan
-    invertChar('P', border, border);
-    invertChar('P', border, (disp.height >> 3) - border - 1);
-    invertChar('P', (disp.width >> 3) - border - 1, border);
-    invertChar('P', (disp.width >> 3) - border - 1, (disp.height >> 3) - border - 1);
+    charInvertChar('P', border, border);
+    charInvertChar('P', border, (disp.height >> 3) - border - 1);
+    charInvertChar('P', (disp.width >> 3) - border - 1, border);
+    charInvertChar('P', (disp.width >> 3) - border - 1, (disp.height >> 3) - border - 1);
 
     // Wait for Enter or ESC to be pressed - or to capture an image
     bool captured = false;
@@ -636,18 +638,18 @@ void pauseMenu(void)
             // Check that a capture is possible
             if (wasBlank)
             {
-                writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
-                writeInvertString("In fast mode", (disp.width >> 4) - 6, (disp.height >> 4) + 1, true);
+                charWriteInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
+                charWriteInvertString("In fast mode", (disp.width >> 4) - 6, (disp.height >> 4) + 1, true);
             }
             else if (!emu_fsInitialised())
             {
-                writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
-                writeInvertString("SD Card not detected", (disp.width >> 4) - 10, (disp.height >> 4) + 1, true);
+                charWriteInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
+                charWriteInvertString("SD Card not detected", (disp.width >> 4) - 10, (disp.height >> 4) + 1, true);
             }
             else if (!emu_GetScreenShotDir(bmp_path))
             {
-                writeInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
-                writeInvertString("Directory does not exist", (disp.width >> 4) - 13, (disp.height >> 4) + 1, true);
+                charWriteInvertString("No Screen capture possible", (disp.width >> 4) - 13, disp.height >> 4, true);
+                charWriteInvertString("Directory does not exist", (disp.width >> 4) - 13, (disp.height >> 4) + 1, true);
             }
             else
             {
@@ -691,12 +693,12 @@ void pauseMenu(void)
 #endif
                 if (!emu_VideoWriteBitmap(bmp_path, currBuff, c_ptr))
                 {
-                    writeInvertString("Screen capture failed", (disp.width >> 4) - 10, disp.height >> 4, true);
-                    writeInvertString("File could not be saved", (disp.width >> 4) - 11, (disp.height >> 4) + 1, true);
+                    charWriteInvertString("Screen capture failed", (disp.width >> 4) - 10, disp.height >> 4, true);
+                    charWriteInvertString("File could not be saved", (disp.width >> 4) - 11, (disp.height >> 4) + 1, true);
                 }
                 else
                 {
-                    writeInvertString("Screen captured", (disp.width >> 4) - 7, disp.height >> 4, true);
+                    charWriteInvertString("Screen captured", (disp.width >> 4) - 7, disp.height >> 4, true);
                     captured = true;
                 }
             }
@@ -734,7 +736,10 @@ bool modifyMenu(void)
     modify.stereo = emu_ACBRequested();
     modify.loadROM = emu_loadUsingROMRequested();
     modify.saveROM = emu_saveUsingROMRequested();
-
+    modify.displayStats = emu_loadDisplayStatusRequested();
+#ifdef INPUT_EAR
+    modify.vol = emu_loadVolumeRequested();
+#endif
 
     if (!buildMenu(false))
         return false;
@@ -864,6 +869,27 @@ bool modifyMenu(void)
                         modify.saveROM = (modify.saveROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
 #endif
                     }
+                    else if (field == PDISSTAT)
+                    {
+                        modify.displayStats = !modify.displayStats;
+                    }
+#ifdef INPUT_EAR
+                    else if (field == PLOADVOL)
+                    {
+                        switch (modify.vol)
+                        {
+                            case LOAD_VOL_LOW:
+                                modify.vol = LOAD_VOL_MEDIUM;
+                            break;
+                            case LOAD_VOL_MEDIUM:
+                                modify.vol = LOAD_VOL_HIGH;
+                            break;
+                            default:
+                                modify.vol = LOAD_VOL_LOW;
+                            break;
+                        }
+                    }
+#endif
                     showModify(field, &modify);
                 break;
 
@@ -942,6 +968,27 @@ bool modifyMenu(void)
                         modify.saveROM = (modify.saveROM == ROM_OFF) ? ROM_SD_CARD : ROM_OFF;
 #endif
                     }
+                    else if (field == PDISSTAT)
+                    {
+                        modify.displayStats = !modify.displayStats;
+                    }
+#ifdef INPUT_EAR
+                    else if (field == PLOADVOL)
+                    {
+                        switch (modify.vol)
+                        {
+                            case LOAD_VOL_LOW:
+                                modify.vol = LOAD_VOL_HIGH;
+                            break;
+                            case LOAD_VOL_MEDIUM:
+                                modify.vol = LOAD_VOL_LOW;
+                            break;
+                            default:
+                                modify.vol = LOAD_VOL_MEDIUM;
+                            break;
+                        }
+                    }
+#endif
                     showModify(field, &modify);
                 break;
             }
@@ -964,6 +1011,10 @@ bool modifyMenu(void)
         emu_SetACB(modify.stereo);
         emu_SetLoadROM(modify.loadROM);
         emu_SetSaveROM(modify.saveROM);
+        emu_SetloadDisplayStatus(modify.displayStats);
+#ifdef INPUT_EAR
+        emu_SetloadVolume(modify.vol);
+#endif
     }
     debounceExit(update);
     endMenu(false);
@@ -1273,7 +1324,7 @@ static bool buildMenu(bool clone)
     border = emu_MenuBorderRequested();
 
     zx80font = (emu_ComputerRequested() == ZX80_4K);
-    setConvert(zx80font);
+    charSetConvert(zx80font);
 
     if (!wasBlank)
     {
@@ -1326,6 +1377,9 @@ static bool buildMenu(bool clone)
         memset(menuscreen, 0x00, disp.stride_byte * disp.height);
     }
     // Display
+    charSetScreenPtr(menuscreen);
+    charSetChromaPtr(menuchroma);
+
     displayBuffer(menuscreen, false, false, clone ? (chromamode != 0): false);
     return true;
 }
@@ -1349,33 +1403,33 @@ static void endMenu(bool blank)
 
 static void showModify(PositionF6_T pos, ModifyF6_T* modify)
 {
-    uint lcount = (disp.height >> 4) - 13;
+    uint32_t lcount = (disp.height >> 4) - 13;
 
     int lhs = (disp.width >> 4) - 10;
     int rhs = lhs + 13;
     char c[20];
 
-    writeString("Modify", lhs + 6, lcount);
-    writeString("======", lhs + 6, lcount+1);
+    charWriteString("Modify", lhs + 6, lcount);
+    charWriteString("======", lhs + 6, lcount+1);
 
-    writeInvertString("Frame Sync:", lhs, lcount + PositionF6_T::PSYNC, pos == PositionF6_T::PSYNC);
-    writeString((modify->fsync == SYNC_OFF) ? "Off      " : (modify->fsync == SYNC_ON) ? "On       " : "Interlace", rhs , lcount + PositionF6_T::PSYNC);
+    charWriteInvertString("Frame Sync:", lhs, lcount + PositionF6_T::PSYNC, pos == PositionF6_T::PSYNC);
+    charWriteString((modify->fsync == SYNC_OFF) ? "Off      " : (modify->fsync == SYNC_ON) ? "On       " : "Interlace", rhs , lcount + PositionF6_T::PSYNC);
 
-    writeInvertString("Em TV Type:", lhs, lcount + PositionF6_T::PNTSC, pos == PositionF6_T::PNTSC);
-    writeString(modify->ntsc ? "NTSC" : "PAL ", rhs, lcount + PositionF6_T::PNTSC);
+    charWriteInvertString("Em TV Type:", lhs, lcount + PositionF6_T::PNTSC, pos == PositionF6_T::PNTSC);
+    charWriteString(modify->ntsc ? "NTSC" : "PAL ", rhs, lcount + PositionF6_T::PNTSC);
 
-    writeInvertString("Vert Tol:", lhs, lcount + PositionF6_T::PVTOL, pos == PositionF6_T::PVTOL);
+    charWriteInvertString("Vert Tol:", lhs, lcount + PositionF6_T::PVTOL, pos == PositionF6_T::PVTOL);
     sprintf(c,"%d lines  \n",modify->vTol);
-    writeString(c, rhs , lcount + PositionF6_T::PVTOL);
+    charWriteString(c, rhs , lcount + PositionF6_T::PVTOL);
 
-    writeInvertString("Centre:", lhs, lcount + PositionF6_T::PCENTRE, pos == PositionF6_T::PCENTRE);
-    writeString(modify->centre ? "YES" : "NO ", rhs , lcount + PositionF6_T::PCENTRE);
+    charWriteInvertString("Centre:", lhs, lcount + PositionF6_T::PCENTRE, pos == PositionF6_T::PCENTRE);
+    charWriteString(modify->centre ? "YES" : "NO ", rhs , lcount + PositionF6_T::PCENTRE);
 
-    writeInvertString("WRX RAM:", lhs, lcount + PositionF6_T::PWRX, pos == PositionF6_T::PWRX);
-    writeString(modify->wrx ? "YES" : "NO ", rhs , lcount + PositionF6_T::PWRX);
+    charWriteInvertString("WRX RAM:", lhs, lcount + PositionF6_T::PWRX, pos == PositionF6_T::PWRX);
+    charWriteString(modify->wrx ? "YES" : "NO ", rhs , lcount + PositionF6_T::PWRX);
 
 #ifndef PICO_NO_SOUND
-    writeInvertString("Sound:", lhs, lcount + PositionF6_T::PSOUNDTYPE, pos == PositionF6_T::PSOUNDTYPE);
+    charWriteInvertString("Sound:", lhs, lcount + PositionF6_T::PSOUNDTYPE, pos == PositionF6_T::PSOUNDTYPE);
     switch (modify->sound)
     {
         case SOUND_TYPE_QUICKSILVA:
@@ -1402,37 +1456,45 @@ static void showModify(PositionF6_T pos, ModifyF6_T* modify)
             strcpy(c,"NONE      ");
         break;
     }
-    writeString(c, rhs , lcount + PositionF6_T::PSOUNDTYPE);
+    charWriteString(c, rhs , lcount + PositionF6_T::PSOUNDTYPE);
 
-    writeInvertString("Stereo:", lhs, lcount + PositionF6_T::PSTEREOACB, pos == PositionF6_T::PSTEREOACB);
+    charWriteInvertString("Stereo:", lhs, lcount + PositionF6_T::PSTEREOACB, pos == PositionF6_T::PSTEREOACB);
     if (emu_ACBPossible())
-        writeString(modify->stereo ? "ON-ACB" : "OFF   ", rhs , lcount + PositionF6_T::PSTEREOACB);
+        charWriteString(modify->stereo ? "ON-ACB" : "OFF   ", rhs , lcount + PositionF6_T::PSTEREOACB);
     else
-        writeString("N/A", rhs , lcount + PositionF6_T::PSTEREOACB);
+        charWriteString("N/A", rhs , lcount + PositionF6_T::PSTEREOACB);
 #endif
-    writeInvertString("LOAD ROM", lhs, lcount + PositionF6_T::PLOADROM, pos == PositionF6_T::PLOADROM);
-    writeString((modify->loadROM == ROM_EAR_MIC) ? "Ear  " : (modify->loadROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF6_T::PLOADROM);
+    charWriteInvertString("LOAD ROM:", lhs, lcount + PositionF6_T::PLOADROM, pos == PositionF6_T::PLOADROM);
+    charWriteString((modify->loadROM == ROM_EAR_MIC) ? "Ear  " : (modify->loadROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF6_T::PLOADROM);
 
-    writeInvertString("SAVE ROM", lhs, lcount + PositionF6_T::PSAVEROM, pos == PositionF6_T::PSAVEROM);
-    writeString((modify->saveROM == ROM_EAR_MIC) ? "Mic  " : (modify->saveROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF6_T::PSAVEROM);
+    charWriteInvertString("SAVE ROM:", lhs, lcount + PositionF6_T::PSAVEROM, pos == PositionF6_T::PSAVEROM);
+    charWriteString((modify->saveROM == ROM_EAR_MIC) ? "Mic  " : (modify->saveROM == ROM_SD_CARD) ? "Card" : "Off ", rhs , lcount + PositionF6_T::PSAVEROM);
+
+    charWriteInvertString("LOAD STATS:", lhs, lcount + PositionF6_T::PDISSTAT, pos == PositionF6_T::PDISSTAT);
+    charWriteString(modify->displayStats ? "ON " : "OFF", rhs , lcount + PositionF6_T::PDISSTAT);
+
+#ifdef INPUT_EAR
+    charWriteInvertString("LOAD VOLUME:", lhs, lcount + PositionF6_T::PLOADVOL, pos == PositionF6_T::PLOADVOL);
+    charWriteString(modify->vol == LOAD_VOL_HIGH ? "HIGH  " : (modify->vol == LOAD_VOL_MEDIUM ? "MEDIUM" : "LOW   "), rhs , lcount + PositionF6_T::PLOADVOL);
+#endif
 }
 
 static void showRestart(PositionF7_T pos, RestartF7_T* restart)
 {
-    uint lcount = (disp.height >> 4) - 13;
+    uint32_t lcount = (disp.height >> 4) - 13;
 
     int lhs = (disp.width >> 4) - 10;
     int rhs = lhs + 13;
     char c[20];
 
-    writeString("Restart", lhs + 6, lcount);
-    writeString("=======", lhs + 6, lcount+1);
+    charWriteString("Restart", lhs + 6, lcount);
+    charWriteString("=======", lhs + 6, lcount+1);
 
-    writeString("Note: CHANGING VALUES", lhs - 1, lcount + 4);
-    writeString("      WILL RESTART THE", lhs - 1, lcount + 5);
-    writeString("      EMULATED MACHINE", lhs - 1, lcount + 6);
+    charWriteString("Note: CHANGING VALUES", lhs - 1, lcount + 4);
+    charWriteString("      WILL RESTART THE", lhs - 1, lcount + 5);
+    charWriteString("      EMULATED MACHINE", lhs - 1, lcount + 6);
 
-    writeInvertString("Computer:", lhs, lcount + PositionF7_T::PCOMPUTER, pos == PositionF7_T::PCOMPUTER);
+    charWriteInvertString("Computer:", lhs, lcount + PositionF7_T::PCOMPUTER, pos == PositionF7_T::PCOMPUTER);
     switch (restart->computer)
     {
         case ZX80_4K:
@@ -1452,69 +1514,69 @@ static void showRestart(PositionF7_T pos, RestartF7_T* restart)
         break;
     }
 
-    writeString(c, rhs , lcount + PositionF7_T::PCOMPUTER);
+    charWriteString(c, rhs , lcount + PositionF7_T::PCOMPUTER);
 
-    writeInvertString("Memory:", lhs, lcount + PositionF7_T::PMSIZE, pos == PositionF7_T::PMSIZE);
+    charWriteInvertString("Memory:", lhs, lcount + PositionF7_T::PMSIZE, pos == PositionF7_T::PMSIZE);
     sprintf(c,"%0d KB\n",restart->msize);
-    writeString(c, rhs , lcount + PositionF7_T::PMSIZE);
+    charWriteString(c, rhs , lcount + PositionF7_T::PMSIZE);
 
-    writeInvertString("LOW RAM:", lhs, lcount + PositionF7_T::PLOWRAM, pos == PositionF7_T::PLOWRAM);
-    writeString((restart->lowRAM) ? "On " : "Off", rhs , lcount + PositionF7_T::PLOWRAM);
+    charWriteInvertString("LOW RAM:", lhs, lcount + PositionF7_T::PLOWRAM, pos == PositionF7_T::PLOWRAM);
+    charWriteString((restart->lowRAM) ? "On " : "Off", rhs , lcount + PositionF7_T::PLOWRAM);
 
-    writeInvertString("MINOT:", lhs, lcount + PositionF7_T::PM1NOT, pos == PositionF7_T::PM1NOT);
-    writeString((restart->m1not) ? "On " : "Off", rhs , lcount + PositionF7_T::PM1NOT);
+    charWriteInvertString("MINOT:", lhs, lcount + PositionF7_T::PM1NOT, pos == PositionF7_T::PM1NOT);
+    charWriteString((restart->m1not) ? "On " : "Off", rhs , lcount + PositionF7_T::PM1NOT);
 
-    writeInvertString("CHAR$128:", lhs, lcount + PositionF7_T::PCHR128, pos == PositionF7_T::PCHR128);
-    writeString((restart->chr128) ? "On " : "Off", rhs , lcount + PositionF7_T::PCHR128);
+    charWriteInvertString("CHAR$128:", lhs, lcount + PositionF7_T::PCHR128, pos == PositionF7_T::PCHR128);
+    charWriteString((restart->chr128) ? "On " : "Off", rhs , lcount + PositionF7_T::PCHR128);
 
-    writeInvertString("QS UDG:", lhs, lcount + PositionF7_T::PQSUDG, pos == PositionF7_T::PQSUDG);
-    writeString((restart->qsudg) ? "On " : "Off", rhs , lcount + PositionF7_T::PQSUDG);
+    charWriteInvertString("QS UDG:", lhs, lcount + PositionF7_T::PQSUDG, pos == PositionF7_T::PQSUDG);
+    charWriteString((restart->qsudg) ? "On " : "Off", rhs , lcount + PositionF7_T::PQSUDG);
 }
 
 static void showReboot(FiveSevenSix_T mode)
 {
-    uint lcount = (disp.height >> 4) - 13;
+    uint32_t lcount = (disp.height >> 4) - 13;
 
     int lhs = (disp.width >> 4) - 10;
 
-    writeString("Reboot", lhs + 6, lcount);
-    writeString("======", lhs + 6, lcount+1);
+    charWriteString("Reboot", lhs + 6, lcount);
+    charWriteString("======", lhs + 6, lcount+1);
 
     int rhs = lhs + 13;
 
-    writeString("Note: RESOLUTION", lhs - 1, lcount + 4);
-    writeString("      CHANGE WILL", lhs - 1, lcount + 5);
-    writeString("      REBOOT THE PICO", lhs - 1, lcount + 6);
+    charWriteString("Note: RESOLUTION", lhs - 1, lcount + 4);
+    charWriteString("      CHANGE WILL", lhs - 1, lcount + 5);
+    charWriteString("      REBOOT THE PICO", lhs - 1, lcount + 6);
 
-    writeInvertString("Resolution:", lhs, lcount + 12, true);
+    charWriteInvertString("Resolution:", lhs, lcount + 12, true);
 #ifndef PICOZX_LCD
 #ifndef PICO_LCD_CS_PIN
-    writeString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
+    charWriteString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
 #else
-    writeString((mode == OFF) ? "320x240x60  " : (mode == MATCH) ? "320x240x50.6" : "320x240x50  ", rhs, lcount + 12);
+    charWriteString((mode == OFF) ? "320x240x60  " : (mode == MATCH) ? "320x240x50.6" : "320x240x50  ", rhs, lcount + 12);
 #endif
 #else
     if (useLCD)
-        writeString((mode == OFF) ? "320x240x60  " : (mode == MATCH) ? "320x240x50.6" : "320x240x50  ", rhs, lcount + 12);
+        charWriteString((mode == OFF) ? "320x240x60  " : (mode == MATCH) ? "320x240x50.6" : "320x240x50  ", rhs, lcount + 12);
     else
-        writeString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
+        charWriteString((mode == OFF) ? "640x480x60  " : (mode == MATCH) ? "720x568x50.6" : "720x568x50  ", rhs, lcount + 12);
 #endif
 }
 
-static void showSave(const char* name, uint len, uint cursor, uint col, uint row)
+static void showSave(const char* name, uint32_t len, uint32_t cursor, uint32_t col, uint32_t row)
 {
 
-    for (uint i=0; i<cursor; ++i)
+    for (uint32_t i=0; i<cursor; ++i)
     {
-        writeChar(name[i], col++, row);
+        charWriteChar(name[i], col++, row);
     }
-    invertChar('L', col++, row);
+    charInvertChar('L', col++, row);
 
-    for (uint i=cursor; i<len; ++i)
+    for (uint32_t i=cursor; i<len; ++i)
     {
-        writeChar(name[i], col++, row);
+        charWriteChar(name[i], col++, row);
     }
-    writeChar(' ', col, row);
+    charWriteChar(' ', col, row);
 }
 
 // Waits for 120 ms
@@ -1540,151 +1602,23 @@ static void debounceExit(bool selected)
     }
 }
 
-// Inverts a row
-static void xorRow(uint row)
-{
-    uint8_t* screen = menuscreen;
-    screen += row * disp.stride_bit;
-    for (uint i=0; i<disp.stride_bit; ++i)
-    {
-        *screen++ ^= 0xff;
-    }
-}
-
-static char ascii2zx[96]=
-  {
-   0, 0,11,12,13, 0, 0,11,16,17,23,21,26,22,27,24,
-  28,29,30,31,32,33,34,35,36,37,14,25,19,20,18,15,
-  23,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,
-  53,54,55,56,57,58,59,60,61,62,63,16,24,17,11,22,
-  11,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,
-  53,54,55,56,57,58,59,60,61,62,63,16,24,17,11, 0
-  };
-
-static void setConvert(bool zx80)
-{
-    if (zx80)
-    {
-        ascii2zx['"' - 32] = 0x01;
-        ascii2zx['-' - 32] = 0x12;
-        ascii2zx['+' - 32] = 0x13;
-        ascii2zx['*' - 32] = 0x14;
-        ascii2zx['/' - 32] = 0x15;
-        ascii2zx['=' - 32] = 0x16;
-        ascii2zx['>' - 32] = 0x17;
-        ascii2zx['<' - 32] = 0x18;
-        ascii2zx[13] = 0x12;
-        ascii2zx[63] = 0x12;
-    }
-    else
-    {
-        ascii2zx['"' - 32] = 0x0B;
-        ascii2zx['-' - 32] = 0x16;
-        ascii2zx['+' - 32] = 0x15;
-        ascii2zx['*' - 32] = 0x17;
-        ascii2zx['/' - 32] = 0x18;
-        ascii2zx['=' - 32] = 0x14;
-        ascii2zx['>' - 32] = 0x12;
-        ascii2zx['<' - 32] = 0x13;
-    }
-}
-// Write string to screen, terminate string at screen edge
-static void writeString(const char* s, uint col, uint row)
-{
-    writeInvertString(s, col, row, false);
-}
-
-// Write string to screen, terminate string at screen edge, optionally inverting characters
-static void writeInvertString(const char* s, uint col, uint row, bool invert)
-{
-    if ((col < (uint)(disp.width>>3)) && (row < (uint)(disp.height>>3)))
-    {
-        unsigned int len = strlen(s);
-
-        len = len > ((disp.width>>3)-col) ? ((disp.width>>3)-col) : len;
-        for (uint i=0; i<len; ++i)
-        {
-            if (invert)
-            {
-                invertChar(s[i], col+i, row);
-            }
-            else
-            {
-                writeChar(s[i], col+i, row);
-            }
-        }
-    }
-}
-
-// Write one character to screen
-static void writeChar(char c, uint col, uint row)
-{
-    uint8_t* pos = menuscreen + row * disp.stride_bit + col;
-    const unsigned char* rom = (zx80font ? zx80rom : zx81rom);
-    uint16_t offset = zx80font ? 0x0e00 : 0x1e00;   // Start of characters in ROM
-
-    // Convert from ascii to ZX
-    if ((c >= 32) && (c < 128))
-    {
-        offset += (ascii2zx[c-32] << 3);
-    }
-
-    // Find the offset in the ROM
-    for (uint i=0; i<8; ++i)
-    {
-        *pos = rom[offset+i];
-        pos += disp.stride_byte;
-    }
-}
-
-static void invertChar(char c, uint col, uint row)
-{
-    uint8_t* pos = menuscreen + row * disp.stride_bit + col;
-    const unsigned char* rom = (zx80font ? zx80rom : zx81rom);
-    uint16_t offset = zx80font ? 0x0e00 : 0x1e00;   // Start of characters in ROM
-
-    // Convert from ascii to ZX
-    if ((c >= 32) && (c < 128))
-    {
-        offset += (ascii2zx[c-32] << 3);
-    }
-
-    // Find the offset in the ROM
-    for (uint i=0; i<8; ++i)
-    {
-        *pos = (rom[offset+i] ^ 0xff);
-        pos += disp.stride_byte;
-    }
-
-    // Update chroma foreground and background, so inverse char is visible
-    if (menuchroma)
-    {
-        pos = menuchroma + row * disp.stride_bit + col;
-        for (uint i=0; i<8; ++i)
-        {
-            *pos = 0xf0;
-            pos += disp.stride_byte;
-        }
-    }
-}
-
 // Returns the total number of eligible files and directories.
 // Populate screen with files / directories starting at first
-static int populateFiles(const char* path, uint first)
+static int populateFiles(const char* path, uint32_t first)
 {
     FRESULT res;
     DIR dir;
-    uint i = 0;
-    uint count = 0;
+    uint32_t i = 0;
+    uint32_t count = 0;
     FILINFO fno;
-    uint fullrow = (uint)((disp.height>>3)-(border<<1));
+    uint32_t fullrow = (uint32_t)((disp.height>>3)-(border<<1));
 
     // Populate parent directory
     if (path[0])
     {
         if (!first)
         {
-            writeString("<..>", border, border);
+            charWriteString("<..>", border, border);
             ++i;
         }
         ++count;
@@ -1725,7 +1659,7 @@ static int populateFiles(const char* path, uint first)
                         name[len] = '>';
                         name[len + 1] = 0;
                     }
-                    writeString(name, border, i+border);
+                    charWriteString(name, border, i+border);
                     ++i;
                 }
                 ++count;
@@ -1747,17 +1681,17 @@ static int populateFiles(const char* path, uint first)
                 if ((count >= first) && (count < (first + fullrow)))
                 {
                     // Terminate long file names with a +
-                    if (strlen(fno.fname) > (uint)((disp.width>>3) - (border<<1)))
+                    if (strlen(fno.fname) > (uint32_t)((disp.width>>3) - (border<<1)))
                     {
                         // Copy and terminate with a +
                         strncpy(name, fno.fname, sizeof(name));
                         name[((disp.width>>3) - (border<<1)-1)] = '+';
                         name[((disp.width>>3) - (border<<1))] = 0;
-                        writeString(name, border, i+border);
+                        charWriteString(name, border, i+border);
                     }
                     else
                     {
-                        writeString(fno.fname, border, i+border);
+                        charWriteString(fno.fname, border, i+border);
                     }
                     ++i;
                 }
@@ -1783,13 +1717,13 @@ static int populateFiles(const char* path, uint first)
 // Failure modes should be limited to a failing card, or
 // card removal. File /directory names that are too long
 // will not have been put in the list
-static bool getFile(char* inout, uint index, bool* direct)
+static bool getFile(char* inout, uint32_t index, bool* direct)
 {
     FRESULT res;
     DIR dir;
     FILINFO fno;
     bool ret = false;
-    uint count = 0;
+    uint32_t count = 0;
 
     if (inout[0])
     {
@@ -1892,4 +1826,3 @@ static void removeKnownExtension(char* filename)
         filename[len - 4] = 0;
     }
 }
-

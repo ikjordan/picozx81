@@ -34,6 +34,9 @@ static int linein_buffer_available = 0;             // The buffer that has data 
 static uint rx_offset = 0;
 static float linein_clkdiv = 0.0f;
 
+static int32_t bit_high = 0;
+static int32_t bit_low = 0;
+
 #ifdef TIME_SPARE
 int32_t linein_count = 0;
 #endif
@@ -155,9 +158,6 @@ static int16_t linein_value(uint32_t tstates)
 #define HPF_B0   24331      // 0.742517 in Q15
 #define HPF_A1   15894      // 0.485035 in Q15
 
-#define HYSTERESIS 1500
-#define BIT_HIGH   1500
-#define BIT_LOW    (BIT_HIGH - HYSTERESIS)
 #define HIGH_STATE 0xFFFF
 #define LOW_STATE  0
 
@@ -174,7 +174,7 @@ static inline int16_t hpf3400(int16_t input)
     x1 = x;
     y1 = y;
 
-    last_state = last_state ? (y > BIT_LOW) : (y > BIT_HIGH);
+    last_state = last_state ? (y > bit_low) : (y > bit_high);
 
     return last_state ? HIGH_STATE : LOW_STATE;
 }
@@ -182,8 +182,9 @@ static inline int16_t hpf3400(int16_t input)
 // External API
 
 // Initialise the linein capture
-void emu_linein_initialise(void)
+void emu_linein_initialise(LoadVolume_T vol)
 {
+    emu_linein_set_volume(vol);
     codec_power_on();
     i2c_setup();
 
@@ -269,9 +270,28 @@ void emu_linein_apply_filter(void)
 }
 
 // Obtain whether signal is high or low
-bool emu_is_signal_high(uint32_t tstates)
+bool emu_linein_signal_high(uint32_t tstates)
 {
     return linein_value(tstates) != LOW_STATE;
+}
+
+void emu_linein_set_volume(LoadVolume_T vol)
+{
+    switch(vol)
+    {
+        case LOAD_VOL_HIGH:
+            bit_high = 6000;
+            bit_low = 4000;
+        break;
+        case LOAD_VOL_MEDIUM:
+            bit_high = 3000;
+            bit_low = 2000;
+        break;
+        default:
+            bit_high = 1500;
+            bit_low = 1000;
+        break;
+    }
 }
 
 // For debug only

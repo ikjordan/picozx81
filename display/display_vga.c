@@ -169,9 +169,9 @@ static Fill_u expand_display(uint8_t disp, uint8_t colours);
 
     // Determine the video mode
 #ifndef PICOZX_LCD
-uint displayInitialise
+uint32_t displayInitialise
 #else
-uint displayInitialiseVGA
+uint32_t displayInitialiseVGA
 #endif
                       (bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)

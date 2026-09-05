@@ -520,17 +520,17 @@ static inline void __not_in_flash_func(swapCurrAndLast)(void)
 #include "zx80bmp.h"
 #include "zx81bmp.h"
 
-extern uint displayInitialiseLCD(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+extern uint32_t displayInitialiseLCD(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                                  uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
 extern void displayStartLCD(void);
 extern bool displayShowKeyboardLCD(bool ROM8K);
 
-extern uint displayInitialiseVGA(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+extern uint32_t displayInitialiseVGA(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                                  uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info);
 extern void displayStartVGA(void);
 extern bool displayShowKeyboardVGA(bool ROM8K);
 
-uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+uint32_t displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
 {
     if (useLCD)

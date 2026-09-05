@@ -12,7 +12,7 @@ extern bool modifyMenu(void);
 extern bool restartMenu(void);
 extern void rebootMenu(void);
 extern void snapMenu(void);
-extern bool saveMenu(char* save, uint length, bool zx80);
+extern bool saveMenu(char* save, uint32_t length, bool zx80);
 #ifdef __cplusplus
 }
 #endif

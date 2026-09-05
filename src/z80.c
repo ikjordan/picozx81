@@ -27,6 +27,7 @@
 #include "emuvideo.h"
 #include "emusound.h"
 #include "display.h"
+#include "chars.h"
 #include "z80.h"
 
 #define parity(a) (partable[a])
@@ -137,7 +138,8 @@ bool LowRAM = false;
 bool chr128 = false;
 bool useNTSC = false;
 bool frameSync = false;
-bool running_rom = false;
+RomExecuteType_t running_rom = ROM_EXECUTE_OFF;
+bool display_load_stats = true;
 
 unsigned char a, f, b, c, d, e, h, l;
 unsigned char r, a1, f1, b1, c1, d1, e1, h1, l1, i, iff1, iff2, im;
@@ -149,9 +151,11 @@ unsigned char intsample = 0;
 unsigned char op;
 unsigned short m1cycles;
 
-#ifdef DEBUG_LOAD_AND_SAVE
-uint16_t load_bytes_total = 0;
-uint16_t load_bytes_detected = 0;
+#ifdef INPUT_EAR
+static uint16_t load_bytes_total = 0;
+static uint16_t load_bytes_detected = 0;
+static uint16_t load_message_col = 0;
+static uint32_t load_message_row = 0;
 #endif
 
 /* ZX80 specific */
@@ -249,7 +253,7 @@ void resetZ80(void)
   RasterY = 0;
   psync = 1;
   sync_len = 0;
-  running_rom = false;
+  running_rom = ROM_EXECUTE_OFF;
   frameNotSync = true;
   LastInstruction = LASTINSTNONE;
 
@@ -279,6 +283,12 @@ void resetZ80(void)
   sync_type = SYNCNONE;
   sync_len = 0;
   nosync_lines = 0;
+
+#ifdef INPUT_EAR
+  load_message_col = disp.width >> 4;
+  load_message_row = disp.height >> 4;
+#endif
+  running_rom = ROM_EXECUTE_OFF;
 
   emu_VideoSetInterlace();
 
@@ -389,7 +399,7 @@ static void loadAndSaveROM(void)
   printf("loadAndSaveROM %04x Running ROM %s\n", pc, running_rom ? "Yes" : "No");
 #endif
 
-  if (!running_rom)
+  if (running_rom == ROM_EXECUTE_OFF)
   {
     int sound_target = SOUND_TYPE_VSYNC;
 
@@ -397,7 +407,7 @@ static void loadAndSaveROM(void)
     {
       if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
       {
-        running_rom = true;
+        running_rom = ROM_EXECUTE_LOAD;
       }
       else
       {
@@ -421,7 +431,7 @@ static void loadAndSaveROM(void)
           break;
 
           case LOAD_SAVE_ROM:
-            running_rom = true;
+            running_rom = ROM_EXECUTE_LOAD;
           break;
 
           default:
@@ -438,7 +448,7 @@ static void loadAndSaveROM(void)
         // Full volume if saving though audio port
         sound_target = SOUND_TYPE_CASSETTE;
 #endif
-        running_rom = true;
+        running_rom = ROM_EXECUTE_SAVE;
       }
       else
       {
@@ -458,7 +468,7 @@ static void loadAndSaveROM(void)
           break;
 
           case LOAD_SAVE_ROM:
-            running_rom = true;
+            running_rom = ROM_EXECUTE_SAVE;
           break;
 
           default:
@@ -468,7 +478,7 @@ static void loadAndSaveROM(void)
       }
     }
 
-    if (running_rom)
+    if (running_rom != ROM_EXECUTE_OFF)
     {
       // Run the ROM, generating MIC (save) / EAR (load) sounds
       sound_cache = emu_sndImmediateChange(sound_type, sound_target);
@@ -478,24 +488,74 @@ static void loadAndSaveROM(void)
   {
     if ((pc == rom_addresses.success) || (pc == rom_addresses.failure))
     {
+      if (running_rom == ROM_EXECUTE_LOAD)
+      {
+#ifdef INPUT_EAR
 #ifdef DEBUG_LOAD_AND_SAVE
-      printf("Load: Bytes expected: %u Bytes Detected: %u\n", load_bytes_total, load_bytes_detected);
-      load_bytes_total = 0;
-      load_bytes_detected = 0;
+        printf("Load: Bytes expected: %u Bytes Detected: %u\n", load_bytes_total, load_bytes_detected);
 #endif
+        load_bytes_total = 0;
+        load_bytes_detected = 0;
+#endif
+      }
       // Restore the sound mode
       if (sound_cache != sound_type)
       {
         emu_sndQueueChange(sound_cache);
       }
-      running_rom = false;
+      running_rom = ROM_EXECUTE_OFF;
       tstates_frame = 0;
     }
   }
 }
 
+#ifdef INPUT_EAR
+static inline char* buildLoadMessage(uint16_t total, uint16_t left)
+{
+  static char data[] = "TOTAL 0000 LEFT 0000";
+  static char hex[] = "0123456789ABCDEF";
+
+  data[6] = hex[(total >> 12) & 0x0F];
+  data[7] = hex[(total >> 8) & 0x0F];
+  data[8] = hex[(total >> 4) & 0x0F];
+  data[9] = hex[total & 0x0F];
+
+  data[16] = hex[(left >> 12) & 0x0F];
+  data[17] = hex[(left >> 8) & 0x0F];
+  data[18] = hex[(left >> 4) & 0x0F];
+  data[19] = hex[left & 0x0F];
+
+  return data;
+}
+
+static inline void showLoadStatus(void)
+{
+  if (running_rom == ROM_EXECUTE_LOAD)
+  {
+    if (display_load_stats)
+    {
+      // Show load status
+      charSetScreenPtr(scrnbmp_new);
+      if (load_bytes_total)
+      {
+        charWriteString(buildLoadMessage(load_bytes_total, load_bytes_total - load_bytes_detected),
+                        load_message_col - 10, load_message_row);
+      }
+      else
+      {
+        charWriteString("NOT DETECTED", load_message_col - 6, load_message_row);
+      }
+    }
+  }
+}
+#endif
+
 static void __not_in_flash_func(displayAndNewScreen)(bool sync)
 {
+#ifdef INPUT_EAR
+  showLoadStatus();
+#endif
+
   // Display the current screen
   displayBuffer(scrnbmp_new, sync, true, (chromamode != 0));
   displayGetFreeBuffer(&scrnbmp_new);

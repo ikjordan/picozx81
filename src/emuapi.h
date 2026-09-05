@@ -75,6 +75,8 @@ extern bool emu_AllFilesRequested(void);
 extern bool emu_NinePinJoystickRequested(void);
 extern SLRomType_T emu_loadUsingROMRequested(void);
 extern SLRomType_T emu_saveUsingROMRequested(void);
+extern bool emu_loadDisplayStatusRequested(void);
+extern LoadVolume_T emu_loadVolumeRequested(void);
 extern int emu_MenuBorderRequested(void);
 extern uint16_t emu_VTol(void);
 extern bool emu_ACBRequested(void);
@@ -111,6 +113,9 @@ extern void emu_SetLowRAM(bool lowRAM);
 extern void emu_SetM1NOT(bool m1NOT);
 extern void emu_SetLoadROM(SLRomType_T loadROM);
 extern void emu_SetSaveROM(SLRomType_T loadROM);
+extern void emu_SetloadDisplayStatus(bool display);
+extern void emu_SetloadVolume(LoadVolume_T vol);
+
 extern void emu_SetQSUDG(bool qsudg);
 extern void emu_SetCHR128(bool chr128);
 

@@ -110,8 +110,4 @@ inline static void store2func(unsigned short ad,unsigned char b1,unsigned char b
 #define de ((d<<8)|e)
 #define hl ((h<<8)|l)
 
-#ifdef DEBUG_LOAD_AND_SAVE
-extern uint16_t load_bytes_total;
-extern uint16_t load_bytes_detected;
-#endif
 #endif
