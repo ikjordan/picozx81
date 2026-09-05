@@ -572,8 +572,16 @@ static void __not_in_flash_func(vsync_lower)(void)
   {
     // wrapping around frame, so display bottom
     uint8_t* start = scrnbmp_new + vsy * disp.stride_byte + (vsx >> 3) - 1;
+    uint8_t end = disp.stride_byte * (disp.height - vsy) - (vsx >> 3) - 1;
     *start++ = (0xff >> (vsx & 0x7));
-    memset(start, 0xff, disp.stride_byte * (disp.height - vsy) - (vsx >> 3) - 1);
+#ifdef DEBUG_LOAD_AND_SAVE
+    if (start + end - scrnbmp_new >= disp.length)
+    {
+      printf("vsync_lower: start + end out of range: S=%p E=%d", start, end);
+      exit(-1);
+    }
+#endif
+    memset(start, 0xff, end);
 
     // check for case where wrap ends at bottom
     if ((nx == 0) && (ny == 0)) return;
@@ -593,6 +601,13 @@ static void __not_in_flash_func(vsync_lower)(void)
     *end = (0xff << (nx & 0x7));
   }
 
+#ifdef DEBUG_LOAD_AND_SAVE
+    if (end - scrnbmp_new >= disp.length)
+    {
+      printf("vsync_lower: end out of range: E=%p", end);
+      exit(-1);
+    }
+#endif
   // Note: End equalling start is not unusual after adjusting positions to be on screen
   // especially when displaying the loading screen
   if (end > start)
@@ -1133,13 +1148,10 @@ void __not_in_flash_func(execZX80)(void)
           if (nosync_lines >= FRAME_SCAN)
           {
             // Whole frame with no sync, so blank the display
-            displayBlank(true);
+            memset(scrnbmp_new, 0x0ff, disp.length);
             nosync_lines -= FRAME_SCAN;
           }
-          else
-          {
-            displayAndNewScreen(frameSync);
-          }
+          displayAndNewScreen(frameSync);
           S_RasterX = 0;
           S_RasterY = 0;
         }
@@ -1266,14 +1278,13 @@ static inline void __not_in_flash_func(checkvsync)(int tolchk)
     if (sync_len>(int)tsmax)
     {
       // If there has been no sync for an entire frame then blank the screen
-      displayBlank(true);
+      memset(scrnbmp_new, 0x0ff, disp.length);
       sync_len = 0;
       frameNotSync = true;
       vsyncFound = false;
     }
     else
     {
-      displayAndNewScreen(frameSync);
       if (vsyncFound)
       {
         frameNotSync = (RasterY >= VSYNC_TOLERANCEMAX);
@@ -1284,6 +1295,7 @@ static inline void __not_in_flash_func(checkvsync)(int tolchk)
         vsyncFound = (RasterY < VSYNC_TOLERANCEMAX);
       }
     }
+    displayAndNewScreen(frameSync);
     RasterY = 0;
     dest = disp.offset + (disp.stride_bit * adjustStartY) + adjustStartX;
   }

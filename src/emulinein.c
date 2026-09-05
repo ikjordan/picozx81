@@ -103,11 +103,11 @@ static void es8311_init_capture(void)
     es8311_write(0x14, 0x10);
 
     // ADC volume full-scale, High pass filter (HPF) on, EQ bypass
-    es8311_write(0x16, 0x20);       // Synchronise filter counter, ADC gain scale up 0dB
-    es8311_write(0x17, 0xe9);       // ADC volume: +32dB - 22 * 0.5 = +21dB
+    es8311_write(0x16, 0x24);       // Synchronise filter counter, ADC gain scale up 24dB
+    es8311_write(0x17, 0xb9);       // ADC volume: +32dB - 70 * 0.5 = -3dB
     es8311_write(0x18, 0x00);       // ALC disabled
-    es8311_write(0x1b, 0x08);       // ADCHPF stage1 coeff = 0x08
-    es8311_write(0x1c, 0x68);       // ADCEQ bypass, Dynamic HPF, ADCHPF stage2 coeff = 0x08
+    es8311_write(0x1b, 0x0f);       // ADCHPF stage1 coeff = 0x0f
+    es8311_write(0x1c, 0x6f);       // ADCEQ bypass, Dynamic HPF, ADCHPF stage2 coeff = 0x0f
 }
 
 static inline void linein_start_dma_transfer(void)
