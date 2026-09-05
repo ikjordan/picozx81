@@ -833,8 +833,8 @@ void z8x_Init(void)
 
   // Get machine type and memory
   zx80 = emu_ZX80Requested();
-  charSetScreenFont(zx80 != 0);
   rom4k = emu_ROM4KRequested();
+  charSetScreenFont(rom4k != 0);
   ramsize = emu_MemoryRequested();
   m1not = emu_M1NOTRequested();
   chr128 = emu_CHR128Requested();
