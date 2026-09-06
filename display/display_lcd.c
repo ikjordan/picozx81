@@ -85,10 +85,10 @@ static inline void lcd_start_pixels(void);
 #include <stdio.h>
 
 #ifndef PICOZX_LCD
-uint displayInitialise
+uint32_t displayInitialise
 #else
 bool useLCD = false;
-uint displayInitialiseLCD
+uint32_t displayInitialiseLCD
 #endif
                       (bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
                        uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
@@ -296,7 +296,7 @@ static void __not_in_flash_func(render_loop)()
             lcd_start_pixels();
 
             // 1 pixel generates a 12 bit word - so 2 pixels are 3 bytes
-            for (uint y = 0; y < HEIGHT; ++y)
+            for (uint32_t y = 0; y < HEIGHT; ++y)
             {
                 uint8_t* buff = curr_buff;    // As curr_buff can change at any time
 #ifdef SUPPORT_CHROMA
@@ -476,7 +476,7 @@ void core1_main(void)
         exit(-1);
     }
 
-    uint offset = pio_add_program(pio, &spi_lcd_program);
+    uint32_t offset = pio_add_program(pio, &spi_lcd_program);
 #ifndef PICO_LCD_CLK_PIN
     spi_lcd_program_init(pio, sm, offset, PICO_SD_CMD_PIN, PICO_SD_CLK_PIN, (SERIAL_CLK_DIV * (skip ? 2: 1)));
 #else

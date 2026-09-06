@@ -304,6 +304,8 @@ typedef struct
   bool ninePinJoystick;
   uint8_t loadUsingROM;
   uint8_t saveUsingROM;
+  bool loadDisplayStatus;
+  LoadVolume_T loadVolume;
 } Configuration_T;
 
 typedef struct
@@ -465,6 +467,16 @@ SLRomType_T emu_loadUsingROMRequested(void)
 SLRomType_T emu_saveUsingROMRequested(void)
 {
   return (SLRomType_T)specific.saveUsingROM;
+}
+
+bool emu_loadDisplayStatusRequested(void)
+{
+  return specific.loadDisplayStatus;
+}
+
+LoadVolume_T emu_loadVolumeRequested(void)
+{
+  return specific.loadVolume;
 }
 
 int emu_MenuBorderRequested(void)
@@ -771,6 +783,18 @@ void emu_SetSaveROM(SLRomType_T saveROM)
 {
   general.saveUsingROM = (uint8_t)saveROM;
   specific.saveUsingROM = (uint8_t)saveROM;
+}
+
+void emu_SetloadDisplayStatus(bool display)
+{
+  general.loadDisplayStatus = display;
+  specific.loadDisplayStatus = display;
+}
+
+void emu_SetloadVolume(LoadVolume_T vol)
+{
+  general.loadVolume = vol;
+  specific.loadVolume = vol;
 }
 
 void emu_SetQSUDG(bool qsudg)
@@ -1126,6 +1150,25 @@ static int handler(void *user, const char *section, const char *name,
         c->conf->saveUsingROM = ROM_OFF;
 #endif
       }
+      else if ((!strcasecmp(name, "LoadDisplayStatus")))
+      {
+        c->conf->loadDisplayStatus = isEnabled(value);
+      }
+#ifdef INPUT_EAR
+      else if ((!strcasecmp(name, "LoadVolume")))
+      {
+        if (!strcasecmp(value, "LOW"))
+        {
+          c->conf->loadVolume = LOAD_VOL_LOW;
+        } else if (!strcasecmp(value, "HIGH"))
+        {
+          c->conf->loadVolume = LOAD_VOL_HIGH;
+        } else
+        {
+          c->conf->loadVolume = LOAD_VOL_MEDIUM;
+        }
+      }
+#endif
 #ifdef PICO_LCD_CS_PIN
       else if (!strcasecmp(name, "LCDInvertColour"))
       {
@@ -1331,7 +1374,9 @@ void emu_ReadSpecificValues(const char *filename)
  * Snapshot
  ********************************/
 #define SNAPSHOT_ID         0x50414E53          // Little endian 'SNAP'
-#define SECOND_OFFSET       57                  // Start of second data section
+#define SECOND_OFFSET_V1    57                  // Start of second data section for V1
+#define SECOND_OFFSET_V2    61                  // Start of second data section for V2
+#define SPECIFIC_V1         48                  // sizeof(specific) in V1
 
 #ifdef __cplusplus
 extern "C" {
@@ -1352,7 +1397,6 @@ bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
   bool ret = false;
   FiveSevenSix_T state;
   printf("emu_loadSnapshotSpecific %s \n", fullpathname);
-
   EMU_LOCK_SDCARD
   if (!(f_open(&file, fullpathname, FA_READ)))
   {
@@ -1360,7 +1404,7 @@ bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
     uint32_t id;
     if (!emu_FileReadBytes(&id, sizeof(id)) || id != SNAPSHOT_ID)
     {
-      printf("emu_loadSnapshotSpecific wrong id\n");
+      printf("emu_loadSnapshotSpecific wrong id %08lx\n", id);
     }
     else if ((!emu_FileReadBytes(&id, sizeof(id))) ||
              ((id != SUPPORTED_VERSION_1) && (id != SUPPORTED_VERSION_2)))
@@ -1372,17 +1416,41 @@ bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
       printf("emu_loadSnapshotSpecific wrong display type - triggering reboot\n");
       emu_SetRebootMode(state, emu_GetDirectory(), filename);
     }
-    else if (!emu_FileReadBytes(&specific, sizeof(specific)))
-    {
-      printf("emu_loadSnapshotSpecific read specific failed\n");
-    }
-    else if (f_tell(&file) != SECOND_OFFSET)
-    {
-      printf("emu_loadSnapshotSpecific wrong data size %lli\n", f_tell(&file));
-    }
     else
     {
-      ret = true;
+      if (id == SUPPORTED_VERSION_2)
+      {
+        if (!emu_FileReadBytes(&specific, sizeof(specific)))
+        {
+          printf("emu_loadSnapshotSpecific read specific V2 failed\n");
+        }
+        else
+        {
+          ret = true;
+        }
+      }
+      else
+      {
+        if (!emu_FileReadBytes(&specific, SPECIFIC_V1))
+        {
+          printf("emu_loadSnapshotSpecific read specific V1 failed\n");
+        }
+        else
+        {
+          specific.loadDisplayStatus = OFF;
+          specific.loadVolume = LOAD_VOL_LOW;
+          ret = true;
+        }
+      }
+    }
+
+    if (ret)
+    {
+      if (f_tell(&file) != (id == SUPPORTED_VERSION_2 ? SECOND_OFFSET_V2 : SECOND_OFFSET_V1))
+      {
+        printf("emu_loadSnapshotSpecific wrong data size %lli\n", f_tell(&file));
+        ret = false;
+      }
     }
     f_close(&file);
   }
@@ -1408,14 +1476,15 @@ bool emu_loadSnapshotData(const char* fullpathname)
 
     if (!emu_FileReadBytes(&id, sizeof(id)) || id != SNAPSHOT_ID)
     {
-      printf("emu_loadSnapshotData wrong id\n");
+      printf("emu_loadSnapshotData wrong id %08lx\n", id);
     }
     else if ((!emu_FileReadBytes(&version, sizeof(version))) ||
              ((version != SUPPORTED_VERSION_1) && (version != SUPPORTED_VERSION_2)))
     {
       printf("emu_loadSnapshotData wrong version %li\n", version);
     }
-    else if (f_lseek(&file, SECOND_OFFSET) || (f_tell(&file) != SECOND_OFFSET))
+    else if (f_lseek(&file, version == SUPPORTED_VERSION_2 ? SECOND_OFFSET_V2 : SECOND_OFFSET_V1) ||
+             (f_tell(&file) != (version == SUPPORTED_VERSION_2 ? SECOND_OFFSET_V2 : SECOND_OFFSET_V1)))
     {
       printf("emu_loadSnapshotData move to start of second data failed\n");
     }
@@ -1462,6 +1531,7 @@ bool emu_saveSnapshot(const char* fullpathname)
     // write identifer
     uint32_t id = SNAPSHOT_ID;
     uint32_t version = SUPPORTED_VERSION_2;
+
     if (!emu_FileWriteBytes(&id, sizeof(id)))
     {
       printf("emu_saveSnapshot write id failed\n");
@@ -1478,7 +1548,7 @@ bool emu_saveSnapshot(const char* fullpathname)
     {
       printf("emu_saveSnapshot write specific failed\n");
     }
-    else if (f_tell(&file) != SECOND_OFFSET)
+    else if (f_tell(&file) != SECOND_OFFSET_V2)
     {
       printf("emu_saveSnapshot wrong offset - %lli\n", f_tell(&file));
     }

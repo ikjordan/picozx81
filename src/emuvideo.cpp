@@ -58,7 +58,7 @@ typedef struct {
 
 Display_T disp;                 // Dimension information for the display
 
-uint emu_VideoInit(void)
+uint32_t emu_VideoInit(void)
 {
     bool match = false;
     DisplayExtraInfo_T extra;

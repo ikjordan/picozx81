@@ -34,32 +34,40 @@ static int linein_buffer_available = 0;             // The buffer that has data 
 static uint rx_offset = 0;
 static float linein_clkdiv = 0.0f;
 
+static int32_t bit_high = 0;
+static int32_t bit_low = 0;
+
 #ifdef TIME_SPARE
 int32_t linein_count = 0;
 #endif
 
 
-static void die_if_i2c_err(int rc, const char *what) {
-    if (rc < 0) {
+static void exit_if_i2c_err(int rc, const char *what)
+{
+    if (rc < 0)
+    {
         printf("I2C error during %s: %d\n", what, rc);
-        while (true) sleep_ms(1000);
+        exit(-1);
     }
 }
 
-static void es8311_write(uint8_t reg, uint8_t val) {
+static void es8311_write(uint8_t reg, uint8_t val)
+{
     uint8_t b[2] = {reg, val};
     int rc = i2c_write_blocking(i2c0, PICO_ES8311_ADDR, b, 2, false);
-    die_if_i2c_err(rc, "write");
+    exit_if_i2c_err(rc, "write");
 }
 
-static void codec_power_on(void) {
+static void codec_power_on(void)
+{
     gpio_init(PICO_CODEC_PWR_DIS_PIN);
     gpio_set_dir(PICO_CODEC_PWR_DIS_PIN, GPIO_OUT);
     gpio_put(PICO_CODEC_PWR_DIS_PIN, 1);
     sleep_ms(100);
 }
 
-static void i2c_setup(void) {
+static void i2c_setup(void)
+{
     i2c_init(i2c_default, 400 * 1000);
     gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
@@ -67,7 +75,8 @@ static void i2c_setup(void) {
     gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
 }
 
-static void es8311_init_capture(void) {
+static void es8311_init_capture(void)
+{
     // Reset sequence
     es8311_write(0x00, 0x1f);
     sleep_ms(6);
@@ -97,13 +106,14 @@ static void es8311_init_capture(void) {
     es8311_write(0x14, 0x10);
 
     // ADC volume full-scale, High pass filter (HPF) on, EQ bypass
-    es8311_write(0x16, 0x20);       // Synchronise filter counter, ADC gain scale up 0dB
-    es8311_write(0x17, 0xea);       // ADC volume: +32dB - 21 * 0.5 = +21.5dB
+    es8311_write(0x16, 0x24);       // Synchronise filter counter, ADC gain scale up 24dB
+    es8311_write(0x17, 0xb9);       // ADC volume: +32dB - 70 * 0.5 = -3dB
     es8311_write(0x18, 0x00);       // ALC disabled
+    es8311_write(0x1b, 0x0f);       // ADCHPF stage1 coeff = 0x0f
     es8311_write(0x1c, 0x6f);       // ADCEQ bypass, Dynamic HPF, ADCHPF stage2 coeff = 0x0f
 }
 
-static inline void linein_start_dma_transfer()
+static inline void linein_start_dma_transfer(void)
 {
     dma_channel_config c = dma_get_channel_config(LINEIN_DMA_CHANNEL);
     channel_config_set_write_increment(&c, true);
@@ -114,7 +124,7 @@ static inline void linein_start_dma_transfer()
 }
 
 // irq handler for LineIn DMA
-static void __isr __time_critical_func(linein_dma_irq_handler)()
+static void __isr __time_critical_func(linein_dma_irq_handler)(void)
 {
     if (dma_irqn_get_channel_status(LINEIN_DMA_IRQ_INDEX, LINEIN_DMA_CHANNEL))
     {
@@ -143,11 +153,17 @@ static int16_t linein_value(uint32_t tstates)
 }
 
 // High pass filter 3400Hz - emulates the ZX80/81 EAR hardware high pass filter
+// Incorporates a Schmitt trigger, which is not in the original hardware
+
 #define HPF_B0   24331      // 0.742517 in Q15
 #define HPF_A1   15894      // 0.485035 in Q15
 
+#define HIGH_STATE 0xFFFF
+#define LOW_STATE  0
+
 static inline int16_t hpf3400(int16_t input)
 {
+    static bool last_state = false;
     static int32_t x1 = 0;
     static int32_t y1 = 0;
     int32_t x  = input;
@@ -158,18 +174,17 @@ static inline int16_t hpf3400(int16_t input)
     x1 = x;
     y1 = y;
 
-    // 16-bit saturation
-    if (y > 32767)  y = 32767;
-    if (y < -32768) y = -32768;
+    last_state = last_state ? (y > bit_low) : (y > bit_high);
 
-    return (int16_t)y;
+    return last_state ? HIGH_STATE : LOW_STATE;
 }
 
 // External API
 
 // Initialise the linein capture
-void emu_linein_initialise(void)
+void emu_linein_initialise(LoadVolume_T vol)
 {
+    emu_linein_set_volume(vol);
     codec_power_on();
     i2c_setup();
 
@@ -254,21 +269,29 @@ void emu_linein_apply_filter(void)
     }
 }
 
-#define HYSTERESIS 1000
-#define BIT_HIGH   2000
-#define BIT_LOW    (BIT_HIGH - HYSTERESIS)
-
 // Obtain whether signal is high or low
-// Incorporates a Schmitt trigger, which is not in the original hardware
-bool emu_is_signal_high(uint32_t tstates)
+bool emu_linein_signal_high(uint32_t tstates)
 {
-    static bool last_state = false;
+    return linein_value(tstates) != LOW_STATE;
+}
 
-    int16_t val = linein_value(tstates);
-
-    last_state = last_state ? (val > BIT_LOW) : (val > BIT_HIGH);
-
-    return last_state;
+void emu_linein_set_volume(LoadVolume_T vol)
+{
+    switch(vol)
+    {
+        case LOAD_VOL_HIGH:
+            bit_high = 6000;
+            bit_low = 4000;
+        break;
+        case LOAD_VOL_MEDIUM:
+            bit_high = 3000;
+            bit_low = 2000;
+        break;
+        default:
+            bit_high = 1500;
+            bit_low = 1000;
+        break;
+    }
 }
 
 // For debug only

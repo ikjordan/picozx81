@@ -70,8 +70,8 @@ static void render_loop();
 // Public functions
 //
 
-uint displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
-                       uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
+uint32_t displayInitialise(bool fiveSevenSix, bool match, uint16_t minBuffByte, uint16_t* pixelWidth,
+                           uint16_t* pixelHeight, uint16_t* strideBit, DisplayExtraInfo_T* info)
 {
 #ifndef SOUND_HDMI
     (void)info;
@@ -159,7 +159,7 @@ static void __not_in_flash_func(render_loop)()
         newFrame();
 
         // 1 pixel generates 1 word = 4 bytes of tmds
-        for (uint y = 0; y < HEIGHT; ++y)
+        for (uint32_t y = 0; y < HEIGHT; ++y)
         {
             uint8_t* buff = curr_buff;    // As curr_buff can change at any time
 #ifdef SUPPORT_CHROMA

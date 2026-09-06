@@ -1,14 +1,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include "z80.h"
-#include "zx80rom.h"
-#include "zx81x2rom.h"
-#include "zx81rom.h"
+#include "roms.h"
 #include "zx8x.h"
 #include "emuapi.h"
 #include "emusound.h"
 #include "emuvideo.h"
 #include "emukeyboard.h"
+#include "chars.h"
 #ifdef INPUT_EAR
 #include "emulinein.h"
 #endif
@@ -60,7 +59,7 @@ static bool load_snap = false;
  * The mapping is also valid for the ZX80 for alphanumerics.
  * WARNING: this only covers 0<=char<=63!
  */
-static char zx2ascii[64]={
+static const char zx2ascii[64]={
 /*  0- 9 */ ' ', '_', '_', '_', '_', '_', '_', '_', '_', '_',
 /* 10-19 */ '_', '\'','#', '$', ':', '?', '(', ')', '>', '<',
 /* 20-29 */ '=', '+', '-', '*', '/', ';', ',', '.', '0', '1',
@@ -110,21 +109,22 @@ unsigned int __not_in_flash_func(in)(int h, int l)
         sound_vsync(0);
     }
 
-    if (running_rom)
-    {
-      data = useNTSC ? 0x40 : 0;
+    data = useNTSC ? 0x40 : 0;
 #ifdef INPUT_EAR
-      if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
-      {
-        data |= emu_is_signal_high(tstates) ? 0x0 : 0x80;  // Reversed as use xor below
-      }
-      else
-#endif
-      {
-        data |= loadPGetBit() ? 0x0 : 0x80;   // Reversed as use xor below
-      }
+    if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
+    {
+      data |= emu_linein_signal_high(tstates) ? 0x0 : 0x80;  // Reversed as use xor below
     }
-
+    else
+    {
+#endif
+    if ((emu_loadUsingROMRequested() == ROM_SD_CARD) && (running_rom == ROM_EXECUTE_LOAD))
+    {
+      data |= loadPGetBit() ? 0x0 : 0x80;   // Reversed as use xor below
+    }
+#ifdef INPUT_EAR
+    }
+#endif
     switch(h)
     {
       case 0xfe:  return(keyboard[0] ^ data);
@@ -688,7 +688,7 @@ void rom8k_addresses()
   rom_addresses.load_start = LOAD_START_8K;
   rom_addresses.ret = LOAD_SAVE_RET_8K;
   rom_addresses.success = LOAD_SAVE_SUCCESS_8K;
-  rom_addresses.failure = LOAD_SAVE_FAILURE_8K;
+  rom_addresses.failure = LOAD_SAVE_SUCCESS_8K;
  }
 
 void rom4k_addresses()
@@ -827,12 +827,14 @@ void z8x_Init(void)
   {
       strcpy(fname, emu_GetDirectory());
       strcat(fname, tapename);
-      emu_loadSnapshotSpecific(tapename, fname);
+      load_snap = emu_loadSnapshotSpecific(tapename, fname);
+      printf("Load snap %s\n", load_snap ? "True" : "False");
   }
 
   // Get machine type and memory
   zx80 = emu_ZX80Requested();
   rom4k = emu_ROM4KRequested();
+  charSetScreenFont(rom4k != 0);
   ramsize = emu_MemoryRequested();
   m1not = emu_M1NOTRequested();
   chr128 = emu_CHR128Requested();
@@ -887,9 +889,13 @@ void z8x_updateValues(void)
   useWRX = emu_WRXRequested();
   useNTSC = emu_NTSCRequested();
   frameSync = (emu_FrameSyncRequested() != SYNC_OFF);
+  display_load_stats = emu_loadDisplayStatusRequested();
   setEmulatedTV(!useNTSC, emu_VTol());
   setDisplayBoundaries();
   emu_VideoSetInterlace();
+  #ifdef INPUT_EAR
+  emu_linein_set_volume(emu_loadVolumeRequested());
+  #endif
 }
 
 bool z8x_Step(void)
@@ -995,7 +1001,7 @@ static bool parseNumber(const char* input,
 
 static bool strzx80_to_ascii(int memaddr, char* buffer, int size)
 {
-  static unsigned char zx80table[16] = {'_', '$', ':', '?', '(', ')',
+  static const unsigned char zx80table[16] = {'_', '$', ':', '?', '(', ')',
     '-', '+', '*', '/', '=', '>', '<', ';', ',', '.'};
   unsigned char sinchar;
   char asciichar;

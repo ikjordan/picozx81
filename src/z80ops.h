@@ -210,7 +210,7 @@ instr(20,4);
 endinstr;
 
 instr(21,4);
-   if ((pc == LOAD_SAVE_FAILURE_4K) && rom4k) loadAndSaveROM();
+   if ((pc == LOAD_SAVE_FAILURE_4K) && (running_rom != ROM_EXECUTE_OFF) && rom4k) loadAndSaveROM();
    dec(d);
 endinstr;
 
@@ -269,7 +269,7 @@ instr(33,10);
    if(!ixoriy){
       l=fetch(pc),pc++;
       h=fetch(pc),pc++;
-      if ((pc == LOAD_SAVE_SUCCESS_8K) && (!rom4k)) loadAndSaveROM();
+      if ((pc == LOAD_SAVE_SUCCESS_8K) && (running_rom != ROM_EXECUTE_OFF) && (!rom4k)) loadAndSaveROM();
    }
    else {
       if(ixoriy==1)
@@ -350,6 +350,11 @@ instr(42,16);
    if(!ixoriy){
       l=fetch(addr);
       h=fetch(addr+1);
+      if ((((pc == LOAD_SAVE_DETECT_4K) && rom4k) || ((pc == LOAD_SAVE_DETECT_8K) && (!rom4k))) && (running_rom == ROM_EXECUTE_LOAD))
+      {
+         load_bytes_total = hl - (rom4k ? 0x4000 : 0x4009);
+         load_bytes_detected++;
+      }
    }
    else if(ixoriy==1)ix=fetch2(addr);
    else iy=fetch2(addr);
@@ -998,7 +1003,7 @@ instr(0xc2,10);
 endinstr;
 
 instr(0xc3,10);
-   if ((pc == LOAD_SAVE_SUCCESS_4K) && rom4k) loadAndSaveROM();
+   if ((pc == LOAD_SAVE_SUCCESS_4K) && (running_rom != ROM_EXECUTE_OFF) && rom4k) loadAndSaveROM();
    jp;
 endinstr;
 
@@ -1064,7 +1069,7 @@ endinstr;
 
 instr(0xd1,10);
    pop1(d,e);
-   if (((pc == LOAD_START_4K) || (pc == SAVE_START_4K)) && rom4k) loadAndSaveROM();
+   if ((((pc == LOAD_START_4K) || (pc == SAVE_START_4K)) && rom4k) && (running_rom == ROM_EXECUTE_OFF)) loadAndSaveROM();
 endinstr;
 
 instr(0xd2,10);
