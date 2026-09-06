@@ -350,7 +350,7 @@ instr(42,16);
    if(!ixoriy){
       l=fetch(addr);
       h=fetch(addr+1);
-      if ((((pc == LOAD_SAVE_DETECT_4K) && rom4k) || ((pc == LOAD_SAVE_DETECT_8K) && (!rom4k))) && (running_rom != ROM_EXECUTE_OFF))
+      if ((((pc == LOAD_SAVE_DETECT_4K) && rom4k) || ((pc == LOAD_SAVE_DETECT_8K) && (!rom4k))) && (running_rom == ROM_EXECUTE_LOAD))
       {
          load_bytes_total = hl - (rom4k ? 0x4000 : 0x4009);
          load_bytes_detected++;
