@@ -151,12 +151,10 @@ unsigned char intsample = 0;
 unsigned char op;
 unsigned short m1cycles;
 
-#ifdef INPUT_EAR
 static uint16_t load_bytes_total = 0;
 static uint16_t load_bytes_detected = 0;
 static uint16_t load_message_col = 0;
 static uint32_t load_message_row = 0;
-#endif
 
 /* ZX80 specific */
 #define SYNCNONE        0
@@ -253,7 +251,6 @@ void resetZ80(void)
   RasterY = 0;
   psync = 1;
   sync_len = 0;
-  running_rom = ROM_EXECUTE_OFF;
   frameNotSync = true;
   LastInstruction = LASTINSTNONE;
 
@@ -284,10 +281,11 @@ void resetZ80(void)
   sync_len = 0;
   nosync_lines = 0;
 
-#ifdef INPUT_EAR
   load_message_col = disp.width >> 4;
   load_message_row = disp.height >> 4;
-#endif
+
+  load_bytes_total = 0;
+  load_bytes_detected = 0;
   running_rom = ROM_EXECUTE_OFF;
 
   emu_VideoSetInterlace();
@@ -490,13 +488,11 @@ static void loadAndSaveROM(void)
     {
       if (running_rom == ROM_EXECUTE_LOAD)
       {
-#ifdef INPUT_EAR
 #ifdef DEBUG_LOAD_AND_SAVE
         printf("Load: Bytes expected: %u Bytes Detected: %u\n", load_bytes_total, load_bytes_detected);
 #endif
         load_bytes_total = 0;
         load_bytes_detected = 0;
-#endif
       }
       // Restore the sound mode
       if (sound_cache != sound_type)
@@ -509,8 +505,7 @@ static void loadAndSaveROM(void)
   }
 }
 
-#ifdef INPUT_EAR
-static inline char* buildLoadMessage(uint16_t total, uint16_t left)
+static inline char* __not_in_flash_func(buildLoadMessage)(uint16_t total, uint16_t left)
 {
   static char data[] = "TOTAL 0000 LEFT 0000";
   static char hex[] = "0123456789ABCDEF";
@@ -528,7 +523,7 @@ static inline char* buildLoadMessage(uint16_t total, uint16_t left)
   return data;
 }
 
-static inline void showLoadStatus(void)
+static inline void __not_in_flash_func(showLoadStatus)(void)
 {
   if (running_rom == ROM_EXECUTE_LOAD)
   {
@@ -539,22 +534,19 @@ static inline void showLoadStatus(void)
       if (load_bytes_total)
       {
         charWriteString(buildLoadMessage(load_bytes_total, load_bytes_total - load_bytes_detected),
-                        load_message_col - 10, load_message_row);
+                        load_message_col - 11, load_message_row);
       }
       else
       {
-        charWriteString("NOT DETECTED", load_message_col - 6, load_message_row);
+        charWriteString("NOT DETECTED", load_message_col - 7, load_message_row);
       }
     }
   }
 }
-#endif
 
 static void __not_in_flash_func(displayAndNewScreen)(bool sync)
 {
-#ifdef INPUT_EAR
   showLoadStatus();
-#endif
 
   // Display the current screen
   displayBuffer(scrnbmp_new, sync, true, (chromamode != 0));
