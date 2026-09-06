@@ -1150,7 +1150,7 @@ static int handler(void *user, const char *section, const char *name,
         c->conf->saveUsingROM = ROM_OFF;
 #endif
       }
-      else if ((!strcasecmp(name, "LoadDisplayStatus")))
+      else if ((!strcasecmp(name, "LoadStatus")))
       {
         c->conf->loadDisplayStatus = isEnabled(value);
       }
@@ -1622,7 +1622,7 @@ void emu_JoystickInitialiseNinePin(void)
 }
 
 
-void emu_JoystickParse(void)
+void __not_in_flash_func(emu_JoystickParse)(void)
 {
 #ifdef NINEPIN_JOYSTICK
   if (emu_NinePinJoystickRequested())
@@ -1639,7 +1639,7 @@ void emu_JoystickParse(void)
 
 }
 
-void emu_JoystickDeviceParse(bool up, bool down, bool left, bool right, bool button)
+void __not_in_flash_func(emu_JoystickDeviceParse)(bool up, bool down, bool left, bool right, bool button)
 {
   // Handle device joystick
   if (up) hidInjectKey(specific.up);
@@ -1706,7 +1706,7 @@ bool emu_chromaSupported(void)
  ********************************/
 extern semaphore_t timer_sem;
 
-void emu_WaitFor50HzTimer(void)
+void __not_in_flash_func(emu_WaitFor50HzTimer(void))
 {
 #ifdef TIME_SPARE
   static uint32_t count = 0;
@@ -1750,8 +1750,7 @@ void emu_WaitFor50HzTimer(void)
     linein_prev = -linein_count;
 #endif
 
-    printf("ms: %lld U: %lu\n", total_time / 1000, underrun);
-    printf("I: %lld S: %ld\n", ints, sound);
+    printf("ms: %lld U: %lu\nI: %lld S: %ld\n", total_time / 1000, underrun, ints, sound);
 #ifdef INPUT_EAR
     printf("L: %ld MaR: %d MiR: %d MaF: %d MiF: %d\n", linein_ints, max_vol_r, min_vol_r, max_vol_f, min_vol_f);
     max_vol_r = -32767;

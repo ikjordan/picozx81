@@ -1,6 +1,7 @@
 #ifndef EMUVIDEO_H
 #define EMUVIDEO_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus

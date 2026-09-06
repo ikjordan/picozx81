@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  *
  * Test me with:
- * 
+ *
  * ceedling test:pattern[hid_host_utils]
  */
 
@@ -63,7 +63,7 @@ uint32_t tuh_hid_report_bytes_u32(uint8_t const* report, uint16_t start, uint16_
   for(uint16_t i = 0; i < length; ++i) {
     acc |= ((uint32_t)*p++) << (i << 3);
   }
-  return acc;   
+  return acc;
 }
 
 // Helper to get some bytes from a HID report as a signed 32 bit number
@@ -78,11 +78,11 @@ int32_t tuh_hid_report_bytes_i32(uint8_t const* report, uint16_t start, uint16_t
   const uint32_t lp0 = ((uint32_t)1) << ((length << 3) - 1);
   const uint32_t lp1 = lp0 << 1;
   // sign extend
-  return acc & lp0 ? acc | -lp1 : acc;  
+  return acc & lp0 ? acc | -lp1 : acc;
 }
 
 // Helper to get a value from a HID report
-int32_t tuh_hid_report_i32(const uint8_t* report, uint16_t start, uint16_t length, bool is_signed) 
+int32_t tuh_hid_report_i32(const uint8_t* report, uint16_t start, uint16_t length, bool is_signed)
 {
   if (length == 0) return 0;
   if ((start | length) & 7) {
@@ -93,7 +93,7 @@ int32_t tuh_hid_report_i32(const uint8_t* report, uint16_t start, uint16_t lengt
   else {
     return is_signed ?
       tuh_hid_report_bytes_i32(report, start >> 3, length >> 3):
-      (int32_t)tuh_hid_report_bytes_u32(report, start >> 3, length >> 3);   
+      (int32_t)tuh_hid_report_bytes_u32(report, start >> 3, length >> 3);
   }
 }
 

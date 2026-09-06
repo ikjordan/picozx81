@@ -254,7 +254,7 @@ static bool  __not_in_flash_func(timer_callback)(repeating_timer_t *rt)
 }
 #endif
 
-bool emu_KeyboardUpdate(uint8_t* special)
+bool __not_in_flash_func(emu_KeyboardUpdate(uint8_t* special))
 {
   bool ret = hidReadUsbKeyboard(special, emu_DoubleShiftRequested());
 

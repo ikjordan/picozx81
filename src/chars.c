@@ -1,13 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tusb.h"
 #include "emuvideo.h"
-#include "roms.h"
+#include "common.h"
 
-#include "hid_usb.h"
 #include "display.h"
-#include "ff.h"
 #include "chars.h"
 
 static char ascii2zx[96]=
@@ -110,7 +107,6 @@ void charWriteInvertString(const char* s, uint32_t col, uint32_t row, bool inver
 void charWriteChar(char c, uint32_t col, uint32_t row)
 {
     uint8_t* pos = charScreen + row * disp.stride_bit + col;
-    const unsigned char* rom = (zx80font ? zx80rom : zx81rom);
     uint16_t offset = zx80font ? 0x0e00 : 0x1e00;   // Start of characters in ROM
 
     // Convert from ascii to ZX
@@ -122,7 +118,7 @@ void charWriteChar(char c, uint32_t col, uint32_t row)
     // Find the offset in the ROM
     for (uint32_t i=0; i<8; ++i)
     {
-        *pos = rom[offset+i];
+        *pos = mem[offset+i];
         pos += disp.stride_byte;
     }
 }
@@ -130,7 +126,6 @@ void charWriteChar(char c, uint32_t col, uint32_t row)
 void charInvertChar(char c, uint32_t col, uint32_t row)
 {
     uint8_t* pos = charScreen + row * disp.stride_bit + col;
-    const unsigned char* rom = (zx80font ? zx80rom : zx81rom);
     uint16_t offset = zx80font ? 0x0e00 : 0x1e00;   // Start of characters in ROM
 
     // Convert from ascii to ZX
@@ -142,7 +137,7 @@ void charInvertChar(char c, uint32_t col, uint32_t row)
     // Find the offset in the ROM
     for (uint32_t i=0; i<8; ++i)
     {
-        *pos = (rom[offset+i] ^ 0xff);
+        *pos = (mem[offset+i] ^ 0xff);
         pos += disp.stride_byte;
     }
 

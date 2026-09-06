@@ -1,3 +1,4 @@
+#include "pico.h"
 #include <stdlib.h>
 #include "tusb.h"
 #include "hid_usb.h"
@@ -395,7 +396,7 @@ void hidSaveMenu(uint8_t* key)
     return;
 }
 
-bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
+bool __not_in_flash_func(hidReadUsbKeyboard)(uint8_t* special, bool usedouble)
 {
     static bool shift = false;
     static int doubleshift = 0;     // Counts shift presses
@@ -481,7 +482,7 @@ bool hidReadUsbKeyboard(uint8_t* special, bool usedouble)
 }
 
 // Not currently used
-int16_t hidKeyboardToJoystick(void)
+int16_t __not_in_flash_func(hidKeyboardToJoystick)(void)
 {
     hid_keyboard_report_t report;
     int16_t result = 0;
@@ -523,7 +524,7 @@ int16_t hidKeyboardToJoystick(void)
     return result;
 }
 
-int16_t hidReadUsbJoystick(int instance)
+int16_t __not_in_flash_func(hidReadUsbJoystick)(int instance)
 {
     int16_t result = 0;
     joystick_state_t report;
@@ -535,7 +536,7 @@ int16_t hidReadUsbJoystick(int instance)
     return result;
 }
 
-void hidJoystickToKeyboard(int instance, byte up, byte down, byte left, byte right, byte button)
+void __not_in_flash_func(hidJoystickToKeyboard)(int instance, byte up, byte down, byte left, byte right, byte button)
 {
   int16_t val = hidReadUsbJoystick(instance);
   if (val)
