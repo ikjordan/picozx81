@@ -14,8 +14,16 @@ run_cmake_and_build() {
   local lcd=$4
   local uf2="picozx81_${1}_$( [[ "$hdmi" == "ON" ]] && echo "hdmi_sound_" )$( [[ "$lcd" == "ON" ]] && echo "lcd_" )${chip_type}.uf2"
 
-  cmake -DHDMI_SOUND=$hdmi -DPICOZX_LCD=$lcd -DCMAKE_BUILD_TYPE=$(build_type "$chip_type") -DTIME_SPARE=OFF -DFLASH_LED=OFF -DPICO_BOARD=$board -DPICO_MCU=$chip_type
-  make -j4 2>&1 | tee -a ../build.log
+  cmake -G Ninja \
+    -DHDMI_SOUND=$hdmi \
+    -DPICOZX_LCD=$lcd \
+    -DCMAKE_BUILD_TYPE=$(build_type "$chip_type") \
+    -DTIME_SPARE=OFF \
+    -DFLASH_LED=OFF \
+    -DPICO_BOARD=$board \
+    -DPICO_MCU=$chip_type
+
+  cmake --build . --parallel 4 2>&1 | tee -a ../build.log
 
   # Check for errors and warnings - excluding the target errors step in picotoolBuild
   if grep -iE "error|warning" ../build.log | grep -v "Built target errors"; then
@@ -24,6 +32,7 @@ run_cmake_and_build() {
   fi
 
   cp ./${uf2} ../uf2/${uf2}
+
 }
 
 # Functions for different build variants
