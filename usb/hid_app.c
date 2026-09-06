@@ -95,7 +95,7 @@ bool hid_app_get_latest_joystick_state(joystick_state_t* latest, int num)
     latest->lr = 0;
     latest->button = 0;
 
-    // Determine: 
+    // Determine:
     // up /down /centre
     // left / right / centre
     // button 1 up / down
@@ -159,13 +159,13 @@ void __not_in_flash_func(handle_mouse_report)(tusb_hid_host_info_t* info, const 
 }
 
 void __not_in_flash_func(handle_joystick_report)(tusb_hid_host_info_t* info, const uint8_t* report, uint8_t report_length, uint8_t report_id)
-{ 
+{
   TU_LOG1("HID receive joystick report\r\n");
   tusb_hid_simple_joystick_t* simple_joystick = tuh_hid_get_simple_joystick(
-    info->key.elements.dev_addr, 
-    info->key.elements.instance, 
+    info->key.elements.dev_addr,
+    info->key.elements.instance,
     report_id);
-    
+
   if (simple_joystick != NULL) {
     tusb_hid_simple_joysick_process_report(simple_joystick, report, report_length);
   }
@@ -218,9 +218,9 @@ void __not_in_flash_func(tuh_hid_mount_cb)(uint8_t dev_addr, uint8_t instance, u
     for (uint8_t i = 0; i < hid_info[instance].report_count; ++i) {
       tuh_hid_report_info2_t *report = &hid_info[instance].report_info[i];
       bool has_report_id = hid_info[instance].report_count > 1 || (report[0].report_id > 0);
-      
+
       //printf("HID report usage_page=%d, usage=%d, has_report_id=%d dev_addr=%d instance=%d\n", report->usage_page, report->usage, has_report_id, dev_addr, instance);
-      
+
       if (report->usage_page == HID_USAGE_PAGE_DESKTOP)
       {
         switch (report->usage)
@@ -255,7 +255,7 @@ void __not_in_flash_func(tuh_hid_mount_cb)(uint8_t dev_addr, uint8_t instance, u
           }
         }
       }
-    }  
+    }
   }
   else if ( itf_protocol == HID_ITF_PROTOCOL_KEYBOARD )
   {
@@ -275,8 +275,8 @@ void __not_in_flash_func(tuh_hid_mount_cb)(uint8_t dev_addr, uint8_t instance, u
 void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance)
 {
   printf("HID device address = %d, instance = %d is unmounted\r\n", dev_addr, instance);
-  
-  // Invoke unmount functions adn free up host info structure 
+
+  // Invoke unmount functions adn free up host info structure
   tuh_hid_free_info(dev_addr, instance);
 }
 
@@ -331,7 +331,7 @@ static void __not_in_flash_func(process_kbd_report)(hid_keyboard_report_t const 
   // Copy to the index pointed to by keyboard index
   memcpy(&keyboard_report[keyboard_index], report, sizeof(hid_keyboard_report_t));
 
-  // update keyboard_index, so that it points to where the next report will be stored 
+  // update keyboard_index, so that it points to where the next report will be stored
   keyboard_index = 1 - keyboard_index;
 }
 
@@ -477,7 +477,7 @@ void hid_app_print_keys(void)
   {
     printf("%c", keys_pressed[i]);
     if ( keys_pressed[i] == '\r' ) printf("\n"); // added new line for enter key
-    fflush(stdout); 
-  }  
+    fflush(stdout);
+  }
 }
 

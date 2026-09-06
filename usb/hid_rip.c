@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License (MIT)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -42,38 +42,38 @@ void tuh_hid_rip_init_state(tuh_hid_rip_state_t *state, const uint8_t *report, u
   state->status = HID_RIP_INIT;
 }
 
-const uint8_t* tuh_hid_rip_next_item(tuh_hid_rip_state_t *state) 
+const uint8_t* tuh_hid_rip_next_item(tuh_hid_rip_state_t *state)
 {
   // Already at eof
   if (state->length == 0) return NULL;
-   
+
   const uint8_t *ri = state->cursor;
   int16_t il = state->item_length;
 
   // Previous error encountered so do nothing
   if (il < 0) return NULL;
-  
+
   if (il > 0 && tuh_hid_ri_short_type(ri) == RI_TYPE_MAIN) {
     // Clear down local state after a main item
     tu_memclr(&state->local_items, sizeof(uint8_t*) * 16);
     state->usage_count = 0;
   }
-  
+
   // Advance to the next report item
   ri += il;
   state->cursor = ri;
   state->length -= il;
-  
+
   // Normal eof
   if (state->length == 0) {
      state->item_length = 0;
      state->status = HID_RIP_EOF;
      return NULL;
   }
-  
+
   // Check the report item is valid
   state->item_length = il = tuh_hid_ri_size(ri, state->length);
-  
+
   if (il <= 0) {
     state->status = HID_RIP_ITEM_ERR;
     TU_LOG2("HID Report item parser: Attempt to read HID Report item returned %d\r\n", il);
@@ -98,7 +98,7 @@ const uint8_t* tuh_hid_rip_next_item(tuh_hid_rip_state_t *state)
           case RI_GLOBAL_POP:
             if (state->stack_index-- == 0) {
               state->status = HID_RIP_STACK_UNDERFLOW;
-              TU_LOG2("HID Report item parser: stack underflow\r\n");              
+              TU_LOG2("HID Report item parser: stack underflow\r\n");
               return NULL;
             }
             break;
@@ -117,7 +117,7 @@ const uint8_t* tuh_hid_rip_next_item(tuh_hid_rip_state_t *state)
             }
             if (state->usage_count == HID_REPORT_MAX_USAGES) {
               state->status = HID_RIP_USAGES_OVERFLOW;
-              TU_LOG2("HID Report item parser: usage overflow\r\n");              
+              TU_LOG2("HID Report item parser: usage overflow\r\n");
               return NULL;
             }
             state->usages[state->usage_count++] = usage;
@@ -135,7 +135,7 @@ const uint8_t* tuh_hid_rip_next_item(tuh_hid_rip_state_t *state)
               state->status = HID_RIP_COLLECTIONS_OVERFLOW;
               TU_LOG2("HID Report item parser: collections overflow\r\n");
               return NULL;
-            } 
+            }
             state->collections[state->collections_count++] = ri;
             break;
           }
@@ -159,7 +159,7 @@ const uint8_t* tuh_hid_rip_next_item(tuh_hid_rip_state_t *state)
   return ri;
 }
 
-const uint8_t* tuh_hid_rip_next_short_item(tuh_hid_rip_state_t *state) 
+const uint8_t* tuh_hid_rip_next_short_item(tuh_hid_rip_state_t *state)
 {
   const uint8_t* ri;
   while((ri = tuh_hid_rip_next_item(state)) != NULL) if (!tuh_hid_ri_is_long(ri)) break;
@@ -181,12 +181,12 @@ const uint8_t* tuh_hid_rip_current_item(tuh_hid_rip_state_t *state)
   return state->cursor;
 }
 
-uint32_t tuh_hid_rip_report_total_size_bits(tuh_hid_rip_state_t *state) 
+uint32_t tuh_hid_rip_report_total_size_bits(tuh_hid_rip_state_t *state)
 {
   const uint8_t* ri_report_size = tuh_hid_rip_global(state, RI_GLOBAL_REPORT_SIZE);
   const uint8_t* ri_report_count = tuh_hid_rip_global(state, RI_GLOBAL_REPORT_COUNT);
-  
-  if (ri_report_size != NULL && ri_report_count != NULL) 
+
+  if (ri_report_size != NULL && ri_report_count != NULL)
   {
     uint32_t report_size = tuh_hid_ri_short_udata32(ri_report_size);
     uint32_t report_count = tuh_hid_ri_short_udata32(ri_report_count);
@@ -202,14 +202,14 @@ uint32_t tuh_hid_rip_report_total_size_bits(tuh_hid_rip_state_t *state)
 //--------------------------------------------------------------------+
 // Report Descriptor Parser
 //--------------------------------------------------------------------+
-uint8_t __not_in_flash_func(tuh_hid_parse_report_descriptor2)(tuh_hid_report_info2_t* report_info_arr, uint8_t arr_count, uint8_t const* desc_report, uint16_t desc_len) 
+uint8_t __not_in_flash_func(tuh_hid_parse_report_descriptor2)(tuh_hid_report_info2_t* report_info_arr, uint8_t arr_count, uint8_t const* desc_report, uint16_t desc_len)
 {
   // Prepare the summary array
   tu_memclr(report_info_arr, arr_count*sizeof(tuh_hid_report_info2_t));
   uint8_t report_num = 0;
   uint16_t usage = 0;
   uint16_t usage_page = 0;
-  
+
   tuh_hid_report_info2_t* info = report_info_arr;
   tuh_hid_rip_state_t pstate;
   tuh_hid_rip_init_state(&pstate, desc_report, desc_len);
@@ -217,14 +217,14 @@ uint8_t __not_in_flash_func(tuh_hid_parse_report_descriptor2)(tuh_hid_report_inf
   while((ri = tuh_hid_rip_next_short_item(&pstate)) != NULL)
   {
     uint8_t const type_and_tag = tuh_hid_ri_short_type_and_tag(ri);
-    
+
     switch(type_and_tag)
     {
       case HID_RI_TYPE_AND_TAG(RI_TYPE_MAIN, RI_MAIN_INPUT): {
         if (report_num >= arr_count) {
           TU_LOG1("HID report description contains more than the maximum %d reports\r\n", arr_count);
           return report_num;
-        }        
+        }
         info->in_len += tuh_hid_rip_report_total_size_bits(&pstate);
         info->usage = usage;
         info->usage_page = usage_page;
@@ -234,7 +234,7 @@ uint8_t __not_in_flash_func(tuh_hid_parse_report_descriptor2)(tuh_hid_report_inf
         if (report_num >= arr_count) {
           TU_LOG1("HID report description contains more than the maximum %d reports\r\n", arr_count);
           return report_num;
-        }        
+        }
         info->out_len += tuh_hid_rip_report_total_size_bits(&pstate);
         info->usage = usage;
         info->usage_page = usage_page;
@@ -263,7 +263,7 @@ uint8_t __not_in_flash_func(tuh_hid_parse_report_descriptor2)(tuh_hid_report_inf
       default: break;
     }
   }
-  
+
   for ( uint8_t i = 0; i < report_num + 1; i++ )
   {
     info = report_info_arr+i;

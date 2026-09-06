@@ -105,21 +105,21 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
 #define VSYNC_CHANGE_MAX      (AY_CHANGE_MAX * 4)
 #define FRAME_SIZE            (SAMPLE_FREQ / 50) // Number of samples in 20 ms
 
-static uint16_t ay_tone_levels[16];
+static uint16_t __scratch_y("ay") ay_tone_levels[16];
 
 /* tick/incr/periods are all fixed-point with low 16 bits as
  * fractional part, except ay_env_{tick,period} which count as the chip does.
  */
-static unsigned int ay_tone_tick[3],ay_noise_tick;
-static unsigned int ay_env_tick,ay_env_subcycles;
-static unsigned int ay_tick_incr;
-static unsigned int ay_tone_period[3],ay_noise_period,ay_env_period;
+static unsigned int __scratch_y("ay") ay_tone_tick[3],ay_noise_tick;
+static unsigned int __scratch_y("ay") ay_env_tick,ay_env_subcycles;
+static unsigned int __scratch_y("ay") ay_tick_incr;
+static unsigned int __scratch_y("ay") ay_tone_period[3],ay_noise_period,ay_env_period;
 
-static int env_held=0,env_alternating=0;
+static int __scratch_y("ay") env_held=0,env_alternating=0;
 
 /* AY registers */
 /* we have 16 so we can fake an 8910 if needed */
-static unsigned char sound_ay_registers[16];
+static unsigned char __scratch_y("ay") sound_ay_registers[16];
 
 typedef struct
 {
@@ -143,9 +143,9 @@ typedef union
   ay_change_tag   ay[AY_CHANGE_MAX];
 } change_tag;
 
-static change_tag change;
-static vsync_status_tag vsync;
-static int ay_change_count;
+static __scratch_y("ay") change_tag change;
+static int __scratch_y("ay") ay_change_count;
+static  __scratch_y("ay") vsync_status_tag vsync;
 
 #ifdef MIC_SOUND
 static change_tag mic_change;

@@ -19,18 +19,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * 
- * This module contains an example of mapping a HID report to a simplified 
+ *
+ * This module contains an example of mapping a HID report to a simplified
  * local joystick definition. This simple model has:
  *        2x XY axes (X, Y and Z, Rz)
  *        1x HAT control
  * up to 32x Buttons (but have to be defined in one range in the HID description)
- * 
- * Applications will still need to allow mapping of axis and buttons to 
+ *
+ * Applications will still need to allow mapping of axis and buttons to
  * particlar functions.
- * 
+ *
  * There are many ways a HID report can describe a joystick and this code
- * only copes with a few of them. 
+ * only copes with a few of them.
  */
 
 #ifndef _TUSB_HID_HOST_JOY_H_
@@ -59,7 +59,7 @@ typedef union TU_ATTR_PACKED
       bool nonull_null         : 1;
   };
 } tusb_hid_ri_intput_flags_t;
-  
+
 typedef struct {
   union TU_ATTR_PACKED
   {
@@ -120,7 +120,7 @@ typedef struct {
 
 // Intermediate data structure used while parsing joystick HID report descriptors
 typedef struct {
-  uint32_t report_size; 
+  uint32_t report_size;
   uint32_t report_count;
   int32_t logical_min;
   int32_t logical_max;

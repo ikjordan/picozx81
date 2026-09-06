@@ -64,7 +64,7 @@ int main(void)
     }
 }
 
-static void mainLoop(void)
+static void __not_in_flash_func(mainLoop(void))
 {
     while (1)
     {

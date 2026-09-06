@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  *
  * Test me with:
- * 
+ *
  * ceedling test:pattern[hid_host_joy]
  */
 
@@ -48,7 +48,7 @@ tusb_hid_simple_joystick_t* tuh_hid_get_simple_joystick(uint8_t dev_addr, uint8_
   key.elements.report_id = report_id;
   key.elements.in_use = 1;
   uint32_t combined = key.combined;
-  
+
   for(uint8_t i = 0; i < HID_MAX_JOYSTICKS; ++i) {
     tusb_hid_simple_joystick_t* simple_joystick = &hid_simple_joysicks[i];
     if (simple_joystick->key.combined == combined) return simple_joystick;
@@ -59,7 +59,7 @@ tusb_hid_simple_joystick_t* tuh_hid_get_simple_joystick(uint8_t dev_addr, uint8_
 void tuh_hid_free_simple_joysticks(void) {
   for(uint8_t i = 0; i < HID_MAX_JOYSTICKS; ++i) {
     hid_simple_joysicks[i].key.elements.in_use = false;
-  } 
+  }
 }
 
 void tuh_hid_free_simple_joysticks_for_instance(uint8_t dev_addr, uint8_t instance) {
@@ -122,10 +122,10 @@ bool tuh_hid_joystick_get_data(
   const uint8_t* ri_usage_page = tuh_hid_rip_global(pstate, RI_GLOBAL_USAGE_PAGE);
   const uint8_t* ri_usage_min = tuh_hid_rip_local(pstate, RI_LOCAL_USAGE_MIN);
   const uint8_t* ri_usage_max = tuh_hid_rip_local(pstate, RI_LOCAL_USAGE_MAX);
-    
+
   // We need to know how the size of the data
   if (ri_report_size == NULL || ri_report_count == NULL || ri_usage_page == NULL) return false;
-  
+
   jdata->report_size = tuh_hid_ri_short_udata32(ri_report_size);
   jdata->report_count = tuh_hid_ri_short_udata32(ri_report_count);
   jdata->report_id = ri_report_id ? tuh_hid_ri_short_udata8(ri_report_id) : 0;
@@ -136,7 +136,7 @@ bool tuh_hid_joystick_get_data(
   jdata->usage_min = ri_usage_min ? tuh_hid_ri_short_udata32(ri_usage_min) : 0;
   jdata->usage_max = ri_usage_max ? tuh_hid_ri_short_udata32(ri_usage_max) : 0;
   jdata->usage_is_range = (ri_usage_min != NULL) && (ri_usage_max != NULL);
-  
+
   return true;
 }
 
@@ -160,7 +160,7 @@ void tuh_hid_joystick_process_usages(
   uint8_t instance)
 {
   if (jdata->input_flags.data_const) return;
-  
+
   // If there are no specific usages look for a range
   // TODO What is the correct behaviour if there are both?
   if (pstate->usage_count == 0 && !jdata->usage_is_range) {
@@ -169,7 +169,7 @@ void tuh_hid_joystick_process_usages(
   }
 
   tusb_hid_simple_joystick_t* simple_joystick = tuh_hid_obtain_simple_joystick(dev_addr, instance, jdata->report_id);
-  
+
   if (simple_joystick == NULL) {
     printf("Failed to allocate joystick for HID dev_addr %d, instance %d, report ID %d\n", dev_addr, instance, jdata->report_id);
     return;
@@ -193,7 +193,7 @@ void tuh_hid_joystick_process_usages(
     switch (eusage) {
       // Seems to be common usage for gamepads.
       // Probably needs a lot more thought...
-      case HID_RIP_EUSAGE(HID_USAGE_PAGE_DESKTOP, HID_USAGE_DESKTOP_X):    
+      case HID_RIP_EUSAGE(HID_USAGE_PAGE_DESKTOP, HID_USAGE_DESKTOP_X):
         tuh_hid_joystick_process_axis(jdata, bitpos, &simple_joystick->axis_x1);
         break;
       case HID_RIP_EUSAGE(HID_USAGE_PAGE_DESKTOP, HID_USAGE_DESKTOP_Y):
@@ -204,7 +204,7 @@ void tuh_hid_joystick_process_usages(
         break;
       case HID_RIP_EUSAGE(HID_USAGE_PAGE_DESKTOP, HID_USAGE_DESKTOP_RZ):
         tuh_hid_joystick_process_axis(jdata, bitpos, &simple_joystick->axis_y2);
-        break;      
+        break;
       case HID_RIP_EUSAGE(HID_USAGE_PAGE_DESKTOP, HID_USAGE_DESKTOP_HAT_SWITCH):
         tuh_hid_joystick_process_axis(jdata, bitpos, &simple_joystick->hat);
         break;
@@ -214,7 +214,7 @@ void tuh_hid_joystick_process_usages(
   }
 }
 
-void tuh_hid_joystick_parse_report_descriptor(uint8_t const* desc_report, uint16_t desc_len, uint8_t dev_addr, uint8_t instance) 
+void tuh_hid_joystick_parse_report_descriptor(uint8_t const* desc_report, uint16_t desc_len, uint8_t dev_addr, uint8_t instance)
 {
   uint32_t eusage = 0;
   tuh_hid_rip_state_t pstate;
@@ -252,13 +252,13 @@ void tuh_hid_joystick_parse_report_descriptor(uint8_t const* desc_report, uint16
   }
 }
 
-int32_t tuh_hid_simple_joystick_get_axis_value(tusb_hid_simple_axis_t* simple_axis, const uint8_t* report) 
+int32_t tuh_hid_simple_joystick_get_axis_value(tusb_hid_simple_axis_t* simple_axis, const uint8_t* report)
 {
   return tuh_hid_report_i32(report, simple_axis->start, simple_axis->length, simple_axis->flags.is_signed);
 }
 
 void tusb_hid_simple_joysick_process_report(tusb_hid_simple_joystick_t* simple_joystick, const uint8_t* report, uint8_t report_length)
- {   
+ {
   if (simple_joystick->report_length > report_length) {
     TU_LOG1("HID joystick report too small\r\n");
     return;
@@ -276,8 +276,8 @@ void tusb_hid_simple_joysick_process_report(tusb_hid_simple_joystick_t* simple_j
 
 void tusb_hid_print_simple_joysick_report(tusb_hid_simple_joystick_t* simple_joystick)
 {
-  if (simple_joystick->has_values) {  
-    printf("dev_addr=%3d, instance=%3d, report_id=%3d, x1=%4ld, y1=%4ld, x2=%4ld, y2=%4ld, hat=%01lX, buttons=%04lX\n",  
+  if (simple_joystick->has_values) {
+    printf("dev_addr=%3d, instance=%3d, report_id=%3d, x1=%4ld, y1=%4ld, x2=%4ld, y2=%4ld, hat=%01lX, buttons=%04lX\n",
       simple_joystick->key.elements.dev_addr,
       simple_joystick->key.elements.instance,
       simple_joystick->key.elements.report_id,
@@ -286,7 +286,7 @@ void tusb_hid_print_simple_joysick_report(tusb_hid_simple_joystick_t* simple_joy
       simple_joystick->values.x2,
       simple_joystick->values.y2,
       simple_joystick->values.hat,
-      simple_joystick->values.buttons);    
+      simple_joystick->values.buttons);
   }
 }
 
@@ -298,7 +298,7 @@ uint8_t tuh_hid_get_simple_joysticks(tusb_hid_simple_joystick_t** simple_joystic
     if (simple_joystick->key.elements.in_use) {
       simple_joysticks[j++] = simple_joystick;
     }
-  }  
+  }
   return j;
 }
 

@@ -32,7 +32,7 @@
 
 #define parity(a) (partable[a])
 
-unsigned char partable[256] = {     // Constant, but want to be in RAM
+unsigned char __scratch_y("reg") partable[256] = {     // Constant, but want to be in RAM
       4, 0, 0, 4, 0, 4, 4, 0, 0, 4, 4, 0, 4, 0, 0, 4,
       0, 4, 4, 0, 4, 0, 0, 4, 4, 0, 0, 4, 0, 4, 4, 0,
       0, 4, 4, 0, 4, 0, 0, 4, 4, 0, 0, 4, 0, 4, 4, 0,
@@ -51,21 +51,21 @@ unsigned char partable[256] = {     // Constant, but want to be in RAM
       4, 0, 0, 4, 0, 4, 4, 0, 0, 4, 4, 0, 4, 0, 0, 4
    };
 
-unsigned long tstates = 0;
-unsigned long tstates_frame = 0;
 const unsigned long tsmax = 65000;
-static unsigned long ts = 0;
+unsigned long __scratch_y("zx81") tstates = 0;
+unsigned long __scratch_y("zx81") tstates_frame = 0;
+static unsigned long __scratch_y("zx81") ts = 0;
 
-static unsigned char* scrnbmp_new = 0;
+static unsigned char* __scratch_y("zx81") scrnbmp_new = 0;
 #ifdef SUPPORT_CHROMA
-static unsigned char* scrnbmpc_new = 0;
+static unsigned char* __scratch_y("zx81") scrnbmpc_new = 0;
 #endif
 
-static int vsx = 0;
-static int vsy = 0;
-int ay_reg = 0;
-int LastInstruction;
-bool frameNotSync = true;
+static int __scratch_y("zx81") vsx = 0;
+static int __scratch_y("zx81") vsy = 0;
+int __scratch_y("zx81") ay_reg = 0;
+int __scratch_y("zx81") LastInstruction;
+bool __scratch_y("zx81") frameNotSync = true;
 
 // Horizontal line timings
 #define HLENGTH       207 // TStates in horizontal scanline
@@ -82,39 +82,39 @@ bool frameNotSync = true;
 
 static const int HSYNC_TOLERANCEMIN = HSCAN - HTOL;
 static const int HSYNC_TOLERANCEMAX = HSCAN + HTOL;
-static int FRAME_SCAN = SCAN50;
+static int __scratch_y("zx81") FRAME_SCAN = SCAN50;
 
 static const int HSYNC_MINLEN = HMIN;
 static const int HSYNC_MAXLEN = HMAX;
 static const int VSYNC_MINLEN = VMIN;
 
-static int VSYNC_TOLERANCEMIN = SCAN50 - VTOL;
-static int VSYNC_TOLERANCEMAX = SCAN50 + VTOL;
+static int __scratch_y("zx81") VSYNC_TOLERANCEMIN = SCAN50 - VTOL;
+static int __scratch_y("zx81") VSYNC_TOLERANCEMAX = SCAN50 + VTOL;
 
 static const int HSYNC_START = 16;
 static const int HSYNC_END = 32;
 static const int HLEN = HLENGTH;
 static const int MAX_JMP = 8;
 
-static int RasterX = 0;
-static int RasterY = 0;
-static int dest;
+static int __scratch_y("zx81") RasterX = 0;
+static int __scratch_y("zx81") RasterY = 0;
+static int __scratch_y("zx81") dest;
 
-static int adjustStartX = 0;
-static int adjustStartY = 0;
-static int startX = 0;
-static int startY = 0;
-static int syncX = 0;
-static int endX = 0;
-static int endY = 0;
+static int __scratch_y("zx81") adjustStartX = 0;
+static int __scratch_y("zx81") adjustStartY = 0;
+static int __scratch_y("zx81") startX = 0;
+static int __scratch_y("zx81") startY = 0;
+static int __scratch_y("zx81") syncX = 0;
+static int __scratch_y("zx81") endX = 0;
+static int __scratch_y("zx81") endY = 0;
 
-static int nmi_pending, hsync_pending;
-static int NMI_generator;
-static int VSYNC_state, HSYNC_state, SYNC_signal;
-static int psync, sync_len;
-static int rowcounter = 0;
-static int hsync_counter = 0;
-static bool rowcounter_hold = false;
+static int __scratch_y("zx81") nmi_pending, hsync_pending;
+static int __scratch_y("zx81") NMI_generator;
+static int __scratch_y("zx81") VSYNC_state, HSYNC_state, SYNC_signal;
+static int __scratch_y("zx81") psync, sync_len;
+static int __scratch_y("zx81") rowcounter = 0;
+static int __scratch_y("zx81") hsync_counter = 0;
+static bool __scratch_y("zx81") rowcounter_hold = false;
 
 static void setRemainingDisplayBoundaries(void);
 static void displayAndNewScreen(bool sync);
@@ -129,55 +129,55 @@ static inline int nmi_interrupt(void);
 static unsigned long z80_op(void);
 static void loadAndSaveROM(void);
 
-int sound_type = SOUND_TYPE_NONE;
-bool m1not = false;
-bool useWRX = false;
-bool UDGEnabled = false;
-bool useQSUDG = false;
-bool LowRAM = false;
-bool chr128 = false;
-bool useNTSC = false;
-bool frameSync = false;
-RomExecuteType_t running_rom = ROM_EXECUTE_OFF;
-bool display_load_stats = true;
+int __scratch_y("args") sound_type = SOUND_TYPE_NONE;
+bool __scratch_y("args") m1not = false;
+bool __scratch_y("args") useWRX = false;
+bool __scratch_y("args") UDGEnabled = false;
+bool __scratch_y("args") useQSUDG = false;
+bool __scratch_y("args") LowRAM = false;
+bool __scratch_y("args") chr128 = false;
+bool __scratch_y("args") useNTSC = false;
+bool __scratch_y("args") frameSync = false;
+RomExecuteType_t __scratch_y("args") running_rom = ROM_EXECUTE_OFF;
+bool __scratch_y("args") display_load_stats = true;
 
-unsigned char a, f, b, c, d, e, h, l;
-unsigned char r, a1, f1, b1, c1, d1, e1, h1, l1, i, iff1, iff2, im;
-unsigned short pc;
-unsigned short ix, iy, sp;
-unsigned char radjust;
-unsigned char ixoriy, new_ixoriy;
-unsigned char intsample = 0;
-unsigned char op;
-unsigned short m1cycles;
+unsigned char __scratch_y("reg") a, f, b, c, d, e, h, l;
+unsigned char __scratch_y("reg") r, a1, f1, b1, c1, d1, e1, h1, l1, i, iff1, iff2, im;
+unsigned short __scratch_y("reg") pc;
+unsigned short __scratch_y("reg") ix, iy, sp;
+unsigned char __scratch_y("reg") radjust;
+unsigned char __scratch_y("reg") ixoriy, new_ixoriy;
+unsigned char __scratch_y("reg") intsample = 0;
+unsigned char __scratch_y("reg") op;
+unsigned short __scratch_y("reg") m1cycles;
 
-static uint16_t load_bytes_total = 0;
-static uint16_t load_bytes_detected = 0;
-static uint16_t load_message_col = 0;
-static uint32_t load_message_row = 0;
+static uint16_t __scratch_y("load") load_bytes_total = 0;
+static uint16_t __scratch_y("load") load_bytes_detected = 0;
+static uint16_t __scratch_y("load") load_message_col = 0;
+static uint32_t __scratch_y("load") load_message_row = 0;
 
 /* ZX80 specific */
 #define SYNCNONE        0
 #define SYNCTYPEH       1
 #define SYNCTYPEV       2
 
-static int S_RasterX = 0;
-static int S_RasterY = 0;
+static int __scratch_y("zx80") S_RasterX = 0;
+static int __scratch_y("zx80") S_RasterY = 0;
 
-static int scanlineCounter = 0;
+static int __scratch_y("zx80") scanlineCounter = 0;
 
-static int videoFlipFlop1Q = 1;
-static int videoFlipFlop2Q = 0;
-static int videoFlipFlop3Q = 0;
-static int videoFlipFlop3Clear = 0;
-static int prevVideoFlipFlop3Q = 0;
+static int __scratch_y("zx80") videoFlipFlop1Q = 1;
+static int __scratch_y("zx80") videoFlipFlop2Q = 0;
+static int __scratch_y("zx80") videoFlipFlop3Q = 0;
+static int __scratch_y("zx80") videoFlipFlop3Clear = 0;
+static int __scratch_y("zx80") prevVideoFlipFlop3Q = 0;
 
-static int lineClockCarryCounter = 0;
+static int __scratch_y("zx80") lineClockCarryCounter = 0;
 
-static int scanline_len = 0;
-static int sync_type = SYNCNONE;
-static int nosync_lines = 0;
-static bool vsyncFound = false;
+static int __scratch_y("zx80") scanline_len = 0;
+static int __scratch_y("zx80") sync_type = SYNCNONE;
+static int __scratch_y("zx80") nosync_lines = 0;
+static bool __scratch_y("zx80") vsyncFound = false;
 
 static const int scanlinePixelLength = (HLENGTH << 1);
 static const int ZX80HSyncDuration = 20;
@@ -389,7 +389,7 @@ void resetZ80(void)
   }
 }
 
-static void loadAndSaveROM(void)
+static void __not_in_flash_func(loadAndSaveROM)(void)
 {
   static int sound_cache;
 

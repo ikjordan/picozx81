@@ -1,4 +1,4 @@
-/* 
+/*
  * The MIT License (MIT)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -135,7 +135,7 @@ const uint8_t* tuh_hid_rip_local(tuh_hid_rip_state_t *state, uint8_t tag);
 const uint8_t* tuh_hid_rip_current_item(tuh_hid_rip_state_t *state);
 
 // Return report_size * report_count
-// 
+//
 // Note: this currently does not include the Report ID byte
 uint32_t tuh_hid_rip_report_total_size_bits(tuh_hid_rip_state_t *state);
 
