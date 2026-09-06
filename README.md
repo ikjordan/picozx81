@@ -271,7 +271,7 @@ Notes: ENTER and SPACE can be used to represent the New Line and Space keys, res
 
 #### Extra configuration options
 
-Ten extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
+Twelve extra options apply across all programs and can only be set in the `[default]` section of the `config.ini` file in the root directory of the SD Card
 
 | Item | Description | Default Value |
 | --- | --- | --- |
@@ -281,8 +281,10 @@ Ten extra options apply across all programs and can only be set in the `[default
 | DoubleShift | Enables the generation of function key presses on a 40 key ZX80 or ZX81 keyboard. See [here](#function-key-menu)| On |
 | AllFiles| When set, all files are initially displayed when the [Load Menu](#f2---load) is selected. When off only files with extensions `.p`, `.o`, `.s`, `.81`, `.80` and `.p81` are initially displayed|Off|
 | MenuBorder | Enables a border area (in characters) for the [Load](#f2---load) and [Pause](#f4---pause) menus, useful when using a display with overscan. Range 0 to 2 | 1 |
-| LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated. Set to On to enable. <br><br> On the RP2350PC set the value to EAR and connect a cassette player to the LineIn socket to load directly from a cassette. Cassette recorded from a real ZX81 have been successfully loaded. Can also load directly from a WAV file played into the LineIn socket | Off |
+| LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated. Set to On to enable. <br><br> On the RP2350PC set the value to EAR and connect a cassette player to the LineIn socket to load directly from a cassette. Cassettes recorded from a real ZX81 have been successfully loaded. Can also load directly from a WAV file played into the LineIn socket | Off |
 | SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated. Set to On to enable. When set to MIC the audio save tones will be created, but the file will not be saved to SD-Card. <br><br> The signals can be recorded to a cassette recorder. The Signals are at Line level voltages, use an attenuating lead if connecting to a cassette recorder the requires microphone level voltages.<br><br> If the LineOut is connected to the ZX81 EAR socket, picozx81 can be used to load programs directly into the ZX81. Can also connect to a PC to save a WAV file | Off |
+| LoadStatus | When set to `on` displays the total nunmber of bytes expected and the total number of bytes left whilst loading in real-time using the ROM. This is especially useful when emulating the ZX80 and loading using the LineIn socket, to determine whether the volume is set correctly | Off |
+| LoadVolume | Allows adjustment of the LineIn sensitivity whilst loading in real-time. Allowed values are `HIGH`, `MEDIUM` and `LOW`. Set to `HIGH` for sources that generate a high volume signal, e.g. A Tzxduino | Medium |
 | NinePinJoystick | When set to `on` Enables reading a 9 pin joystick, if supported in hardware | Off |
 | VGA | When set to `on` enables VGA output for the PICOZX + LCD board | off |
 
