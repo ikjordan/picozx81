@@ -143,9 +143,9 @@ typedef union
   ay_change_tag   ay[AY_CHANGE_MAX];
 } change_tag;
 
-static change_tag __scratch_y("ay") change;
 static int __scratch_y("ay") ay_change_count;
-static vsync_status_tag  __scratch_y("ay") vsync;
+static change_tag __scratch_y("ay") change;
+static vsync_status_tag __scratch_y("ay") vsync;
 
 #ifdef MIC_SOUND
 static change_tag mic_change;
