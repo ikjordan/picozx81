@@ -280,14 +280,19 @@ void emu_linein_set_volume(LoadVolume_T vol)
     switch(vol)
     {
         case LOAD_VOL_HIGH:
-            bit_high = 6000;
-            bit_low = 4000;
-        break;
-        case LOAD_VOL_MEDIUM:
+            es8311_write(0x14, 0x10);
             bit_high = 3000;
             bit_low = 2000;
         break;
-        default:
+        case LOAD_VOL_MEDIUM:
+            es8311_write(0x14, 0x10);
+            bit_high = 1500;
+            bit_low = 1000;
+        break;
+        case LOAD_VOL_LOW:
+            // Used to capture from the ZX81 MIC port
+            es8311_write(0x14, 0x1A);   // PGA at 30dB
+            // May also need to change register 17
             bit_high = 1500;
             bit_low = 1000;
         break;

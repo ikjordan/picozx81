@@ -1160,12 +1160,12 @@ static int handler(void *user, const char *section, const char *name,
         if (!strcasecmp(value, "LOW"))
         {
           c->conf->loadVolume = LOAD_VOL_LOW;
-        } else if (!strcasecmp(value, "HIGH"))
-        {
-          c->conf->loadVolume = LOAD_VOL_HIGH;
-        } else
+        } else if (!strcasecmp(value, "MEDIUM"))
         {
           c->conf->loadVolume = LOAD_VOL_MEDIUM;
+        } else
+        {
+          c->conf->loadVolume = LOAD_VOL_HIGH;
         }
       }
 #endif
