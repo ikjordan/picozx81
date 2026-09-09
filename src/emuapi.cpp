@@ -1159,12 +1159,21 @@ static int handler(void *user, const char *section, const char *name,
       {
         if (!strcasecmp(value, "LOW"))
         {
+#ifdef DEBUG_LOAD_AND_SAVE
+          printf("Handler: Low");
+#endif
           c->conf->loadVolume = LOAD_VOL_LOW;
         } else if (!strcasecmp(value, "MEDIUM"))
         {
+#ifdef DEBUG_LOAD_AND_SAVE
+          printf("Handler: Medium");
+#endif
           c->conf->loadVolume = LOAD_VOL_MEDIUM;
         } else
         {
+#ifdef DEBUG_LOAD_AND_SAVE
+          printf("Handler: High");
+#endif
           c->conf->loadVolume = LOAD_VOL_HIGH;
         }
       }
@@ -1273,6 +1282,8 @@ void emu_ReadDefaultValues(void)
     general.ninePinJoystick = false;
     general.loadUsingROM = ROM_OFF;
     general.saveUsingROM = ROM_OFF;
+    general.loadDisplayStatus = OFF;
+    general.loadVolume = LOAD_VOL_HIGH;
 
 #ifdef PICO_LCDWS28_BOARD
     general.lcdInvertColour = true;
@@ -1438,7 +1449,7 @@ bool emu_loadSnapshotSpecific(const char* filename, const char* fullpathname)
         else
         {
           specific.loadDisplayStatus = OFF;
-          specific.loadVolume = LOAD_VOL_LOW;
+          specific.loadVolume = LOAD_VOL_HIGH;
           ret = true;
         }
       }

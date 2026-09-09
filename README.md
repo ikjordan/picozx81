@@ -28,6 +28,7 @@
 + Supports saving of snapshots. No need to restart from the beginning after you die in a game!
 + Optionally emulates real-time ZX81/80 program load and save with realistic sound and graphics
 + Can connect the sound output to the EAR socket of a real ZX81 and load programs onto the real ZX81 and ZX80 clones (Minstrel 2 and 4)
++ Can load programs directly from the MIC socket on a real ZX81 on the Olimex RP2350PC board
 + Supports load from a cassette recorder on the Olimex RP2350PC board
 + Emulates European and US configuration (i.e. emulates 50Hz and 60Hz ZX81)
 + Supports larger ZX81 generated displays of over 320 by 240 pixels (40 character width and 30 character height)
@@ -284,7 +285,7 @@ Twelve extra options apply across all programs and can only be set in the `[defa
 | LoadUsingROM | Runs the Sinclair ROM routines to load a file in real-time. Authentic loading visual and audio effects are emulated. Set to On to enable. <br><br> On the RP2350PC set the value to EAR and connect a cassette player to the LineIn socket to load directly from a cassette. Cassettes recorded from a real ZX81 have been successfully loaded. Can also load directly from a WAV file played into the LineIn socket | Off |
 | SaveUsingROM | Runs the Sinclair ROM routines to save a file in real-time. Authentic saving visual and audio effects are emulated. Set to On to enable. When set to MIC the audio save tones will be created, but the file will not be saved to SD-Card. <br><br> The signals can be recorded to a cassette recorder. The Signals are at Line level voltages, use an attenuating lead if connecting to a cassette recorder the requires microphone level voltages.<br><br> If the LineOut is connected to the ZX81 EAR socket, picozx81 can be used to load programs directly into the ZX81. Can also connect to a PC to save a WAV file | Off |
 | LoadStatus | When set to `on` displays the total nunmber of bytes expected and the total number of bytes left whilst loading in real-time using the ROM. This is especially useful when emulating the ZX80 and loading using the LineIn socket, to determine whether the volume is set correctly | Off |
-| LoadVolume | Allows adjustment of the LineIn sensitivity whilst loading in real-time. Allowed values are `HIGH`, `MEDIUM` and `LOW`. Set to `HIGH` for sources that generate a high volume signal, e.g. A Tzxduino | Medium |
+| LoadVolume | Allows adjustment of the LineIn sensitivity whilst loading in real-time. Allowed values are `HIGH`, `MEDIUM` and `LOW`. Set to `HIGH` for sources that generate a high volume signal, e.g. A Tzxduino. Set to LOW to capture the signal from a real ZX81 | Medium |
 | NinePinJoystick | When set to `on` Enables reading a 9 pin joystick, if supported in hardware | Off |
 | VGA | When set to `on` enables VGA output for the PICOZX + LCD board | off |
 
@@ -295,8 +296,10 @@ Twelve extra options apply across all programs and can only be set in the `[defa
 3. The LCD supported displays all have a fixed 320 by 240 resolution. `FiveSevenSix` therefore only sets the framerate for these displays (50 Hz, 50.65 Hz or 60 Hz)
 4. Due to the low speed of the ZX8x cassette interface, files can take many minutes to load and save when `LoadUsingROM` and `SaveUsingROM` is enabled
 5. On devices that support both HDMI and LineOut sound, the HDMI sound build also routes cassette sounds (at maximum volume) over the LineOut port. This makes it easier to send sounds to a real ZX81
-6. A mono plug must be used for the RP2350PC LineIn connection. A stereo input will result in garbled data being received by the emulator. If a PC is used as the source of the sound data, consider using a stereo to mono converter cable
-7. The ZX80 appears more "deaf" compared to a ZX81. Programs have been successfully loaded onto a ZX80 clone (Minstrel 2) using the Pimoroni VGA and DVI boards. These boards have dedicated I2S outputs, which can produce a louder signal than the other supported boards that rely on PWM GPIO sound output. The PWM based boards can successfully load to a ZX81, but not a ZX80
+6. A mono plug must be used for the RP2350PC LineIn connection. A stereo input will result in garbled data being received by the emulator. If a PC is used as the source of the sound data, consider using a stereo to mono converter cable. If connecting a real ZX81 MIC connection to the RP2350PC lineIn, use a mono to mono cable (e.g. the original ZX81 cassette lead)
+7. A stereo lead must be used for the RP2350PC lineout connection. If connecting the RP2350PC to a real ZX81 to load programs onto the ZX81, use a stereo to mono converter cable. Stereo for RP2350PC, mono for ZX81 EAR 
+8. The ZX80 appears more "deaf" compared to a ZX81. Programs have been successfully loaded onto a ZX80 clone (Minstrel 2) using the Pimoroni VGA and DVI boards. These boards have dedicated I2S outputs, which can produce a louder signal than the other supported boards that rely on PWM GPIO sound output. The PWM based boards can successfully load to a ZX81, but not a ZX80
+9. **CAUTION** Only use the `Low` volume setting when connected to a real ZX80 or ZX81. This setting uses a high amplification. It will damage the device if used with either a LineIn or a cassette connection
 
 #### Examples
 
@@ -312,7 +315,7 @@ After replacing the SD Card into the emulator, the Pico *must* be restarted, eit
 
 The emulated machine is always reset if any of the following options are changed:
 
-`Computer` `Memory` `LowRAM` `M1NOT` `QSUDG` `CHR128` `LoadUsingROM` `SaveUsingROM`
+`Computer` `Memory` `LowRAM` `M1NOT` `QSUDG` `CHR128`
 
 **Note:** Changing the virtual sound card, or the `FrameSync` or `NTSC` settings, does *not* trigger a reset
 
@@ -509,7 +512,7 @@ The `LoadUsingROM` and `SaveUsingROM` configuration options allow the ROM code t
 
 Picozx81 generates realistic load and save sounds and graphics for the 8K ROM. The 4K ROM generates sounds and graphics when saving, which picozx81 emulates. The 4K ROM does not generate a load screen. Picozx81 will show a black screen when the 4K ROM is loading a program
 
-The save sounds generated for both the 4K and 8K ROMs have been recorded as wav files and then successfully loaded into the EightyOne emulator and a real ZX81
+The save sounds generated for both the 4K and 8K ROMs have been recorded as wav files and then successfully loaded into the EightyOne emulator and a real ZX81. The boards have also been connected to the EAR socket and the save sounds used to load directly onto a real ZX81
 
 The ROM is used for program loading if either the filename is specified on the command line, e.g. `LOAD "FILENAME.P"` or (for the ZX81) an empty filename is supplied e.g. `LOAD ""`. If a file extension exists (`.p`, `.o` etc) then it must be supplied. Directories can be specified as part of the filename e.g. `LOAD "SUBDIR/FILENAME.P"`
 
@@ -1014,12 +1017,13 @@ This emulator offers the following over MCUME:
 + Ability to save files
 + Ability to load a program without reset
 + Ability to save and load snapshots
++ Ability to save and load to cassette
++ Ability to directly save from and load to a real ZX81
 + Support for Hi-res and pseudo Hi-res graphics
 + Support for multiple DVI, VGA and LCD boards
 + Support for Chroma 80 and Chroma 81
 + Support for programs which use more than 32 columns or 24 rows of characters
 + ZonX, QS and TV Sound emulation
-+ Ability to save and load to cassette
 + Emulated QS UDG
 + 50Hz and 60Hz emulation
 + Emulator display refresh decoupled from Pico display rate
