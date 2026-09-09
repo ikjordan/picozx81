@@ -1159,12 +1159,21 @@ static int handler(void *user, const char *section, const char *name,
       {
         if (!strcasecmp(value, "LOW"))
         {
+#ifdef DEBUG_LOAD_AND_SAVE
+          printf("Handler: Low");
+#endif
           c->conf->loadVolume = LOAD_VOL_LOW;
         } else if (!strcasecmp(value, "MEDIUM"))
         {
+#ifdef DEBUG_LOAD_AND_SAVE
+          printf("Handler: Medium");
+#endif
           c->conf->loadVolume = LOAD_VOL_MEDIUM;
         } else
         {
+#ifdef DEBUG_LOAD_AND_SAVE
+          printf("Handler: High");
+#endif
           c->conf->loadVolume = LOAD_VOL_HIGH;
         }
       }
