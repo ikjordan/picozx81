@@ -184,11 +184,11 @@ static inline int16_t hpf3400(int16_t input)
 // Initialise the linein capture
 void emu_linein_initialise(LoadVolume_T vol)
 {
-    emu_linein_set_volume(vol);
     codec_power_on();
     i2c_setup();
 
     es8311_init_capture();
+    emu_linein_set_volume(vol);
 
     rx_offset = pio_add_program(linein_pio, &linein_rx_program);
 
@@ -280,14 +280,30 @@ void emu_linein_set_volume(LoadVolume_T vol)
     switch(vol)
     {
         case LOAD_VOL_HIGH:
-            bit_high = 6000;
-            bit_low = 4000;
-        break;
-        case LOAD_VOL_MEDIUM:
+#ifdef DEBUG_LOAD_AND_SAVE
+            printf("Vol: High\n");
+#endif
+            es8311_write(0x14, 0x10);
+            es8311_write(0x17, 0xb9);       // ADC volume: +32dB - 70 * 0.5 = -3dB
             bit_high = 3000;
             bit_low = 2000;
         break;
-        default:
+        case LOAD_VOL_MEDIUM:
+#ifdef DEBUG_LOAD_AND_SAVE
+            printf("Vol: Medium\n");
+#endif
+            es8311_write(0x14, 0x10);
+            es8311_write(0x17, 0xb9);       // ADC volume: +32dB - 70 * 0.5 = -3dB
+            bit_high = 1500;
+            bit_low = 1000;
+        break;
+        case LOAD_VOL_LOW:
+            // Used to capture from the ZX81 MIC port
+#ifdef DEBUG_LOAD_AND_SAVE
+            printf("Vol: Low\n");
+#endif
+            es8311_write(0x14, 0x1a);       // PGA at 30dB
+            es8311_write(0x17, 0xf2);       // ADC volume: +32dB - 14 * 0.5 = +25dB
             bit_high = 1500;
             bit_low = 1000;
         break;
