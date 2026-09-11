@@ -31,7 +31,6 @@ volatile bool mic_first = true;         // True if the first buffer is playing
 
 int queued_sound_type;           // new sound type requested
 int change_count;                // count down to frame to change sound type
-bool use_sound_mic = false;
 
 static void beginAudio(void);
 
@@ -54,7 +53,6 @@ void emu_sndInit(int new_sound_type, bool force_reset)
   // This will be called multiple times
   if (!soundCreated)
   {
-    use_sound_mic = (emu_loadUsingROMRequested() == ROM_SD_CARD);
     sound_create();
   }
 
@@ -105,10 +103,10 @@ void emu_sndGenerateSamples(void)
 {
   sound_frame(sound_first ? soundBuffer2 : soundBuffer16);
 #ifdef MIC_SOUND
-  if (use_sound_mic) mic_frame(mic_first ? micBuffer2 : micBuffer16);
+  mic_frame(mic_first ? micBuffer2 : micBuffer16);
 #endif
 #ifdef TIME_SPARE
-    sound_count++;
+  sound_count++;
 #endif
 
   // process any queued sound change
@@ -130,12 +128,8 @@ static void beginAudio(void)
   initAudio_i2s();
 #endif
 
-#if defined(SOUND_DMA) || defined(SOUND_PWM)
-#ifdef MIC_SOUND
-  if (use_sound_mic) initAudio_pwm();
-#else
+#ifdef SOUND_DMA
   initAudio_pwm();
-#endif
 #endif
 
 #ifdef SOUND_HDMI
@@ -151,12 +145,8 @@ static void beginAudio(void)
   startAudio_i2s();
 #endif
 
-#if defined(SOUND_DMA) || defined(SOUND_PWM)
-#ifdef MIC_SOUND
-  if (use_sound_mic) startAudio_pwm();
-#else
+#ifdef SOUND_DMA
   startAudio_pwm();
-#endif
 #endif
 
 #ifdef SOUND_HDMI

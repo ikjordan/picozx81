@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-#if defined (SOUND_DMA) || defined (SOUND_PWM)
+#ifdef SOUND_DMA
 #define RANGE     1000
 #endif
 
@@ -46,8 +46,6 @@ extern "C" {
 #endif
 
 #define SAMPLE_FREQ   32000
-extern bool use_sound_mic;
-
 extern void sound_create(void);
 extern void sound_init(int new_sound_type, bool acb, bool force_reset);
 extern void sound_ay_write(int reg,int val);
@@ -61,9 +59,9 @@ extern bool sound_load_snap(uint32_t version);
 extern void sound_mic(int on);
 extern void mic_frame(uint16_t* buff);
 
-    #define SOUND_MIC(on) if (use_sound_mic) sound_mic((on))
+#define SOUND_MIC(on) sound_mic((on))
 #else
-    #define SOUND_MIC(on)
+#define SOUND_MIC(on)
 #endif
 
 #ifdef __cplusplus

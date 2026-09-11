@@ -44,7 +44,7 @@ void initAudio_hdmi(void);
 void startAudio_hdmi(void);
 #endif
 
-#if defined(SOUND_DMA) || defined (SOUND_PWM)
+#ifdef SOUND_DMA
 void initAudio_pwm(void);
 void startAudio_pwm(void);
 #endif
