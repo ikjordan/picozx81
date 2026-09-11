@@ -244,7 +244,7 @@ void __not_in_flash_func(sound_frame)(uint16_t* buff)
   }
   else
   {
-    sound_populate_frame(buff, &vsync, &change);
+  sound_populate_frame(buff, &vsync, &change);
   }
 }
 
@@ -300,7 +300,12 @@ void __not_in_flash_func(sound_mic)(int on)
 static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
 {
   int frame_index = 0;
-  int16_t* restrict ibuff = (int16_t*)buff;
+#if defined(SOUND_DMA_SEPARATE_SOUND) || defined(SOUND_DMA_SEPARATE_MIC)
+  int16_t* restrict right = (int16_t*)buff;
+  int16_t* restrict left = right + FRAME_SIZE;
+#else
+  int16_t* restrict interleaved = (int16_t*)buff;
+#endif
 #ifdef DEBUG_SOUND
   static int change_count_max = 0;
 
@@ -317,8 +322,13 @@ static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_stat
 
     for (int fill = frame_index; fill < c->vsync_offset[vs]; ++fill)
     {
-      *ibuff++ = val;
-      *ibuff++ = val;
+    #if defined(SOUND_DMA_SEPARATE_SOUND) || defined(SOUND_DMA_SEPARATE_MIC)
+      right[fill] = val;
+      left[fill] = val;
+  #else
+      interleaved[fill * 2] = val;
+      interleaved[fill * 2 + 1] = val;
+  #endif
     }
     status->initial_state = !status->initial_state;
     frame_index = c->vsync_offset[vs];
@@ -329,8 +339,13 @@ static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_stat
 
   for (int fill = frame_index; fill < FRAME_SIZE; ++fill)
   {
-    *ibuff++ = val;
-    *ibuff++ = val;
+#if defined(SOUND_DMA_SEPARATE_SOUND) || defined(SOUND_DMA_SEPARATE_MIC)
+  right[fill] = val;
+  left[fill] = val;
+#else
+  interleaved[fill * 2] = val;
+  interleaved[fill * 2 + 1] = val;
+#endif
   }
   status->change_count = 0;
 
@@ -452,19 +467,27 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
   int mixer,envshape;
   int f,g,level;
   int v=0;
-  int16_t* ptr;
   ay_change_tag* change_ptr=change.ay;
   int changes_left=ay_change_count;
   int reg,r;
   int was_high;
+#ifndef SOUND_DMA_SEPARATE_SOUND
   int channels=2;
+#endif
 
   /* convert change times to sample offsets */
   for(f=0;f<ay_change_count;f++)
     change.ay[f].ofs=(change.ay[f].tstates*SAMPLE_FREQ)/3250000;
 
-  for(f=0,ptr=buff;f<FRAME_SIZE;f++,ptr+=channels)
+  for(f=0; f<FRAME_SIZE; f++)
   {
+#ifdef SOUND_DMA_SEPARATE_SOUND
+    int16_t* ptr = &buff[f];
+    int16_t* left_ptr = &buff[FRAME_SIZE + f];
+#else
+    int16_t* ptr = &buff[f * channels];
+#endif
+
     /* update ay registers. All this sub-frame change stuff
     * is pretty hairy, but how else would you handle the
     * samples in Robocop? :-) It also clears up some other
@@ -568,7 +591,11 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
     }
 
     if(sound_stereo_acb)
+  #ifdef SOUND_DMA_SEPARATE_SOUND
+      *left_ptr=*ptr;
+  #else
       ptr[1]=*ptr;
+  #endif
 
     if((mixer&1)==0 || (mixer&0x08)==0)
     {
@@ -578,16 +605,30 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
     if((mixer&2)==0 || (mixer&0x10)==0)
     {
       level=(noise_toggle || (mixer&0x10))?tone_level[1]:0;
+  #ifdef SOUND_DMA_SEPARATE_SOUND
+      AY_OVERLAY_TONE(sound_stereo_acb ? left_ptr : ptr, 1, level);
+  #else
       AY_OVERLAY_TONE(&ptr[sound_stereo_acb],1,level);
+  #endif
     }
 
     if(!sound_stereo_acb)
+    {
+  #ifdef SOUND_DMA_SEPARATE_SOUND
+      *left_ptr=*ptr;
+  #else
       ptr[1]=*ptr;
+  #endif
+    }
 
   #if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
     // Correct to PWM
     *ptr = (*ptr>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
+  #ifdef SOUND_DMA_SEPARATE_SOUND
+    *left_ptr = (*left_ptr>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
+  #else
     ptr[1] = (ptr[1]>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
+  #endif
   #endif
     /* update noise RNG/filter */
     ay_noise_tick+=ay_tick_incr;

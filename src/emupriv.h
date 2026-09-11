@@ -14,6 +14,7 @@ extern int16_t min_vol_f;
 #endif
 
 // Channels 0 to 5 reserved for PicoDVI and scanvideo
-#define DMA_CHANNEL_SOUND   6
-#define DMA_CHANNEL_LINEIN  7
+#define DMA_CHANNEL_SOUND_1ST   6
+#define DMA_CHANNEL_SOUND_2ND   7
+#define DMA_CHANNEL_LINEIN      8
 #endif
