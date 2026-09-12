@@ -343,16 +343,16 @@ int emu_SoundRequested(void)
 bool emu_ACBRequested(void)
 {
   // Do not allow stereo on a mono board
-#if defined(SOUND_I2S) || defined(SOUND_HDMI)
-  return specific.acb;
-#else
-  return specific.acb && (AUDIO_PIN_L != AUDIO_PIN_R);
-#endif
+  return specific.acb && emu_ACBPossible();
 }
 
 bool emu_ACBPossible(void)
 {
-    return (AUDIO_PIN_L != AUDIO_PIN_R);
+#if (defined(SOUND_HDMI) || defined(SOUND_I2S) || (defined(SOUND_DMA) && (AUDIO_PIN_R != AUDIO_PIN_L)) || (defined(SOUND_DMA_SEPARATE))) && (!defined PICO_NO_SOUND)
+  return true;
+#else
+  return false;
+#endif
 }
 
 bool emu_ZX80Requested(void)
