@@ -12,7 +12,7 @@
 
 static void __not_in_flash_func(dmaInterruptHandler)()
 {
-#if !defined(SOUND_DMA_SEPARATE) || (AUDIO_PIN_R == AUDIO_PIN_L)
+#if ((!defined(SOUND_DMA_SEPARATE)) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L)))
     if (dma_channel_get_irq1_status(DMA_CHANNEL_SOUND_1ST))
     {
         dma_channel_acknowledge_irq1(DMA_CHANNEL_SOUND_1ST);
@@ -59,7 +59,7 @@ static void __not_in_flash_func(dmaInterruptHandler)()
 
 void initAudio_dma(int audio_pin_slice_r, int audio_pin_slice_l)
 {
-#if !defined(SOUND_DMA_SEPARATE) || (AUDIO_PIN_R == AUDIO_PIN_L)
+#if ((!defined(SOUND_DMA_SEPARATE)) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L)))
     (void)audio_pin_slice_l;
 #endif
 

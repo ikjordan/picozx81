@@ -26,11 +26,11 @@
 extern "C" {
 #endif
 
-#ifdef SOUND_DMA
+#if defined(SOUND_DMA) || defined(SOUND_DMA_SEPARATE)
 #define RANGE     1000
 #endif
 
-#if defined (SOUND_I2S) || defined (SOUND_HDMI)
+#if defined(SOUND_I2S) || defined(SOUND_HDMI)
 #define ZEROSOUND 0             // Zero point for I2S sound
 #else
 #define ZEROSOUND (RANGE >> 1)  // Zero point for PWM sound

@@ -128,7 +128,7 @@ static void beginAudio(void)
   initAudio_i2s();
 #endif
 
-#ifdef SOUND_DMA
+#if defined(SOUND_DMA) || defined(SOUND_DMA_SEPARATE)
   initAudio_pwm();
 #endif
 
@@ -145,7 +145,7 @@ static void beginAudio(void)
   startAudio_i2s();
 #endif
 
-#ifdef SOUND_DMA
+#if defined(SOUND_DMA) || defined(SOUND_DMA_SEPARATE)
   startAudio_pwm();
 #endif
 

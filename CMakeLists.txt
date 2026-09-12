@@ -13,7 +13,7 @@ endif()
 # Look for board file in local board directory
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
 if (NOT PICO_BOARD)
-    set(PICO_BOARD "vgaboard")
+    set(PICO_BOARD "olimexpcboard")
 endif()
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
@@ -159,7 +159,6 @@ elseif((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcb
         else() # olimexpcboard
             list(APPEND ZX8X_SOURCES src/emusound_dma.cpp)
             list(APPEND ZX8X_SOURCES src/emusound_pwm.cpp)
-            set(_DMA_SOUND ON)
             set(_SEPARATE_DMA_SOUND ON)
         endif()
     endif()
@@ -192,9 +191,11 @@ endif()
 
 if(_DMA_SOUND)
     target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA)
-    if(_SEPARATE_DMA_SOUND)
-        target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA_SEPARATE)
-    endif()
+    target_link_libraries(${PROJECT} hardware_dma hardware_pwm)
+endif()
+
+if(_SEPARATE_DMA_SOUND)
+    target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA_SEPARATE)
     target_link_libraries(${PROJECT} hardware_dma hardware_pwm)
 endif()
 

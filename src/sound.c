@@ -67,7 +67,7 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
  */
 #define AMPL_AY_TONE        2048
 
-#if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
+#if ((!defined(SOUND_I2S)) && (!defined(SOUND_HDMI)))
 #define CASSETTE_ON         RANGE
 #define CASSETTE_OFF        0
 #define VSYNC_ON            (3 * (RANGE >> 2))
@@ -158,10 +158,10 @@ static void sound_vsync_reset(bool full);
 static void sound_ay_reset(void);
 static void sound_ay_setvol(void);
 static void sound_ay_overlay(int16_t* buff);
-#if defined(HDMI_AUDIO) || (!defined(SOUND_DMA_SEPARATE) && (AUDIO_PIN_R != AUDIO_PIN_L))
+#if defined(SOUND_HDMI) || defined(SOUND_I2S) || (defined(SOUND_DMA) && (AUDIO_PIN_R != AUDIO_PIN_L))
 static void __not_in_flash_func(sound_populate_frame_interleaved)(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
 #endif
-#if defined(SOUND_DMA_SEPARATE) || (AUDIO_PIN_R == AUDIO_PIN_L)
+#if defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L))
 static void __not_in_flash_func(sound_populate_frame_separate)(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
 #endif
 static void sound_capture_mic(int on, vsync_status_tag* status, change_tag* c);
@@ -249,7 +249,7 @@ void __not_in_flash_func(sound_frame)(uint16_t* buff)
   }
   else
   {
-#if defined(HDMI_AUDIO) || (!defined(SOUND_DMA_SEPARATE) && (AUDIO_PIN_R != AUDIO_PIN_L))
+#if defined(SOUND_HDMI) || defined(SOUND_I2S) || (defined(SOUND_DMA) && (AUDIO_PIN_R != AUDIO_PIN_L))
     sound_populate_frame_interleaved(buff, &vsync, &change);
 #else
     sound_populate_frame_separate(buff, &vsync, &change);
@@ -260,7 +260,7 @@ void __not_in_flash_func(sound_frame)(uint16_t* buff)
 #ifdef MIC_SOUND
 void mic_frame(uint16_t* buff)
 {
-#if defined (SOUND_DMA_SEPARATE) || (AUDIO_PIN_R == AUDIO_PIN_L)
+#if defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L))
   sound_populate_frame_separate(buff, &mic, &mic_change);
 #else
   sound_populate_frame_interleaved(buff, &mic, &mic_change);
@@ -310,7 +310,7 @@ void __not_in_flash_func(sound_mic)(int on)
 /*
  * Private interface
  */
-#if defined(HDMI_AUDIO) || (!defined(SOUND_DMA_SEPARATE) && (AUDIO_PIN_R != AUDIO_PIN_L))
+#if defined(SOUND_HDMI) || defined(SOUND_I2S) || (defined(SOUND_DMA) && (AUDIO_PIN_R != AUDIO_PIN_L))
 static void __not_in_flash_func(sound_populate_frame_interleaved)(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
 {
   int frame_index = 0;
@@ -357,7 +357,7 @@ static void __not_in_flash_func(sound_populate_frame_interleaved)(uint16_t* buff
 }
 #endif
 
-#if defined(SOUND_DMA_SEPARATE) || (AUDIO_PIN_R == AUDIO_PIN_L)
+#if defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L))
 static void __not_in_flash_func(sound_populate_frame_separate)(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
 {
   int frame_index = 0;
@@ -523,7 +523,7 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
   int16_t* left_ptr;
 
   ptr = buff;
-#ifdef SOUND_DMA_SEPARATE
+#if (!defined(SOUND_HDMI)) && (defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L)))
   left_ptr = &buff[FRAME_SIZE];
 #else
   left_ptr = &buff[1];
@@ -656,7 +656,7 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
       *left_ptr=*ptr;
     }
 
-#if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
+#if (!(defined(SOUND_I2S) || defined(SOUND_HDMI)))
     // Correct to PWM
     *ptr = (*ptr>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
     *left_ptr = (*left_ptr>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
@@ -678,7 +678,7 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
     }
 
     // update the pointers for next sample
-#ifdef SOUND_DMA_SEPARATE
+#if (!defined(SOUND_HDMI)) && (defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L)))
     ptr++;
     left_ptr++;
 #else
