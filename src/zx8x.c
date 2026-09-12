@@ -267,6 +267,7 @@ LoadSaveResult_t load_p(int name_addr, bool defer_rom)
 
   if (!check_file_system())
   {
+    ERROR_D();
     return LOAD_SAVE_FAILED;
   }
 
@@ -291,8 +292,17 @@ LoadSaveResult_t load_p(int name_addr, bool defer_rom)
     {
       // Search for a separator that indicates request to load memory
       extend = strrchr(fname, ';');
+
       if (extend)
       {
+        // Not allowed with ROM
+        if (defer_rom)
+        {
+          printf("Cannot load memory using ROM\n");
+          ERROR_D();
+          return LOAD_SAVE_NOT_SUPPORTED_BY_ROM;
+        }
+
         // Terminate the file name
         *extend++ = '\0';
 
@@ -525,6 +535,7 @@ LoadSaveResult_t save_p(int name_addr, bool defer_rom)
 
   if (!check_file_system())
   {
+    ERROR_D();
     return LOAD_SAVE_FAILED;
   }
 
@@ -604,6 +615,14 @@ LoadSaveResult_t save_p(int name_addr, bool defer_rom)
 
       if (extend)
       {
+        // Cannot do this with ROM
+        if (defer_rom)
+        {
+          printf("Cannot save memory using ROM\n");
+          ERROR_D();
+          return LOAD_SAVE_NOT_SUPPORTED_BY_ROM;
+        }
+
         // verify , after last ;
         ++extend;
         comma = strrchr(extend, ',');
@@ -842,6 +861,7 @@ void z8x_Init(void)
   useWRX = emu_WRXRequested();
   useNTSC = emu_NTSCRequested();
   frameSync = (emu_FrameSyncRequested() != SYNC_OFF);
+  load_ROM_type = emu_loadUsingROMRequested();
   UDGEnabled = false;
 
   setEmulatedTV(!useNTSC, emu_VTol());

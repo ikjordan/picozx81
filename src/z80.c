@@ -417,16 +417,14 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
         switch (load_result)
         {
           case LOAD_SAVE_COMPLETED:
+          case LOAD_SAVE_FAILED:
+          case LOAD_SAVE_NOT_SUPPORTED_BY_ROM:
             pc = rom_addresses.ret;
           break;
 
           break;
           case LOAD_SAVE_REBOOT_NEEDED:
             pc = 0;
-          break;
-
-          case LOAD_SAVE_FAILED:
-            pc = rom_addresses.ret;
           break;
 
           case LOAD_SAVE_ROM:
@@ -459,10 +457,8 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
         switch (save_result)
         {
           case LOAD_SAVE_COMPLETED:
-            pc = rom_addresses.ret;
-          break;
-
           case LOAD_SAVE_FAILED:
+          case LOAD_SAVE_NOT_SUPPORTED_BY_ROM:
             pc = rom_addresses.ret;
           break;
 

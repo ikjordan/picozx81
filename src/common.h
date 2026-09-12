@@ -55,7 +55,8 @@ typedef enum
     LOAD_SAVE_COMPLETED = 0,
     LOAD_SAVE_ROM,
     LOAD_SAVE_FAILED,
-    LOAD_SAVE_REBOOT_NEEDED
+    LOAD_SAVE_REBOOT_NEEDED,
+    LOAD_SAVE_NOT_SUPPORTED_BY_ROM,
 } LoadSaveResult_t;
 
 typedef enum
