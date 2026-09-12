@@ -211,7 +211,6 @@ void sound_create(void)
   sound_type = SOUND_TYPE_NONE;
   sound_enabled=0;
 
-  sound_ay_setvol();
   sound_ay_reset();
   sound_vsync_reset(true);
 }
@@ -245,7 +244,6 @@ void __not_in_flash_func(sound_frame)(uint16_t* buff)
   if((sound_type == SOUND_TYPE_QUICKSILVA) || (sound_type == SOUND_TYPE_ZONX))
   {
     sound_ay_overlay((int16_t*)buff);
-    ay_change_count = 0;
   }
   else
   {
@@ -463,16 +461,26 @@ static void sound_ay_setvol(void)
   ay_tone_levels[0]=0;
 }
 
+static int rng=1;
+static int noise_toggle=1;
+static int env_level=0;
+
 static void sound_ay_reset(void)
 {
   ay_noise_tick=ay_noise_period=0;
   ay_env_tick=ay_env_period=0;
+  ay_env_subcycles=0;
+
   for(int f=0; f<3; f++)
     ay_tone_tick[f]=ay_tone_period[f]=0;
 
   ay_change_count=0;
   env_held=0;
   env_alternating=0;
+
+  rng=1;
+  noise_toggle=1;
+  env_level=0;
 
   for (int i=0; i<16;++i)
   {
@@ -482,6 +490,8 @@ static void sound_ay_reset(void)
   // Set the ay clock rate
   int clock = (sound_type == SOUND_TYPE_QUICKSILVA) ? AY_CLOCK_QUICKSILVA : AY_CLOCK_ZONX;
   ay_tick_incr=(int)(65536.*clock/SAMPLE_FREQ);
+
+  sound_ay_setvol();
 }
 
 static void sound_vsync_reset(bool full)
@@ -505,10 +515,6 @@ static void sound_vsync_reset(bool full)
   }
 }
 
-static int rng=1;
-static int noise_toggle=1;
-static int env_level=0;
-
 static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
 {
   int tone_level[3];
@@ -531,6 +537,8 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
   /* convert change times to sample offsets */
   for(f=0;f<ay_change_count;f++)
     change.ay[f].ofs=(change.ay[f].tstates*SAMPLE_FREQ)/3250000;
+
+  ay_change_count = 0;
 
   for(f=0; f<FRAME_SIZE; f++)
   {

@@ -828,7 +828,6 @@ void z8x_Init(void)
       strcpy(fname, emu_GetDirectory());
       strcat(fname, tapename);
       load_snap = emu_loadSnapshotSpecific(tapename, fname);
-      printf("Load snap %s\n", load_snap ? "True" : "False");
   }
 
   // Get machine type and memory
