@@ -158,7 +158,12 @@ static void sound_vsync_reset(bool full);
 static void sound_ay_reset(void);
 static void sound_ay_setvol(void);
 static void sound_ay_overlay(int16_t* buff);
-static void sound_populate_frame(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
+#if defined(HDMI_AUDIO) || (!defined(SOUND_DMA_SEPARATE) && (AUDIO_PIN_R != AUDIO_PIN_L))
+static void __not_in_flash_func(sound_populate_frame_interleaved)(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
+#endif
+#if defined(SOUND_DMA_SEPARATE) || (AUDIO_PIN_R == AUDIO_PIN_L)
+static void __not_in_flash_func(sound_populate_frame_separate)(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
+#endif
 static void sound_capture_mic(int on, vsync_status_tag* status, change_tag* c);
 
 /* Macros */
@@ -244,14 +249,22 @@ void __not_in_flash_func(sound_frame)(uint16_t* buff)
   }
   else
   {
-  sound_populate_frame(buff, &vsync, &change);
+#if defined(HDMI_AUDIO) || (!defined(SOUND_DMA_SEPARATE) && (AUDIO_PIN_R != AUDIO_PIN_L))
+    sound_populate_frame_interleaved(buff, &vsync, &change);
+#else
+    sound_populate_frame_separate(buff, &vsync, &change);
+#endif
   }
 }
 
 #ifdef MIC_SOUND
 void mic_frame(uint16_t* buff)
 {
-  sound_populate_frame(buff, &mic, &mic_change);
+#if defined (SOUND_DMA_SEPARATE) || (AUDIO_PIN_R == AUDIO_PIN_L)
+  sound_populate_frame_separate(buff, &mic, &mic_change);
+#else
+  sound_populate_frame_interleaved(buff, &mic, &mic_change);
+#endif
 }
 #endif
 
@@ -297,15 +310,11 @@ void __not_in_flash_func(sound_mic)(int on)
 /*
  * Private interface
  */
-static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
+#if defined(HDMI_AUDIO) || (!defined(SOUND_DMA_SEPARATE) && (AUDIO_PIN_R != AUDIO_PIN_L))
+static void __not_in_flash_func(sound_populate_frame_interleaved)(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
 {
   int frame_index = 0;
-#if defined(SOUND_DMA_SEPARATE_SOUND) || defined(SOUND_DMA_SEPARATE_MIC)
-  int16_t* restrict right = (int16_t*)buff;
-  int16_t* restrict left = right + FRAME_SIZE;
-#else
   int16_t* restrict interleaved = (int16_t*)buff;
-#endif
 #ifdef DEBUG_SOUND
   static int change_count_max = 0;
 
@@ -322,13 +331,8 @@ static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_stat
 
     for (int fill = frame_index; fill < c->vsync_offset[vs]; ++fill)
     {
-    #if defined(SOUND_DMA_SEPARATE_SOUND) || defined(SOUND_DMA_SEPARATE_MIC)
-      right[fill] = val;
-      left[fill] = val;
-  #else
-      interleaved[fill * 2] = val;
-      interleaved[fill * 2 + 1] = val;
-  #endif
+      *interleaved++ = val;
+      *interleaved++ = val;
     }
     status->initial_state = !status->initial_state;
     frame_index = c->vsync_offset[vs];
@@ -339,13 +343,8 @@ static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_stat
 
   for (int fill = frame_index; fill < FRAME_SIZE; ++fill)
   {
-#if defined(SOUND_DMA_SEPARATE_SOUND) || defined(SOUND_DMA_SEPARATE_MIC)
-  right[fill] = val;
-  left[fill] = val;
-#else
-  interleaved[fill * 2] = val;
-  interleaved[fill * 2 + 1] = val;
-#endif
+    *interleaved++ = val;
+    *interleaved++ = val;
   }
   status->change_count = 0;
 
@@ -356,6 +355,55 @@ static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_stat
 #endif
   }
 }
+#endif
+
+#if defined(SOUND_DMA_SEPARATE) || (AUDIO_PIN_R == AUDIO_PIN_L)
+static void __not_in_flash_func(sound_populate_frame_separate)(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
+{
+  int frame_index = 0;
+  int16_t* restrict right = (int16_t*)buff;
+  int16_t* restrict left = right + FRAME_SIZE;
+#ifdef DEBUG_SOUND
+  static int change_count_max = 0;
+
+  if (change_count_max < status->change_count)
+  {
+    change_count_max = status->change_count;
+    printf("change_count_max: %i\n", change_count_max);
+  }
+#endif
+
+  for (int vs = 0; vs < status->change_count; ++vs)
+  {
+    int16_t val = (status->initial_state ? status->volume_on : status->volume_off);
+
+    for (int fill = frame_index; fill < c->vsync_offset[vs]; ++fill)
+    {
+      *right++ = val;
+      *left++ = val;
+    }
+    status->initial_state = !status->initial_state;
+    frame_index = c->vsync_offset[vs];
+  }
+
+  // Fill in end of frame
+  int16_t val = (status->initial_state ? status->volume_on : status->volume_off);
+
+  for (int fill = frame_index; fill < FRAME_SIZE; ++fill)
+  {
+    *right++ = val;
+    *left++ = val;
+  }
+  status->change_count = 0;
+
+  if (status->initial_state != status->current_state)
+  {
+#ifdef DEBUG_SOUND
+    printf("current_state incorrect");
+#endif
+  }
+}
+#endif
 
 static void __not_in_flash_func(sound_capture_mic)(int on, vsync_status_tag* status, change_tag* c)
 {
@@ -471,22 +519,21 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
   int changes_left=ay_change_count;
   int reg,r;
   int was_high;
-#ifndef SOUND_DMA_SEPARATE_SOUND
-  int channels=2;
-#endif
+  int16_t* ptr;
+  int16_t* left_ptr;
 
+  ptr = buff;
+#ifdef SOUND_DMA_SEPARATE
+  left_ptr = &buff[FRAME_SIZE];
+#else
+  left_ptr = &buff[1];
+#endif
   /* convert change times to sample offsets */
   for(f=0;f<ay_change_count;f++)
     change.ay[f].ofs=(change.ay[f].tstates*SAMPLE_FREQ)/3250000;
 
   for(f=0; f<FRAME_SIZE; f++)
   {
-#ifdef SOUND_DMA_SEPARATE_SOUND
-    int16_t* ptr = &buff[f];
-    int16_t* left_ptr = &buff[FRAME_SIZE + f];
-#else
-    int16_t* ptr = &buff[f * channels];
-#endif
 
     /* update ay registers. All this sub-frame change stuff
     * is pretty hairy, but how else would you handle the
@@ -591,11 +638,7 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
     }
 
     if(sound_stereo_acb)
-  #ifdef SOUND_DMA_SEPARATE_SOUND
       *left_ptr=*ptr;
-  #else
-      ptr[1]=*ptr;
-  #endif
 
     if((mixer&1)==0 || (mixer&0x08)==0)
     {
@@ -605,31 +648,19 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
     if((mixer&2)==0 || (mixer&0x10)==0)
     {
       level=(noise_toggle || (mixer&0x10))?tone_level[1]:0;
-  #ifdef SOUND_DMA_SEPARATE_SOUND
       AY_OVERLAY_TONE(sound_stereo_acb ? left_ptr : ptr, 1, level);
-  #else
-      AY_OVERLAY_TONE(&ptr[sound_stereo_acb],1,level);
-  #endif
     }
 
     if(!sound_stereo_acb)
     {
-  #ifdef SOUND_DMA_SEPARATE_SOUND
       *left_ptr=*ptr;
-  #else
-      ptr[1]=*ptr;
-  #endif
     }
 
-  #if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
+#if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
     // Correct to PWM
     *ptr = (*ptr>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
-  #ifdef SOUND_DMA_SEPARATE_SOUND
     *left_ptr = (*left_ptr>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
-  #else
-    ptr[1] = (ptr[1]>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
-  #endif
-  #endif
+#endif
     /* update noise RNG/filter */
     ay_noise_tick+=ay_tick_incr;
     if(ay_noise_tick>=ay_noise_period)
@@ -645,6 +676,15 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
 
       ay_noise_tick-=ay_noise_period;
     }
+
+    // update the pointers for next sample
+#ifdef SOUND_DMA_SEPARATE
+    ptr++;
+    left_ptr++;
+#else
+    ptr+=2;
+    left_ptr+=2;
+#endif
   }
 }
 

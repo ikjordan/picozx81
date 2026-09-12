@@ -371,7 +371,10 @@ void cursor_movement(int8_t x, int8_t y, int8_t wheel)
 
   printf("\r\n");
 #else
-  printf("(%d %d %d)\r\n", x, y, wheel);
+  (void)x;
+  (void)y;
+  (void)wheel;
+  // printf("(%d %d %d)\r\n", x, y, wheel);
 #endif
 }
 

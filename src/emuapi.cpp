@@ -1736,7 +1736,7 @@ void __not_in_flash_func(emu_WaitFor50HzTimer(void))
 
 #ifdef TIME_SPARE
   uint64_t taken = (time_us_64() - start);
-  if (taken < 100)
+  if (taken < 50)
     underrun++;
   total_time += taken;
 
