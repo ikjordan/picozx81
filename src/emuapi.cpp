@@ -1362,8 +1362,6 @@ void emu_ReadSpecificValues(const char *filename)
 
     // determine whether a reset is required
     resetNeeded =  ((specific.M1NOT != used.M1NOT) ||
-                    (specific.loadUsingROM != used.loadUsingROM) ||
-                    (specific.saveUsingROM != used.saveUsingROM) ||
                     (specific.memory != used.memory) ||
                     (specific.computer != used.computer) ||
                     (specific.CHR128 != used.CHR128) ||

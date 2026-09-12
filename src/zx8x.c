@@ -111,14 +111,14 @@ unsigned int __not_in_flash_func(in)(int h, int l)
 
     data = useNTSC ? 0x40 : 0;
 #ifdef INPUT_EAR
-    if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
+    if (load_ROM_type == ROM_EAR_MIC)
     {
       data |= emu_linein_signal_high(tstates) ? 0x0 : 0x80;  // Reversed as use xor below
     }
     else
     {
 #endif
-    if ((emu_loadUsingROMRequested() == ROM_SD_CARD) && (running_rom == ROM_EXECUTE_LOAD))
+    if ((running_rom == ROM_EXECUTE_LOAD) && (load_ROM_type == ROM_SD_CARD))
     {
       data |= loadPGetBit() ? 0x0 : 0x80;   // Reversed as use xor below
     }
@@ -890,6 +890,7 @@ void z8x_updateValues(void)
   useNTSC = emu_NTSCRequested();
   frameSync = (emu_FrameSyncRequested() != SYNC_OFF);
   display_load_stats = emu_loadDisplayStatusRequested();
+  load_ROM_type = emu_loadUsingROMRequested();
   setEmulatedTV(!useNTSC, emu_VTol());
   setDisplayBoundaries();
   emu_VideoSetInterlace();

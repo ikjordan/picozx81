@@ -96,6 +96,7 @@ extern bool useNTSC;
 extern bool frameSync;
 extern RomExecuteType_t running_rom;
 extern bool display_load_stats;
+extern SLRomType_T load_ROM_type;
 
 /* Chroma variables */
 extern int chromamode;
