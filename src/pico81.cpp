@@ -12,6 +12,9 @@
 #ifdef INPUT_EAR
 #include "emulinein.h"
 #endif
+#ifdef STACK_USAGE
+#include "stack.h"
+#endif
 #include "zx8x.h"
 #include "display.h"
 #include "menu.h"
@@ -20,6 +23,10 @@ static void mainLoop(void);
 
 int main(void)
 {
+#ifdef STACK_USAGE
+    stack_init();
+#endif
+
 #ifdef OVER_VOLT
     vreg_set_voltage(VREG_VOLTAGE_1_20);
 #endif
@@ -149,4 +156,3 @@ static void __not_in_flash_func(mainLoop(void))
         emu_WaitFor50HzTimer();
     }
 }
-

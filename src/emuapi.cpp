@@ -16,7 +16,9 @@
 #ifdef INPUT_EAR
 #include "emulinein.h"
 #endif
-
+#ifdef STACK_USAGE
+#include "stack.h"
+#endif
 #include "ini.h"
 #include "iopins.h"
 
@@ -1708,8 +1710,8 @@ extern semaphore_t timer_sem;
 
 void __not_in_flash_func(emu_WaitFor50HzTimer(void))
 {
-#ifdef TIME_SPARE
   static uint32_t count = 0;
+#ifdef TIME_SPARE
   static uint64_t total_time;
   static uint32_t underrun;
   static int32_t  sound_prev = 0;
@@ -1717,7 +1719,6 @@ void __not_in_flash_func(emu_WaitFor50HzTimer(void))
 #ifdef INPUT_EAR
   static int32_t  linein_prev = 0;
 #endif
-
   uint64_t start = time_us_64();
 #endif
 
@@ -1737,14 +1738,17 @@ void __not_in_flash_func(emu_WaitFor50HzTimer(void))
   if (taken < 50)
     underrun++;
   total_time += taken;
+#endif
 
   if (++count == 500)
   {
     count = 0;
+#ifdef TIME_SPARE
     int64_t ints = int_count + int_prev ;
     int_prev = -int_count;
     int32_t sound = sound_count + sound_prev;
     sound_prev = -sound_count;
+
 #ifdef INPUT_EAR
     int32_t linein_ints = linein_count + linein_prev;
     linein_prev = -linein_count;
@@ -1757,15 +1761,19 @@ void __not_in_flash_func(emu_WaitFor50HzTimer(void))
     min_vol_r = -max_vol_r;
     max_vol_f = max_vol_r;
     min_vol_f = min_vol_r;
-#else
 #endif
     total_time = 0;
     underrun = 0;
+#endif
+
+#ifdef STACK_USAGE
+    printf("St: %04lx\n", stack_used());
+#endif
+
 #ifdef FLASH_LED
     static bool led_on = false;
     led_on = !led_on;
     gpio_put(PICO_DEFAULT_LED_PIN, led_on);
 #endif
   }
-#endif
 }

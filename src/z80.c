@@ -1235,7 +1235,14 @@ void __not_in_flash_func(execZX80)(void)
   tstates_frame++;
 }
 
+// Function is 30kB in length, so only fits in RAM on a RP2350
+// PICO_RP2350A = 1 for RP2350A and 0 for RP2350B
+// It is not defined for RP2040
+#if defined(PICO_RP2350A)
+static unsigned long __not_in_flash_func(z80_op)(void)
+#else
 static unsigned long z80_op(void)
+#endif
 {
   unsigned long tstore = tstates;
 

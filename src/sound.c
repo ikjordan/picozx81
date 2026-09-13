@@ -121,6 +121,11 @@ static int __scratch_y("ay") env_held=0,env_alternating=0;
 /* we have 16 so we can fake an 8910 if needed */
 static unsigned char __scratch_y("ay") sound_ay_registers[16];
 
+static int __scratch_y("ay") rng=1;
+static int __scratch_y("ay") noise_toggle=1;
+static int __scratch_y("ay") env_level=0;
+
+
 typedef struct
 {
   unsigned long tstates;
@@ -144,12 +149,12 @@ typedef union
 } change_tag;
 
 static int __scratch_y("ay") ay_change_count;
-static change_tag __scratch_y("ay") change;
 static vsync_status_tag __scratch_y("ay") vsync;
+static change_tag change;
 
 #ifdef MIC_SOUND
-static change_tag mic_change;
 static vsync_status_tag __scratch_y("ay") mic;
+static change_tag mic_change;
 #endif
 
 /* Private function declarations */
@@ -159,10 +164,10 @@ static void sound_ay_reset(void);
 static void sound_ay_setvol(void);
 static void sound_ay_overlay(int16_t* buff);
 #if defined(SOUND_HDMI) || defined(SOUND_I2S) || (defined(SOUND_DMA) && (AUDIO_PIN_R != AUDIO_PIN_L))
-static void __not_in_flash_func(sound_populate_frame_interleaved)(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
+static void sound_populate_frame_interleaved(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
 #endif
 #if defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L))
-static void __not_in_flash_func(sound_populate_frame_separate)(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
+static void sound_populate_frame_separate(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
 #endif
 static void sound_capture_mic(int on, vsync_status_tag* status, change_tag* c);
 
@@ -211,6 +216,7 @@ void sound_create(void)
   sound_type = SOUND_TYPE_NONE;
   sound_enabled=0;
 
+  sound_ay_setvol();
   sound_ay_reset();
   sound_vsync_reset(true);
 }
@@ -256,7 +262,7 @@ void __not_in_flash_func(sound_frame)(uint16_t* buff)
 }
 
 #ifdef MIC_SOUND
-void mic_frame(uint16_t* buff)
+void __not_in_flash_func(mic_frame)(uint16_t* buff)
 {
 #if defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L))
   sound_populate_frame_separate(buff, &mic, &mic_change);
@@ -461,10 +467,6 @@ static void sound_ay_setvol(void)
   ay_tone_levels[0]=0;
 }
 
-static int rng=1;
-static int noise_toggle=1;
-static int env_level=0;
-
 static void sound_ay_reset(void)
 {
   ay_noise_tick=ay_noise_period=0;
@@ -490,8 +492,6 @@ static void sound_ay_reset(void)
   // Set the ay clock rate
   int clock = (sound_type == SOUND_TYPE_QUICKSILVA) ? AY_CLOCK_QUICKSILVA : AY_CLOCK_ZONX;
   ay_tick_incr=(int)(65536.*clock/SAMPLE_FREQ);
-
-  sound_ay_setvol();
 }
 
 static void sound_vsync_reset(bool full)
