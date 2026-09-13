@@ -16,7 +16,9 @@
 #ifdef INPUT_EAR
 #include "emulinein.h"
 #endif
-
+#ifdef STACK_USAGE
+#include "stack.h"
+#endif
 #include "ini.h"
 #include "iopins.h"
 
@@ -343,16 +345,16 @@ int emu_SoundRequested(void)
 bool emu_ACBRequested(void)
 {
   // Do not allow stereo on a mono board
-#if defined(SOUND_I2S) || defined(SOUND_HDMI)
-  return specific.acb;
-#else
-  return specific.acb && (AUDIO_PIN_L != AUDIO_PIN_R);
-#endif
+  return specific.acb && emu_ACBPossible();
 }
 
 bool emu_ACBPossible(void)
 {
-    return (AUDIO_PIN_L != AUDIO_PIN_R);
+#if (defined(SOUND_HDMI) || defined(SOUND_I2S) || (defined(SOUND_DMA) && (AUDIO_PIN_R != AUDIO_PIN_L)) || (defined(SOUND_DMA_SEPARATE))) && (!defined PICO_NO_SOUND)
+  return true;
+#else
+  return false;
+#endif
 }
 
 bool emu_ZX80Requested(void)
@@ -1157,12 +1159,12 @@ static int handler(void *user, const char *section, const char *name,
 #ifdef INPUT_EAR
       else if ((!strcasecmp(name, "LoadVolume")))
       {
-        if (!strcasecmp(value, "LOW"))
+        if ((!strcasecmp(value, "ZX")) || (!strcasecmp(value, "MIC")) || (!strcasecmp(value, "ZXMIC")))
+        {
+          c->conf->loadVolume = LOAD_VOL_ZX_MIC;
+        } else if (!strcasecmp(value, "LOW"))
         {
           c->conf->loadVolume = LOAD_VOL_LOW;
-        } else if (!strcasecmp(value, "MEDIUM"))
-        {
-          c->conf->loadVolume = LOAD_VOL_MEDIUM;
         } else
         {
           c->conf->loadVolume = LOAD_VOL_HIGH;
@@ -1362,8 +1364,6 @@ void emu_ReadSpecificValues(const char *filename)
 
     // determine whether a reset is required
     resetNeeded =  ((specific.M1NOT != used.M1NOT) ||
-                    (specific.loadUsingROM != used.loadUsingROM) ||
-                    (specific.saveUsingROM != used.saveUsingROM) ||
                     (specific.memory != used.memory) ||
                     (specific.computer != used.computer) ||
                     (specific.CHR128 != used.CHR128) ||
@@ -1710,8 +1710,8 @@ extern semaphore_t timer_sem;
 
 void __not_in_flash_func(emu_WaitFor50HzTimer(void))
 {
-#ifdef TIME_SPARE
   static uint32_t count = 0;
+#ifdef TIME_SPARE
   static uint64_t total_time;
   static uint32_t underrun;
   static int32_t  sound_prev = 0;
@@ -1719,7 +1719,6 @@ void __not_in_flash_func(emu_WaitFor50HzTimer(void))
 #ifdef INPUT_EAR
   static int32_t  linein_prev = 0;
 #endif
-
   uint64_t start = time_us_64();
 #endif
 
@@ -1736,17 +1735,20 @@ void __not_in_flash_func(emu_WaitFor50HzTimer(void))
 
 #ifdef TIME_SPARE
   uint64_t taken = (time_us_64() - start);
-  if (taken < 100)
+  if (taken < 50)
     underrun++;
   total_time += taken;
+#endif
 
   if (++count == 500)
   {
     count = 0;
+#ifdef TIME_SPARE
     int64_t ints = int_count + int_prev ;
     int_prev = -int_count;
     int32_t sound = sound_count + sound_prev;
     sound_prev = -sound_count;
+
 #ifdef INPUT_EAR
     int32_t linein_ints = linein_count + linein_prev;
     linein_prev = -linein_count;
@@ -1759,15 +1761,19 @@ void __not_in_flash_func(emu_WaitFor50HzTimer(void))
     min_vol_r = -max_vol_r;
     max_vol_f = max_vol_r;
     min_vol_f = min_vol_r;
-#else
 #endif
     total_time = 0;
     underrun = 0;
+#endif
+
+#ifdef STACK_USAGE
+    printf("St: %04lx\n", stack_used());
+#endif
+
 #ifdef FLASH_LED
     static bool led_on = false;
     led_on = !led_on;
     gpio_put(PICO_DEFAULT_LED_PIN, led_on);
 #endif
   }
-#endif
 }

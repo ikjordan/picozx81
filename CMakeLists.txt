@@ -23,6 +23,7 @@ project(${PROJECT} C CXX ASM)
 
 OPTION(TIME_SPARE "Set to true to measure idle time" OFF)
 OPTION(FLASH_LED "Set to blink board led and measure idle time" OFF)
+OPTION(STACK_USAGE "Measure the maximum stack usage" OFF)
 OPTION(OVER_VOLT "Set to true to increase the Pico voltage" OFF)
 OPTION(HDMI_SOUND "Set to true to deliver sound over hdmi" OFF)
 OPTION(PICOZX_LCD "Set to true to enable LCD for PICOZX" OFF)
@@ -157,8 +158,9 @@ elseif((${PICO_BOARD} STREQUAL "dviboard") OR (${PICO_BOARD} STREQUAL "olimexpcb
             set(_DMA_SOUND ON)
             set(_INPUT_EAR ON)
         else() # olimexpcboard
+            list(APPEND ZX8X_SOURCES src/emusound_dma.cpp)
             list(APPEND ZX8X_SOURCES src/emusound_pwm.cpp)
-            set(_PWM_SOUND ON)
+            set(_SEPARATE_DMA_SOUND ON)
         endif()
     endif()
 elseif (${PICO_BOARD} STREQUAL "vgaboard")
@@ -169,6 +171,10 @@ else()
     list(APPEND ZX8X_SOURCES src/emusound_dma.cpp)
     list(APPEND ZX8X_SOURCES src/emusound_pwm.cpp)
     set(_DMA_SOUND ON)
+endif()
+
+if (${STACK_USAGE})
+    list(APPEND ZX8X_SOURCES src/stack.c)
 endif()
 
 add_executable(${PROJECT}
@@ -193,9 +199,9 @@ if(_DMA_SOUND)
     target_link_libraries(${PROJECT} hardware_dma hardware_pwm)
 endif()
 
-if(_PWM_SOUND)
-    target_compile_definitions(${PROJECT} PRIVATE -DSOUND_PWM)
-    target_link_libraries(${PROJECT} hardware_pwm)
+if(_SEPARATE_DMA_SOUND)
+    target_compile_definitions(${PROJECT} PRIVATE -DSOUND_DMA_SEPARATE)
+    target_link_libraries(${PROJECT} hardware_dma hardware_pwm)
 endif()
 
 if(_INPUT_EAR)
@@ -294,8 +300,10 @@ if ((${PICO_MCU} STREQUAL "rp2350"))
 endif()
 
 if (${FLASH_LED})
-    target_compile_definitions(${PROJECT} PRIVATE -DFLASH_LED -DTIME_SPARE)
-elseif (${TIME_SPARE})
+    target_compile_definitions(${PROJECT} PRIVATE -DFLASH_LED)
+endif()
+
+if (${TIME_SPARE})
     target_compile_definitions(${PROJECT} PRIVATE -DTIME_SPARE)
 endif()
 
@@ -307,10 +315,17 @@ if (${OVER_VOLT})
     target_compile_definitions(${PROJECT} PRIVATE -DOVER_VOLT)
 endif()
 
+if (${STACK_USAGE})
+    target_compile_definitions(${PROJECT} PRIVATE -DSTACK_USAGE)
+endif()
+
 # always support Chroma
 target_compile_definitions(${PROJECT} PRIVATE -DSUPPORT_CHROMA)
 
 target_compile_options(${PROJECT} PRIVATE -Wall ${EXTRA_CHECK})
+
+# Increase the default stack size for core 0
+target_compile_definitions(${PROJECT} PRIVATE PICO_STACK_SIZE=0xC00 PICO_CORE1_STACK_SIZE=0x800)
 
 target_link_libraries(${PROJECT}
                       pico_multicore

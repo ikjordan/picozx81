@@ -26,11 +26,11 @@
 extern "C" {
 #endif
 
-#if defined (SOUND_DMA) || defined (SOUND_PWM)
+#if defined(SOUND_DMA) || defined(SOUND_DMA_SEPARATE)
 #define RANGE     1000
 #endif
 
-#if defined (SOUND_I2S) || defined (SOUND_HDMI)
+#if defined(SOUND_I2S) || defined(SOUND_HDMI)
 #define ZEROSOUND 0             // Zero point for I2S sound
 #else
 #define ZEROSOUND (RANGE >> 1)  // Zero point for PWM sound
@@ -46,7 +46,6 @@ extern "C" {
 #endif
 
 #define SAMPLE_FREQ   32000
-
 extern void sound_create(void);
 extern void sound_init(int new_sound_type, bool acb, bool force_reset);
 extern void sound_ay_write(int reg,int val);
@@ -60,9 +59,9 @@ extern bool sound_load_snap(uint32_t version);
 extern void sound_mic(int on);
 extern void mic_frame(uint16_t* buff);
 
-    #define SOUND_MIC(on) sound_mic((on))
+#define SOUND_MIC(on) sound_mic((on))
 #else
-    #define SOUND_MIC(on)
+#define SOUND_MIC(on)
 #endif
 
 #ifdef __cplusplus

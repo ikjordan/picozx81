@@ -106,7 +106,7 @@ void emu_sndGenerateSamples(void)
   mic_frame(mic_first ? micBuffer2 : micBuffer16);
 #endif
 #ifdef TIME_SPARE
-    sound_count++;
+  sound_count++;
 #endif
 
   // process any queued sound change
@@ -128,7 +128,7 @@ static void beginAudio(void)
   initAudio_i2s();
 #endif
 
-#if defined(SOUND_DMA) || defined(SOUND_PWM)
+#if defined(SOUND_DMA) || defined(SOUND_DMA_SEPARATE)
   initAudio_pwm();
 #endif
 
@@ -145,7 +145,7 @@ static void beginAudio(void)
   startAudio_i2s();
 #endif
 
-#if defined(SOUND_DMA) || defined(SOUND_PWM)
+#if defined(SOUND_DMA) || defined(SOUND_DMA_SEPARATE)
   startAudio_pwm();
 #endif
 

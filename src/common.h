@@ -14,8 +14,8 @@ typedef enum
 
 typedef enum
 {
+    LOAD_VOL_ZX_MIC,
     LOAD_VOL_LOW,
-    LOAD_VOL_MEDIUM,
     LOAD_VOL_HIGH,
 } LoadVolume_T;
 
@@ -55,7 +55,8 @@ typedef enum
     LOAD_SAVE_COMPLETED = 0,
     LOAD_SAVE_ROM,
     LOAD_SAVE_FAILED,
-    LOAD_SAVE_REBOOT_NEEDED
+    LOAD_SAVE_REBOOT_NEEDED,
+    LOAD_SAVE_NOT_SUPPORTED_BY_ROM,
 } LoadSaveResult_t;
 
 typedef enum
@@ -96,6 +97,7 @@ extern bool useNTSC;
 extern bool frameSync;
 extern RomExecuteType_t running_rom;
 extern bool display_load_stats;
+extern SLRomType_T load_ROM_type;
 
 /* Chroma variables */
 extern int chromamode;

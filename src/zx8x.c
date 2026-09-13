@@ -111,14 +111,14 @@ unsigned int __not_in_flash_func(in)(int h, int l)
 
     data = useNTSC ? 0x40 : 0;
 #ifdef INPUT_EAR
-    if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
+    if (load_ROM_type == ROM_EAR_MIC)
     {
       data |= emu_linein_signal_high(tstates) ? 0x0 : 0x80;  // Reversed as use xor below
     }
     else
     {
 #endif
-    if ((emu_loadUsingROMRequested() == ROM_SD_CARD) && (running_rom == ROM_EXECUTE_LOAD))
+    if ((running_rom == ROM_EXECUTE_LOAD) && (load_ROM_type == ROM_SD_CARD))
     {
       data |= loadPGetBit() ? 0x0 : 0x80;   // Reversed as use xor below
     }
@@ -267,6 +267,7 @@ LoadSaveResult_t load_p(int name_addr, bool defer_rom)
 
   if (!check_file_system())
   {
+    ERROR_D();
     return LOAD_SAVE_FAILED;
   }
 
@@ -291,8 +292,17 @@ LoadSaveResult_t load_p(int name_addr, bool defer_rom)
     {
       // Search for a separator that indicates request to load memory
       extend = strrchr(fname, ';');
+
       if (extend)
       {
+        // Not allowed with ROM
+        if (defer_rom)
+        {
+          printf("Cannot load memory using ROM\n");
+          ERROR_D();
+          return LOAD_SAVE_NOT_SUPPORTED_BY_ROM;
+        }
+
         // Terminate the file name
         *extend++ = '\0';
 
@@ -525,6 +535,7 @@ LoadSaveResult_t save_p(int name_addr, bool defer_rom)
 
   if (!check_file_system())
   {
+    ERROR_D();
     return LOAD_SAVE_FAILED;
   }
 
@@ -604,6 +615,14 @@ LoadSaveResult_t save_p(int name_addr, bool defer_rom)
 
       if (extend)
       {
+        // Cannot do this with ROM
+        if (defer_rom)
+        {
+          printf("Cannot save memory using ROM\n");
+          ERROR_D();
+          return LOAD_SAVE_NOT_SUPPORTED_BY_ROM;
+        }
+
         // verify , after last ;
         ++extend;
         comma = strrchr(extend, ',');
@@ -828,7 +847,6 @@ void z8x_Init(void)
       strcpy(fname, emu_GetDirectory());
       strcat(fname, tapename);
       load_snap = emu_loadSnapshotSpecific(tapename, fname);
-      printf("Load snap %s\n", load_snap ? "True" : "False");
   }
 
   // Get machine type and memory
@@ -843,6 +861,7 @@ void z8x_Init(void)
   useWRX = emu_WRXRequested();
   useNTSC = emu_NTSCRequested();
   frameSync = (emu_FrameSyncRequested() != SYNC_OFF);
+  load_ROM_type = emu_loadUsingROMRequested();
   UDGEnabled = false;
 
   setEmulatedTV(!useNTSC, emu_VTol());
@@ -890,6 +909,7 @@ void z8x_updateValues(void)
   useNTSC = emu_NTSCRequested();
   frameSync = (emu_FrameSyncRequested() != SYNC_OFF);
   display_load_stats = emu_loadDisplayStatusRequested();
+  load_ROM_type = emu_loadUsingROMRequested();
   setEmulatedTV(!useNTSC, emu_VTol());
   setDisplayBoundaries();
   emu_VideoSetInterlace();

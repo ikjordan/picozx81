@@ -67,7 +67,7 @@ int sound_stereo_acb=0;     /* 1 for ACB stereo, else 0 */
  */
 #define AMPL_AY_TONE        2048
 
-#if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
+#if ((!defined(SOUND_I2S)) && (!defined(SOUND_HDMI)))
 #define CASSETTE_ON         RANGE
 #define CASSETTE_OFF        0
 #define VSYNC_ON            (3 * (RANGE >> 2))
@@ -121,6 +121,11 @@ static int __scratch_y("ay") env_held=0,env_alternating=0;
 /* we have 16 so we can fake an 8910 if needed */
 static unsigned char __scratch_y("ay") sound_ay_registers[16];
 
+static int __scratch_y("ay") rng=1;
+static int __scratch_y("ay") noise_toggle=1;
+static int __scratch_y("ay") env_level=0;
+
+
 typedef struct
 {
   unsigned long tstates;
@@ -144,12 +149,12 @@ typedef union
 } change_tag;
 
 static int __scratch_y("ay") ay_change_count;
-static change_tag __scratch_y("ay") change;
 static vsync_status_tag __scratch_y("ay") vsync;
+static change_tag change;
 
 #ifdef MIC_SOUND
-static change_tag mic_change;
 static vsync_status_tag __scratch_y("ay") mic;
+static change_tag mic_change;
 #endif
 
 /* Private function declarations */
@@ -158,7 +163,12 @@ static void sound_vsync_reset(bool full);
 static void sound_ay_reset(void);
 static void sound_ay_setvol(void);
 static void sound_ay_overlay(int16_t* buff);
-static void sound_populate_frame(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
+#if defined(SOUND_HDMI) || defined(SOUND_I2S) || (defined(SOUND_DMA) && (AUDIO_PIN_R != AUDIO_PIN_L))
+static void sound_populate_frame_interleaved(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
+#endif
+#if defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L))
+static void sound_populate_frame_separate(uint16_t* buff, vsync_status_tag* status, const change_tag* c);
+#endif
 static void sound_capture_mic(int on, vsync_status_tag* status, change_tag* c);
 
 /* Macros */
@@ -240,18 +250,25 @@ void __not_in_flash_func(sound_frame)(uint16_t* buff)
   if((sound_type == SOUND_TYPE_QUICKSILVA) || (sound_type == SOUND_TYPE_ZONX))
   {
     sound_ay_overlay((int16_t*)buff);
-    ay_change_count = 0;
   }
   else
   {
-    sound_populate_frame(buff, &vsync, &change);
+#if defined(SOUND_HDMI) || defined(SOUND_I2S) || (defined(SOUND_DMA) && (AUDIO_PIN_R != AUDIO_PIN_L))
+    sound_populate_frame_interleaved(buff, &vsync, &change);
+#else
+    sound_populate_frame_separate(buff, &vsync, &change);
+#endif
   }
 }
 
 #ifdef MIC_SOUND
-void mic_frame(uint16_t* buff)
+void __not_in_flash_func(mic_frame)(uint16_t* buff)
 {
-  sound_populate_frame(buff, &mic, &mic_change);
+#if defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L))
+  sound_populate_frame_separate(buff, &mic, &mic_change);
+#else
+  sound_populate_frame_interleaved(buff, &mic, &mic_change);
+#endif
 }
 #endif
 
@@ -297,10 +314,11 @@ void __not_in_flash_func(sound_mic)(int on)
 /*
  * Private interface
  */
-static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
+#if defined(SOUND_HDMI) || defined(SOUND_I2S) || (defined(SOUND_DMA) && (AUDIO_PIN_R != AUDIO_PIN_L))
+static void __not_in_flash_func(sound_populate_frame_interleaved)(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
 {
   int frame_index = 0;
-  int16_t* restrict ibuff = (int16_t*)buff;
+  int16_t* restrict interleaved = (int16_t*)buff;
 #ifdef DEBUG_SOUND
   static int change_count_max = 0;
 
@@ -317,8 +335,8 @@ static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_stat
 
     for (int fill = frame_index; fill < c->vsync_offset[vs]; ++fill)
     {
-      *ibuff++ = val;
-      *ibuff++ = val;
+      *interleaved++ = val;
+      *interleaved++ = val;
     }
     status->initial_state = !status->initial_state;
     frame_index = c->vsync_offset[vs];
@@ -329,8 +347,8 @@ static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_stat
 
   for (int fill = frame_index; fill < FRAME_SIZE; ++fill)
   {
-    *ibuff++ = val;
-    *ibuff++ = val;
+    *interleaved++ = val;
+    *interleaved++ = val;
   }
   status->change_count = 0;
 
@@ -341,6 +359,55 @@ static void __not_in_flash_func(sound_populate_frame)(uint16_t* buff, vsync_stat
 #endif
   }
 }
+#endif
+
+#if defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L))
+static void __not_in_flash_func(sound_populate_frame_separate)(uint16_t* buff, vsync_status_tag* status, const change_tag* c)
+{
+  int frame_index = 0;
+  int16_t* restrict right = (int16_t*)buff;
+  int16_t* restrict left = right + FRAME_SIZE;
+#ifdef DEBUG_SOUND
+  static int change_count_max = 0;
+
+  if (change_count_max < status->change_count)
+  {
+    change_count_max = status->change_count;
+    printf("change_count_max: %i\n", change_count_max);
+  }
+#endif
+
+  for (int vs = 0; vs < status->change_count; ++vs)
+  {
+    int16_t val = (status->initial_state ? status->volume_on : status->volume_off);
+
+    for (int fill = frame_index; fill < c->vsync_offset[vs]; ++fill)
+    {
+      *right++ = val;
+      *left++ = val;
+    }
+    status->initial_state = !status->initial_state;
+    frame_index = c->vsync_offset[vs];
+  }
+
+  // Fill in end of frame
+  int16_t val = (status->initial_state ? status->volume_on : status->volume_off);
+
+  for (int fill = frame_index; fill < FRAME_SIZE; ++fill)
+  {
+    *right++ = val;
+    *left++ = val;
+  }
+  status->change_count = 0;
+
+  if (status->initial_state != status->current_state)
+  {
+#ifdef DEBUG_SOUND
+    printf("current_state incorrect");
+#endif
+  }
+}
+#endif
 
 static void __not_in_flash_func(sound_capture_mic)(int on, vsync_status_tag* status, change_tag* c)
 {
@@ -404,12 +471,18 @@ static void sound_ay_reset(void)
 {
   ay_noise_tick=ay_noise_period=0;
   ay_env_tick=ay_env_period=0;
+  ay_env_subcycles=0;
+
   for(int f=0; f<3; f++)
     ay_tone_tick[f]=ay_tone_period[f]=0;
 
   ay_change_count=0;
   env_held=0;
   env_alternating=0;
+
+  rng=1;
+  noise_toggle=1;
+  env_level=0;
 
   for (int i=0; i<16;++i)
   {
@@ -442,29 +515,34 @@ static void sound_vsync_reset(bool full)
   }
 }
 
-static int rng=1;
-static int noise_toggle=1;
-static int env_level=0;
-
 static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
 {
   int tone_level[3];
   int mixer,envshape;
   int f,g,level;
   int v=0;
-  int16_t* ptr;
   ay_change_tag* change_ptr=change.ay;
   int changes_left=ay_change_count;
   int reg,r;
   int was_high;
-  int channels=2;
+  int16_t* ptr;
+  int16_t* left_ptr;
 
+  ptr = buff;
+#if (!defined(SOUND_HDMI)) && (defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L)))
+  left_ptr = &buff[FRAME_SIZE];
+#else
+  left_ptr = &buff[1];
+#endif
   /* convert change times to sample offsets */
   for(f=0;f<ay_change_count;f++)
     change.ay[f].ofs=(change.ay[f].tstates*SAMPLE_FREQ)/3250000;
 
-  for(f=0,ptr=buff;f<FRAME_SIZE;f++,ptr+=channels)
+  ay_change_count = 0;
+
+  for(f=0; f<FRAME_SIZE; f++)
   {
+
     /* update ay registers. All this sub-frame change stuff
     * is pretty hairy, but how else would you handle the
     * samples in Robocop? :-) It also clears up some other
@@ -568,7 +646,7 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
     }
 
     if(sound_stereo_acb)
-      ptr[1]=*ptr;
+      *left_ptr=*ptr;
 
     if((mixer&1)==0 || (mixer&0x08)==0)
     {
@@ -578,17 +656,19 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
     if((mixer&2)==0 || (mixer&0x10)==0)
     {
       level=(noise_toggle || (mixer&0x10))?tone_level[1]:0;
-      AY_OVERLAY_TONE(&ptr[sound_stereo_acb],1,level);
+      AY_OVERLAY_TONE(sound_stereo_acb ? left_ptr : ptr, 1, level);
     }
 
     if(!sound_stereo_acb)
-      ptr[1]=*ptr;
+    {
+      *left_ptr=*ptr;
+    }
 
-  #if ((!defined (SOUND_I2S)) && (!defined (SOUND_HDMI)))
+#if (!(defined(SOUND_I2S) || defined(SOUND_HDMI)))
     // Correct to PWM
     *ptr = (*ptr>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
-    ptr[1] = (ptr[1]>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
-  #endif
+    *left_ptr = (*left_ptr>>PWM_SOUND_SHIFT_REDUCE) + ZEROSOUND;
+#endif
     /* update noise RNG/filter */
     ay_noise_tick+=ay_tick_incr;
     if(ay_noise_tick>=ay_noise_period)
@@ -604,6 +684,15 @@ static void __not_in_flash_func(sound_ay_overlay)(int16_t* buff)
 
       ay_noise_tick-=ay_noise_period;
     }
+
+    // update the pointers for next sample
+#if (!defined(SOUND_HDMI)) && (defined(SOUND_DMA_SEPARATE) || (defined(SOUND_DMA) && (AUDIO_PIN_R == AUDIO_PIN_L)))
+    ptr++;
+    left_ptr++;
+#else
+    ptr+=2;
+    left_ptr+=2;
+#endif
   }
 }
 

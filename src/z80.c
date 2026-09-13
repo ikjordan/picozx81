@@ -140,6 +140,7 @@ bool __scratch_y("args") useNTSC = false;
 bool __scratch_y("args") frameSync = false;
 RomExecuteType_t __scratch_y("args") running_rom = ROM_EXECUTE_OFF;
 bool __scratch_y("args") display_load_stats = true;
+SLRomType_T __scratch_y("args") load_ROM_type = ROM_OFF;
 
 unsigned char __scratch_y("reg") a, f, b, c, d, e, h, l;
 unsigned char __scratch_y("reg") r, a1, f1, b1, c1, d1, e1, h1, l1, i, iff1, iff2, im;
@@ -403,29 +404,27 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
 
     if (pc == rom_addresses.load_start) // load
     {
-      if (emu_loadUsingROMRequested() == ROM_EAR_MIC)
+      if (load_ROM_type == ROM_EAR_MIC)
       {
         running_rom = ROM_EXECUTE_LOAD;
       }
       else
       {
-        LoadSaveResult_t load_result = load_p(rom4k ? hl : de, (emu_loadUsingROMRequested() == ROM_SD_CARD));
+        LoadSaveResult_t load_result = load_p(rom4k ? hl : de, (load_ROM_type == ROM_SD_CARD));
 #ifdef DEBUG_LOAD_AND_SAVE
         printf("loadAndSaveROM: load_result %d\n", load_result);
 #endif
         switch (load_result)
         {
           case LOAD_SAVE_COMPLETED:
+          case LOAD_SAVE_FAILED:
+          case LOAD_SAVE_NOT_SUPPORTED_BY_ROM:
             pc = rom_addresses.ret;
           break;
 
           break;
           case LOAD_SAVE_REBOOT_NEEDED:
             pc = 0;
-          break;
-
-          case LOAD_SAVE_FAILED:
-            pc = rom_addresses.ret;
           break;
 
           case LOAD_SAVE_ROM:
@@ -458,10 +457,8 @@ static void __not_in_flash_func(loadAndSaveROM)(void)
         switch (save_result)
         {
           case LOAD_SAVE_COMPLETED:
-            pc = rom_addresses.ret;
-          break;
-
           case LOAD_SAVE_FAILED:
+          case LOAD_SAVE_NOT_SUPPORTED_BY_ROM:
             pc = rom_addresses.ret;
           break;
 
@@ -1238,7 +1235,14 @@ void __not_in_flash_func(execZX80)(void)
   tstates_frame++;
 }
 
+// Function is 30kB in length, so only fits in RAM on a RP2350
+// PICO_RP2350A = 1 for RP2350A and 0 for RP2350B
+// It is not defined for RP2040
+#if defined(PICO_RP2350A)
+static unsigned long __not_in_flash_func(z80_op)(void)
+#else
 static unsigned long z80_op(void)
+#endif
 {
   unsigned long tstore = tstates;
 
