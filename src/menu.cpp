@@ -877,14 +877,14 @@ bool modifyMenu(void)
                     {
                         switch (modify.vol)
                         {
-                            case LOAD_VOL_LOW:
-                                modify.vol = LOAD_VOL_MEDIUM;
+                            case LOAD_VOL_ZX_MIC:
+                                modify.vol = LOAD_VOL_LOW;
                             break;
-                            case LOAD_VOL_MEDIUM:
+                            case LOAD_VOL_LOW:
                                 modify.vol = LOAD_VOL_HIGH;
                             break;
                             default:
-                                modify.vol = LOAD_VOL_LOW;
+                                modify.vol = LOAD_VOL_ZX_MIC;
                             break;
                         }
                     }
@@ -976,14 +976,14 @@ bool modifyMenu(void)
                     {
                         switch (modify.vol)
                         {
-                            case LOAD_VOL_LOW:
+                            case LOAD_VOL_ZX_MIC:
                                 modify.vol = LOAD_VOL_HIGH;
                             break;
-                            case LOAD_VOL_MEDIUM:
-                                modify.vol = LOAD_VOL_LOW;
+                            case LOAD_VOL_LOW:
+                                modify.vol = LOAD_VOL_ZX_MIC;
                             break;
                             default:
-                                modify.vol = LOAD_VOL_MEDIUM;
+                                modify.vol = LOAD_VOL_LOW;
                             break;
                         }
                     }
@@ -1474,7 +1474,7 @@ static void showModify(PositionF6_T pos, ModifyF6_T* modify)
 
 #ifdef INPUT_EAR
     charWriteInvertString("LOAD VOLUME:", lhs, lcount + PositionF6_T::PLOADVOL, pos == PositionF6_T::PLOADVOL);
-    charWriteString(modify->vol == LOAD_VOL_HIGH ? "HIGH  " : (modify->vol == LOAD_VOL_MEDIUM ? "MEDIUM" : "LOW   "), rhs , lcount + PositionF6_T::PLOADVOL);
+    charWriteString(modify->vol == LOAD_VOL_HIGH ? "HIGH  " : (modify->vol == LOAD_VOL_LOW ? "LOW   " : "ZX-MIC"), rhs , lcount + PositionF6_T::PLOADVOL);
 #endif
 }
 

@@ -1159,12 +1159,12 @@ static int handler(void *user, const char *section, const char *name,
 #ifdef INPUT_EAR
       else if ((!strcasecmp(name, "LoadVolume")))
       {
-        if (!strcasecmp(value, "LOW"))
+        if ((!strcasecmp(value, "ZX")) || (!strcasecmp(value, "MIC")) || (!strcasecmp(value, "ZXMIC")))
+        {
+          c->conf->loadVolume = LOAD_VOL_ZX_MIC;
+        } else if (!strcasecmp(value, "LOW"))
         {
           c->conf->loadVolume = LOAD_VOL_LOW;
-        } else if (!strcasecmp(value, "MEDIUM"))
-        {
-          c->conf->loadVolume = LOAD_VOL_MEDIUM;
         } else
         {
           c->conf->loadVolume = LOAD_VOL_HIGH;

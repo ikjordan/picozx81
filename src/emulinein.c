@@ -288,19 +288,19 @@ void emu_linein_set_volume(LoadVolume_T vol)
             bit_high = 3000;
             bit_low = 2000;
         break;
-        case LOAD_VOL_MEDIUM:
+        case LOAD_VOL_LOW:
 #ifdef DEBUG_LOAD_AND_SAVE
-            printf("Vol: Medium\n");
+            printf("Vol: Low\n");
 #endif
             es8311_write(0x14, 0x10);
             es8311_write(0x17, 0xb9);       // ADC volume: +32dB - 70 * 0.5 = -3dB
             bit_high = 1500;
             bit_low = 1000;
         break;
-        case LOAD_VOL_LOW:
+        case LOAD_VOL_ZX_MIC:
             // Used to capture from the ZX81 MIC port
 #ifdef DEBUG_LOAD_AND_SAVE
-            printf("Vol: Low\n");
+            printf("Vol: zx-mic\n");
 #endif
             es8311_write(0x14, 0x1a);       // PGA at 30dB
             es8311_write(0x17, 0xf2);       // ADC volume: +32dB - 14 * 0.5 = +25dB

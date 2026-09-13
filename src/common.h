@@ -14,8 +14,8 @@ typedef enum
 
 typedef enum
 {
+    LOAD_VOL_ZX_MIC,
     LOAD_VOL_LOW,
-    LOAD_VOL_MEDIUM,
     LOAD_VOL_HIGH,
 } LoadVolume_T;
 
